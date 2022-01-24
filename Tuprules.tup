@@ -1,0 +1,58 @@
+.gitignore
+
+PROJECT_ROOT = $(TUP_CWD)
+
+CFLAGS += -ffast-math -ffp-contract=fast -msse4.1 -mfma -mavx2 -mpopcnt
+CPPFLAGS += -std=c++17
+LINKER +=
+
+# Debug build is without optimisations and with DEBUG_BUILD defined.
+# Default build is with opitmisations.
+# Release build is the same as default build, but without profiling and with debug symbols stripped
+ifdef CONFIG_TESTS_BUILD
+    CFLAGS += -DDEBUG_BUILD  -O0 -g -fsanitize=address
+    LINKER += -fsanitize=address
+    BINARY_NAME_SUFFIX = -tests
+else
+    CFLAGS += -DDOCTEST_CONFIG_DISABLE -DBUILD_WITH_EASY_PROFILER
+    ifdef CONFIG_DEBUG_BUILD
+        CFLAGS += -O0 -g -DDEBUG_BUILD
+        BINARY_NAME_SUFFIX = -debug
+    else
+        CFLAGS += -Ofast
+        LTO += -flto
+        ifdef CONFIG_RELEASE_BUILD
+            BINARY_NAME_SUFFIX = -release
+        else
+            CFLAGS += -g
+            BINARY_NAME_SUFFIX = -dev
+        endif
+    endif
+    ifdef CONFIG_BUILD_WITH_ASAN
+        ifdef CONFIG_DEBUG_BUILD
+            BINARY_NAME_SUFFIX = -debug-with-asan
+        else 
+            ifdef CONFIG_RELEASE_BUILD
+                BINARY_NAME_SUFFIX = -with-asan
+            else
+                BINARY_NAME_SUFFIX = -dev-with-asan
+            endif
+        endif
+        CFLAGS += -fsanitize=address
+        LINKER += -fsanitize=address
+    endif
+endif
+
+DEPENDENCIES = $(PROJECT_ROOT)/third-party
+
+# Third party includes
+INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
+
+!pch = |> clang++ $(CPPFLAGS) $(INCLUDES) -stdlib=libstdc++ -x c++-header %f -o %o |>
+!compile-engine = | $(PCH).hpp |> clang++ -Wall -Werror $(CFLAGS) $(CPPFLAGS) $(LTO) `sdl2-config --cflags` -include $(PCH).hpp $(INCLUDES) -c %f -o %o |> %d__%B.o
+
+!compile-c = |> clang $(CFLAGS) $(INCLUDES) -c %f -o %o |> %d__%B.o
+!compile-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) -c %f -o %o |> %d__%B.o
+!compile-dep-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(DEPS_INCLUDES) -c %f -o %o |> %d__%B.o
+!ar = |> ar crs %o %f |>
+!link-exe = |> clang++ $(LINKER) $(LTO) %f -o %o |> $(PROJECT_ROOT)/$(BINARY_NAME)$(BINARY_NAME_SUFFIX)

@@ -1,0 +1,57 @@
+[submodule "third-party/behaviortree"]
+	path = third-party/behaviortree
+	url = git@github.com:BehaviorTree/BehaviorTree.CPP.git
+[submodule "third-party/cr"]
+	path = third-party/cr
+	url = git@github.com:fungos/cr.git
+[submodule "third-party/entt"]
+	path = third-party/entt
+	url = git@github.com:skypjack/entt.git
+[submodule "third-party/fastnoisesimd"]
+	path = third-party/fastnoisesimd
+	url = git@github.com:Auburns/FastNoiseSIMD.git
+[submodule "third-party/spdlog"]
+	path = third-party/spdlog
+	url = git@github.com:gabime/spdlog.git
+[submodule "third-party/glm"]
+	path = third-party/glm
+	url = git@github.com:g-truc/glm.git
+[submodule "third-party/physfs"]
+	path = third-party/physfs
+	url = git@github.com:criptych/physfs.git
+[submodule "third-party/physfshpp"]
+	path = third-party/physfshpp
+	url = git@github.com:danielytics/physfs-hpp.git
+[submodule "third-party/cxxopts"]
+	path = third-party/cxxopts
+	url = git@github.com:jarro2783/cxxopts.git
+[submodule "third-party/taskflow"]
+	path = third-party/taskflow
+	url = git@github.com:taskflow/taskflow.git
+[submodule "third-party/tweeny"]
+	path = third-party/tweeny
+	url = https://github.com/mobius3/tweeny
+[submodule "third-party/easy_profiler"]
+	path = third-party/easy_profiler
+	url = git@github.com:yse/easy_profiler.git
+[submodule "third-party/soloud"]
+	path = third-party/soloud
+	url = git@github.com:jarikomppa/soloud.git
+[submodule "third-party/tinygltf"]
+	path = third-party/tinygltf
+	url = git@github.com:syoyo/tinygltf.git
+[submodule "third-party/fast_obj"]
+	path = third-party/fast_obj
+	url = git@github.com:thisistherk/fast_obj.git
+[submodule "third-party/toml11"]
+	path = third-party/toml11
+	url = https://github.com/ToruNiina/toml11.git
+[submodule "third-party/orderedmap"]
+	path = third-party/orderedmap
+	url = https://github.com/Tessil/ordered-map.git
+[submodule "third-party/immer"]
+	path = third-party/immer
+	url = https://github.com/arximboldi/immer.git
+[submodule "third-party/parallelhashmap"]
+	path = third-party/parallelhashmap
+	url = https://github.com/greg7mdp/parallel-hashmap.git

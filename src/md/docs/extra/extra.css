@@ -1,0 +1,92 @@
+pre {
+    background: #1d1f21;
+}
+.lp-ref {
+    font-weight: bold;
+    font-style: italic;
+    font-variant: small-caps;
+}
+.lp-fragment .ref {
+    font-weight: bold;
+    font-style: italic;
+    font-variant: small-caps;
+}
+a.lp-ref {
+    font-weight: bold;
+    font-style: italic;
+    font-variant: small-caps;
+}
+a.lp-ref:before {
+    content: "«";
+}
+a.lp-ref:after {
+    content: "»";
+}
+span.lp-ref {
+    color: #78C2AD;
+    font-weight: bold;
+    font-style: italic;
+    font-variant: small-caps;
+}
+span.lp-ref:before {
+    content: "«";
+}
+span.lp-ref:after {
+    content: "»";
+}
+
+div.nav {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    align-content: flex-start;
+}
+div.nav.header {
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    margin-top: 0;
+}
+div.nav.footer {
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 5px;
+    margin-bottom: 0;
+}
+div.nav > div.parent:before {
+    content: '|';
+    margin-right: 10px;
+}
+div.nav > div.parent:after {
+    content: '|';
+    margin-left: 10px;
+}
+div.nav > div.parent:first-child:before {
+    content: '';
+    margin-right: 0px;
+}
+div.nav > div.parent:last-child:after {
+    content: '';
+    margin-left: 0px;
+}
+div.nav > div {
+    flex-shrink: 0;
+    margin-right: 10px
+}
+div.nav > div:last-child {
+    margin-right: 0;
+}
+div.nav > div.related {
+    flex-shrink: 1;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+div.nav > div.related div:after {
+    content: ',';
+    padding-right: 10px;
+}
+div.nav > div.related div:last-child:after {
+    content: '';
+    padding-right: 0px;
+}

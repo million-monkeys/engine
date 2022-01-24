@@ -1,0 +1,55 @@
+site_name: Game
+nav:
+    - Home: "index.md"
+    # - Code:
+    #     - Monarch: "monarch/index.md"
+    #     - Reign: "reign/index.md"
+    #     - Architecture: "docs/architecture.md"
+    #     - Style Guide: "style-guide.md"
+    - About: "about.md"
+site_url: https://entangled.github.io/mkdocs
+repo_url: https://github.com/entangled/mkdocs
+site_description: >
+        Setup an MkDocs project that works with Entangled for Literate Programming.
+site_author: ""
+copyright: ""
+docs_dir: src/md
+site_dir: docs
+theme:
+    name: minty
+    highlightjs: false
+    custom_dir: src/md/docs/extra/theme
+    nav_style: light
+markdown_extensions:
+        - pymdownx.superfences:
+            custom_fences:
+               - name: "*"
+                 class: "highlight"
+                 format: !!python/name:entangled.pymd.format
+                 validator: !!python/name:entangled.pymd.validator
+        - pymdownx.arithmatex
+        - pymdownx.details
+        - pymdownx.mark
+        - pymdownx.smartsymbols
+        - pymdownx.snippets
+        - pymdownx.tasklist
+        - admonition
+        - footnotes
+        - nl2br
+        - smarty:
+            smart_angled_quotes: true
+        - toc:
+            permalink: true
+
+plugins:
+    - kroki
+
+extra_css:
+        - docs/extra/extra.css
+        - docs/extra/hljs-theme/hybrid.css
+        
+extra_javascript:
+        - https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.1.0/highlight.min.js
+        - docs/extra/init.js
+        - https://polyfill.io/v3/polyfill.min.js?features=es6
+        - https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js

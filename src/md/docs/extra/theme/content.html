@@ -1,0 +1,41 @@
+{% if page.meta.source %}
+<div class="source-links">
+{% for filename in page.meta.source %}
+    <span class="label label-primary">{{ filename }}</span>
+{% endfor %}
+</div>
+{% endif %}
+<div id="top"></div>
+{% if not page.is_homepage or page.meta.related %}
+<div class="nav header">
+    {% if not page.is_homepage %}
+        <div class="parent"><a href="../index.html">Parent</a></div>
+    {% endif %}
+    {% if page.meta.related %}
+        <div>See also:</div>
+        <div class="related">
+            {% for related in page.meta.related %}
+                <div><a href="{{ page.meta.related[related] }}">{{ related }}</a></div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
+{% endif %}
+
+
+{{ page.content }}
+
+<div class="nav footer">
+    <div><a href="#top">Back To Top</a></div>
+    {% if not page.is_homepage %}
+        <div class="parent"><a href="../index.html">Parent</a></div>
+    {% endif %}
+    {% if page.meta.related %}
+        <div>See also:</div>
+        <div class="related">
+            {% for related in page.meta.related %}
+                <div><a href="{{ page.meta.related[related] }}">{{ related }}</a></div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</div>
