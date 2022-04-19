@@ -4,44 +4,44 @@
 #include <immer/vector.hpp>
 #include <immer/map.hpp>
 
-namespace ai::planner {
+// namespace ai::planner {
 
-    struct Action {
-        struct Parameter {
-            Parameter (entt::hashed_string k, std::variant<float, std::int64_t, entt::hashed_string::hash_type, entt::entity> v) : key(k.value()), value(v) {}
-            entt::hashed_string::hash_type key;
-            std::variant<float, std::int64_t, entt::hashed_string::hash_type, entt::entity> value;
-        };
+//     struct Action {
+//         struct Parameter {
+//             Parameter (entt::hashed_string k, std::variant<float, std::int64_t, entt::hashed_string::hash_type, entt::entity> v) : key(k.value()), value(v) {}
+//             entt::hashed_string::hash_type key;
+//             std::variant<float, std::int64_t, entt::hashed_string::hash_type, entt::entity> value;
+//         };
 
-        entt::hashed_string::hash_type id;
-        helpers::InlineArray<Parameter> parameters;
+//         entt::hashed_string::hash_type id;
+//         helpers::InlineArray<Parameter> parameters;
 
-        template <class Allocator>
-        static Action* create (Allocator& allocator, entt::hashed_string action_id, std::vector<Parameter>&& parameters) {
-            std::size_t len = sizeof(Action) + (parameters.size() * sizeof(Parameter));
-            Action* action = new (allocator.allocate(len)) Action{};
-            action->id = action_id.value();
-            action->parameters.fill(parameters);
-            return action;
-        }
-        template <class Allocator = helpers::DefaultAllocator>
-        static Action* create (entt::hashed_string action_id, std::vector<Parameter>&& parameters) {
-            return create<Allocator::Object>(Allocator::object(), action_id, parameters);
-        }
+//         template <class Allocator>
+//         static Action* create (Allocator& allocator, entt::hashed_string action_id, std::vector<Parameter>&& parameters) {
+//             std::size_t len = sizeof(Action) + (parameters.size() * sizeof(Parameter));
+//             Action* action = new (allocator.allocate(len)) Action{};
+//             action->id = action_id.value();
+//             action->parameters.fill(parameters);
+//             return action;
+//         }
+//         template <class Allocator = helpers::DefaultAllocator>
+//         static Action* create (entt::hashed_string action_id, std::vector<Parameter>&& parameters) {
+//             return create<Allocator::Object>(Allocator::object(), action_id, parameters);
+//         }
 
-        template <class Allocator>
-        static void destroy (Allocator& allocator, Action* action) {
-            allocator.deallocate(reinterpret_cast<std::byte*>(action));
-        }
-        template <class Allocator = helpers::DefaultAllocator>
-        static void destroy (Action* action) {
-            destroy<Allocator::Object>(Allocator::object(), action);
-        }
-    };
+//         template <class Allocator>
+//         static void destroy (Allocator& allocator, Action* action) {
+//             allocator.deallocate(reinterpret_cast<std::byte*>(action));
+//         }
+//         template <class Allocator = helpers::DefaultAllocator>
+//         static void destroy (Action* action) {
+//             destroy<Allocator::Object>(Allocator::object(), action);
+//         }
+//     };
 
-    using Actions = helpers::InlineArray<Action>;
+//     using Actions = helpers::InlineArray<Action>;
 
-}
+// }
 
 namespace state {
     namespace value_types {
@@ -66,18 +66,20 @@ namespace state {
         };
         using Value = std::variant<value_types::Integer, value_types::Real, value_types::Boolean, value_types::Enumeration, Identifier>;
 
-        Name name (const Value& value) {
+        inline Name name (const Value& value) {
             return std::visit(
                 helpers::visitor{
-                    [](const Integer&){ return Name::Integer; },
-                    [](const Real&){ return Name::Real; },
-                    [](const Boolean&){ return Name::Boolean; },
-                    [](const Enumeration&){ return Name::Enumeration; },
+                    [](const Integer&) { return Name::Integer; },
+                    [](const Real&) { return Name::Real; },
+                    [](const Boolean&) { return Name::Boolean; },
+                    [](const Enumeration&) { return Name::Enumeration; },
                     [](const Identifier&) { return Name::Identifier; },
                 },
                 value);
         }
     }
+
+    using Facts = immer::map<entt::hashed_string::hash_type, value_types::Value>;
 
     namespace conditions {
         enum class Operator {
@@ -124,259 +126,33 @@ namespace state {
 
     struct World {
         //helpers::hashed_string_map<value_types::Value> facts;
-        immer::map<entt::hashed_string::hash_type, value_types::Value> facts;
+        Facts facts;
 
-        bool satisfies (const Conditions& conditions) const {
-            for (const auto& condition : conditions) {
-                auto comp = condition.comparator;
-                bool met = std::visit(
-                    [comp](auto&& current, auto&& expected) {
-                        using Op = conditions::Operator;
-                        using Current = std::decay_t<decltype(current)>;
-                        using Expected = std::decay_t<decltype(expected)>;                    
-                        if constexpr ((std::is_same_v<Current, value_types::Integer> || std::is_same_v<Current, value_types::Real>) &&
-                                    (std::is_same_v<Expected, value_types::Integer> || std::is_same_v<Expected, value_types::Real>) ) {
-                            switch (comp) {
-                                case Op::GreaterThan:
-                                    return current.value > expected.value;
-                                case Op::GreaterThanOrEqualTo:
-                                    return current.value >= expected.value;
-                                case Op::LessThan:
-                                    return current.value < expected.value;
-                                case Op::LessThanOrEqualTo:
-                                    return current.value <= expected.value;
-                                case Op::EqualTo:
-                                    return current.value == expected.value;
-                                case Op::NotEqualTo:
-                                    return current.value != expected.value;
-                                case Op::BitsAllSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        return (current.value & expected.value) == expected.value;
-                                    } else {
-                                        return false;
-                                    }
-                                case Op::BitsSomeSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        return bool(current.value & expected.value);
-                                    } else {
-                                        return false;
-                                    }
-                                case Op::BitsNoneSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        return !bool(current.value & expected.value);
-                                    } else {
-                                        return false;
-                                    }
-                                default:
-                                    return false;
-                            };
-                        } else if constexpr (std::is_same_v<Current, Expected>) {
-                            switch (comp) {
-                                case Op::EqualTo:
-                                    return current.value == expected.value;
-                                case Op::NotEqualTo:
-                                    return current.value != expected.value;
-                                default:
-                                    return false;
-                            };
-                        } else {
-                            return false;
-                        }
-                    },
-                    facts[condition.fact],
-                    condition.value);
-                if (! met) {
-                    return false;
-                }
-            }
-            return true;
-        }
+        bool satisfies (const Conditions& conditions) const;
 
         // use to generate a world state from a set of conditions, for the purpose of determining distance
-        World goalState (const Conditions& conditions) const {
-            World goal;
-            for (const auto& condition : conditions) {
-                auto comp = condition.comparator;
-                auto result = std::visit(
-                    [comp](auto&& current, auto&& expected) {
-                        using Op = conditions::Operator;
-                        using Current = std::decay_t<decltype(current)>;
-                        using Expected = std::decay_t<decltype(expected)>;
-                        if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) { 
-                            switch (comp) {
-                                case Op::GreaterThan:
-                                case Op::GreaterThanOrEqualTo:
-                                    return value_types::Integer{expected.value - current.value};
-                                case Op::LessThan:
-                                case Op::LessThanOrEqualTo:
-                                    return value_types::Integer{current.value - expected.value};
-                                case Op::EqualTo:
-                                case Op::NotEqualTo:
-                                    return value_types::Integer{expected.value};
-                                case Op::BitsAllSet:
-                                case Op::BitsSomeSet:
-                                case Op::BitsNoneSet:
-                                    return value_types::Integer{expected.value};
-                            };
-                        } else if constexpr ((std::is_same_v<Current, value_types::Integer> || std::is_same_v<Current, value_types::Real>) &&
-                                    (std::is_same_v<Expected, value_types::Integer> || std::is_same_v<Expected, value_types::Real>) ) {
-                            switch (comp) {
-                                case Op::GreaterThan:
-                                case Op::GreaterThanOrEqualTo:
-                                    return value_types::Real{value_types::Real::Type{expected.value} - current.value};
-                                case Op::LessThan:
-                                case Op::LessThanOrEqualTo:
-                                    return value_types::Real{value_types::Real::Type{current.value} - expected.value};
-                                case Op::EqualTo:
-                                case Op::NotEqualTo:
-                                    return value_types::Real{value_types::Real::Type{expected.value}};
-                                default:
-                                    return value_types::Real{value_types::Real::Type{expected.value}};
-                            };
-                        } else {
-                            return Expected{expected.value};
-                        }
-                    },
-                    facts[condition.fact],
-                    condition.value);
-                goal.facts = goal.facts.set(condition.fact, result);
-            }
-            return goal;
-        }
+        World goalState (const Conditions& conditions) const;
 
         // calculate the distance from one world state to another world state
-        float distanceTo (const World& goal) const {
-            float total = 0.0f;
-            for (const auto& [key, value] : goal.facts) {
-                float value = std::visit(
-                    [](auto&& current, auto&& expected) {
-                        using Op = conditions::Operator;
-                        using Current = std::decay_t<decltype(current)>;
-                        using Expected = std::decay_t<decltype(expected)>;                    
-                        if constexpr ((std::is_same_v<Current, value_types::Integer> || std::is_same_v<Current, value_types::Real>) &&
-                                    (std::is_same_v<Expected, value_types::Integer> || std::is_same_v<Expected, value_types::Real>) ) {
-                            switch (comp) {
-                                case Op::GreaterThan:
-                                    return current.value / expected.value;
-                                case Op::GreaterThanOrEqualTo:
-                                    return current.value / expected.value;
-                                case Op::LessThan:
-                                    return expected.value / current.value;
-                                case Op::LessThanOrEqualTo:
-                                    return expected.value / expected.value;
-                                case Op::EqualTo:
-                                    return current.value == expected.value ? 0.0f : 1.0f;
-                                case Op::NotEqualTo:
-                                    return current.value != expected.value ? 0.0f : 1.0f;
-                                case Op::BitsAllSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        // TODO: Should this count how many are set?
-                                        return (current.value & expected.value) == expected.value ? 0.0f : 1.0f;
-                                    } else {
-                                        return 1.0f;
-                                    }
-                                case Op::BitsSomeSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        return (current.value & expected.value) ? 0.0f : 1.0f;
-                                    } else {
-                                        return 1.0f;
-                                    }
-                                case Op::BitsNoneSet:
-                                    if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Expected, value_types::Integer>) {
-                                        // TODO: Should this count how many are not set?
-                                        return !bool(current.value & expected.value) ? 0.0f : 1.0f;
-                                    } else {
-                                        return 1.0f;
-                                    }
-                                default:
-                                    return 1.0f;
-                            };
-                        } else if constexpr (std::is_same_v<Current, Expected>) {
-                            switch (comp) {
-                                case Op::EqualTo:
-                                    return current.value == expected.value ? 0.0f : 1.0f;
-                                case Op::NotEqualTo:
-                                    return current.value != expected.value ? 0.0f : 1.0f;
-                                default:
-                                    return 1.0f;
-                            };
-                        } else {
-                            return 1.0f;
-                        }
-                    },
-                    facts[key],
-                    value);
-                // Clamp to 0.0 .. 1.0 and add to total
-                total += (value > 1.0f) ? 1.0f : value;
-            }
-            return total;
-        }
+        float distanceTo (const World& goal, const Conditions& conditions) const;
 
-        const World apply (const Effects& effects) const {
-            World world{facts};
-            for (const auto& effect : effects) {
-                auto comp = effect.op;
-                auto result = std::visit(
-                    [comp](auto&& current, auto&& outcome) {
-                        using Op = effects::Operator;
-                        using Current = std::decay_t<decltype(current)>;
-                        using Outcome = std::decay_t<decltype(outcome)>;
-                        if constexpr (std::is_same_v<Current, value_types::Integer> && std::is_same_v<Outcome, value_types::Integer>) { 
-                            switch (comp) {
-                                case Op::Set:
-                                    return value_types::Integer{outcome.value};
-                                case Op::Add:
-                                    return value_types::Integer{current.value + outcome.value};
-                                case Op::Subtract:
-                                    return value_types::Integer{current.value - outcome.value};
-                                case Op::SetBits:
-                                    return value_types::Integer{current.value | outcome.value};
-                                case Op::ClearBits:
-                                    return value_types::Integer{current.value & ~outcome.value};
-                                case Op::ToggleBits:
-                                    return value_types::Integer{current.value ^ outcome.value};
-                            };
-                        } else if constexpr ((std::is_same_v<Current, value_types::Integer> && std::is_same_v<Outcome, value_types::Real>)) {
-                            switch (comp) {
-                                case Op::Set:
-                                    return value_types::Integer{value_types::Integer::Type{outcome.value}};
-                                case Op::Add:
-                                    return value_types::Integer{current.value + value_types::Integer::Type{outcome.value}};
-                                case Op::Subtract:
-                                    return value_types::Integer{current.value - value_types::Integer::Type{outcome.value}};
-                                default:
-                                    return current;
-                            };
-                        } else if constexpr ((std::is_same_v<Current, value_types::Real> && std::is_same_v<Outcome, value_types::Real>)) {
-                            switch (comp) {
-                                case Op::Set:
-                                    return value_types::Real{outcome.value};
-                                case Op::Add:
-                                    return value_types::Real{current.value + outcome.value};
-                                case Op::Subtract:
-                                    return value_types::Real{current.value - outcome.value};
-                                default:
-                                    return current;
-                            };
-                        } else if constexpr (std::is_same_v<Current, Outcome>) {
-                            if (comp == Op::Set) {
-                                return Current{outcome.value};
-                            }
-                        }
-                        return current;
-                    },
-                    facts[effect.fact],
-                    effect.value);
-                world.facts = world.facts.set(effect.fact, result);
-            }
-            return world;
-        }
+        // Generate new world state by applying effects to this world stat
+        const World apply (const Effects& effects) const;
     };
 }
 
-using Parameters = immer::map<entt::hashed_string::hash_type, state::value_types::Value>;
+using Parameters = state::Facts;
 
 struct Action {
+private:
+    // Operator
+    const state::Conditions preconditions;
+    const entt::hashed_string action;
+    const Parameters parameters;
+    const state::Effects effects;
+    const state::Effects expected_effects;
+
+public:
     // Does the world state meet this acitons conditions?
     bool valid (const state::World state) const {
         return state.satisfies(preconditions);
@@ -387,118 +163,96 @@ struct Action {
         return state.apply(effects).apply(expected_effects);
     }
 
-    // Operator
-    const state::Conditions preconditions;
-    const entt::hashed_string action;
-    const Parameters parameters;
-    const state::Effects effects;
-    const state::Effects expected_effects;
+    // const Parameters get_parameters () const { return parameters; }
+
+    friend struct Operator;
 };
 
 struct Operator {
 private:
-    const state::Conditions& preconditions;
-    const state::Effects& effects;
+    const Action* m_action;
 
 public:
-    const entt::hashed_string action;
-    const Parameters& parameters;
+    Operator (const Action* action) : m_action(action) {}
+    ~Operator () = default;
+
+    const entt::hashed_string action () const {
+        return m_action->action;
+    }
+    const Parameters& parameters () const {
+        return m_action->parameters;
+    }
 
     // Does the world state meet this acitons conditions?
     bool valid (const state::World state) const {
-        return state.satisfies(preconditions);
+        return state.satisfies(m_action->preconditions);
     }
 
     // Apply the effects of this action to world state
     state::World apply_effects (const state::World state) const {
-        return state.apply(effects);
+        return state.apply(m_action->effects);
     }
 };
 
-using Actions = helpers::hashed_string_map<Action>;
+using Actions = helpers::hashed_string_map<const Action*>;
 
 namespace goap {
 
-    std::vector<ai::planner::Action> plan (const state::World& start, const state::World& goal, const std::vector<ai::planner::Action*>& vocabulary)
-    {
-        // A* search...
-        return {};
-    }
+    std::vector<Action> plan (const state::World& start, const state::World& goal, const Actions& vocabulary);
 
 }
 
 namespace htn {
+    // namespace ng {
+    //     struct Task {
+    //         virtual void handle () {}
+    //     };
+    //     struct Method {
+    //         const state::Conditions preconditions;
+    //         const std::vector<Task*> subtasks;
+
+    //         bool valid (const state::World& state) const {
+    //             return state.satisfies(preconditions);
+    //         }
+    //     };
+
+    //     struct CompoundTask : public Task {
+    //         const std::vector<Method> methods;
+    //         void handle ();
+    //     };
+    //     struct PrimitiveTask : public Task {
+    //         void handle ();
+    //     };
+
+    //     struct HTN {
+
+    //         std::vector<Task*> tasks;
+    //         helpers::hashed_string_map<Task*> domains;
+    //     };
+    // }
     using PrimitiveTask = entt::hashed_string;
     struct CompoundTask {
         struct Method {
-            state::Conditions preconditions;
-            using SubTask = std::variant<PrimitiveTask, CompoundTask>;
-            std::vector<SubTask> subtasks;
+            const state::Conditions preconditions;
+            std::vector<struct SubTask*> subtasks;
+
+            bool valid (const state::World& state) const {
+                return state.satisfies(preconditions);
+            }
         };
         std::vector<Method> methods;
     };
     using Task = std::variant<PrimitiveTask, CompoundTask>;
-
-    struct History {
-        const immer::vector<const Action> plan;
-        const immer::vector<const Task*> tasks_to_process;
-        const state::World state;
+    struct SubTask {
+        const Task& task;
     };
 
-    std::vector<Operator> plan (const state::World& current, const Task* root_task, Actions& vocabulary)
-    {
-        immer::vector<const Action> current_plan;
-        state::World working_state{current};
-        immer::vector<const Task*> tasks_to_process{root_task};
-        std::vector<const History> history;
-        while (!tasks_to_process.empty()) {
-            const Task* current_task = tasks_to_process.back();
-            tasks_to_process = tasks_to_process.take(tasks_to_process.size() - 1);
+    struct History {
+        const immer::vector<const Action*> plan;
+        const immer::vector<const Task*> tasks_to_process;
+        const state::World state;
+        const std::size_t method_index;
+    };
 
-            bool valid_task_found = false;
-            if (const auto* task = std::get_if<CompoundTask>(current_task)) {
-                for (const auto& method : task->methods) {
-                    if (working_state.satisfies(method.preconditions)) {
-                        // Add tasks to history stack
-                        history.push_back(History{current_plan, tasks_to_process, working_state});
-                        // Add subtasks to be processed
-                        for (const auto& task : method.subtasks) {
-                            tasks_to_process = tasks_to_process.push_back(&task);
-                        }
-                        valid_task_found = true;
-                        break;
-                    }
-                }
-            } else if (const auto* primitive_task = std::get_if<PrimitiveTask>(current_task)) {
-                const auto& task = vocabulary.find()
-                if (task->valid(working_state)) {
-                    // Apply operators effects
-                    working_state = task->apply_effects(working_state);
-                    // Add operator to plan
-                    current_plan = current_plan.push_back(task->action_operator);
-                    valid_task_found = true;
-                }
-            }
-            // If no tasks preconditions are satisfied, restore from history, if there is any
-            if (! valid_task_found) {
-                if (!history.empty()) {
-                    const auto& restored = history.back();
-                    current_plan = restored.plan;
-                    tasks_to_process = restored.tasks_to_process;
-                    working_state = restored.state;
-                    history.pop_back();
-                } else {
-                    // There was no history, planning has failed
-                    return {};
-                }
-            }
-        }
-        
-        // Copy current winning plan to vector of operators and return
-        std::vector<Operator> final_plan;
-        for (const auto& action : current_plan) {
-            final_plan.push_back(Operator{action.preconditions, action.effects, action.action, action.parameters});
-        }
-        return final_plan;
-    }
+    std::vector<Operator> plan (const state::World& current, const Task* root_task, const Actions& vocabulary);
 }

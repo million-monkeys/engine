@@ -4,7 +4,7 @@ PROJECT_ROOT = $(TUP_CWD)
 
 CFLAGS += -ffast-math -ffp-contract=fast -msse4.1 -mfma -mavx2 -mpopcnt
 CPPFLAGS += -std=c++17
-LINKER +=
+LINKER += -rdynamic
 
 # Debug build is without optimisations and with DEBUG_BUILD defined.
 # Default build is with opitmisations.
@@ -45,6 +45,9 @@ endif
 
 DEPENDENCIES = $(PROJECT_ROOT)/third-party
 
+# Engine SDK includes
+INCLUDES += -I$(PROJECT_ROOT)/sdk/
+
 # Third party includes
 INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
 
@@ -55,4 +58,4 @@ INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
 !compile-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) -c %f -o %o |> %d__%B.o
 !compile-dep-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(DEPS_INCLUDES) -c %f -o %o |> %d__%B.o
 !ar = |> ar crs %o %f |>
-!link-exe = |> clang++ $(LINKER) $(LTO) %f -o %o |> $(PROJECT_ROOT)/$(BINARY_NAME)$(BINARY_NAME_SUFFIX)
+!link-exe = |> clang++ $(LINKER) $(LTO) %f -o %o |> $(PROJECT_ROOT)/../$(BINARY_NAME)$(BINARY_NAME_SUFFIX)

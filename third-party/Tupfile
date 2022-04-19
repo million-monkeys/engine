@@ -1,0 +1,32 @@
+include_rules
+
+# Build tinygltf
+: foreach tinygltf/*.cc |> !compile-c++ |> tinygltf__%B.o
+
+# Build GLAD
+ifdef CONFIG_DEBUG_BUILD
+    INCLUDES += -Iglad/debug/include
+    : foreach glad/debug/src/*.c |> !compile-c |> glad__%B.o
+else
+    INCLUDES += -Iglad/release/include
+    : foreach glad/release/src/*.c |> !compile-c |> glad__%B.o
+endif
+: glad__*.o |> !ar |> libglad.a
+
+# Build ImGUI
+# INCLUDES += `sdl2-config --cflags` -Iimgui
+# CPPFLAGS += -DIMGUI_IMPL_OPENGL_LOADER_GLAD -fPIC
+# : foreach imgui/imgui.cpp imgui/imgui_widgets.cpp imgui/imgui_tables.cpp imgui/imgui_draw.cpp |> !compile-c++ |> imgui__%B.o
+# : imgui/backends/imgui_impl_sdl.cpp |> !compile-c++ |> imgui__%d_%B.o
+# : imgui/backends/imgui_impl_opengl3.cpp |> !compile-c++ |>imgui__%d_%B.o
+# : imgui__*.o |> !ar |> libdearimgui.a
+
+# ifndef CONFIG_DEBUG_BUILD
+#     ifndef CONFIG_RELEASE_BUILD
+        # Build easy_profiler
+        INCLUDES += -Ieasy_profiler/easy_profiler_core/include
+        CPPFLAGS += -DEASY_PROFILER_VERSION_MAJOR=2 -DEASY_PROFILER_VERSION_MINOR=1 -DEASY_PROFILER_VERSION_PATCH=0 -DBUILD_WITH_EASY_PROFILER=1
+        : foreach easy_profiler/easy_profiler_core/*.cpp |> !compile-c++ |> easy_profiler__%B.o
+        : easy_profiler__*.o |> !ar |> libeasy_profiler.a
+#     endif
+# endif

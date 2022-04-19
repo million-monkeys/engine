@@ -1,17 +1,17 @@
 include_rules
 
 BINARY_NAME = game
-PCH = game
+PCH = game_pch
 
 CFLAGS += -Wall -Werror -I. -Wno-delete-non-abstract-non-virtual-dtor
 LINKER += -pthread -ldl -lSDL2 -lGL
 
+INCLUDES += -I$(DEPENDENCIES)/spdlog/include
 INCLUDES += -I$(DEPENDENCIES)/cr/
 INCLUDES += -I$(DEPENDENCIES)/entt/src
 INCLUDES += -I$(DEPENDENCIES)/taskflow
 INCLUDES += -I$(DEPENDENCIES)/toml11
 INCLUDES += -I$(DEPENDENCIES)/glm
-INCLUDES += -I$(DEPENDENCIES)/spdlog/include
 INCLUDES += -I$(DEPENDENCIES)/cxxopts/include
 INCLUDES += -I$(DEPENDENCIES)/physfs/src
 INCLUDES += -I$(DEPENDENCIES)/physfshpp/include
@@ -21,6 +21,8 @@ INCLUDES += -I$(DEPENDENCIES)/parallelhashmap/
 INCLUDES += -I$(DEPENDENCIES)/stb
 INCLUDES += -I$(DEPENDENCIES)/easy_profiler/easy_profiler_core/include
 INCLUDES += -I$(DEPENDENCIES)/tinygltf
+INCLUDES += -I$(DEPENDENCIES)/magic_enum/include
+INCLUDES += -I$(DEPENDENCIES)/luajit/src
 
 ifdef CONFIG_DEBUG_BUILD
     INCLUDES += -I$(DEPENDENCIES)/glad/debug/include
@@ -32,15 +34,22 @@ endif
 : $(PCH).hpp |> !pch |> $(PCH).pch
 
 # Compile Sources
-: foreach core/*.cpp |> !compile-engine |>
-: foreach graphics/*.cpp |> !compile-engine |>
-: foreach graphics/renderer/*.cpp |> !compile-engine |>
-: foreach memory/*.cpp |> !compile-engine |>
-: foreach utils/*.cpp |> !compile-engine |>
+: foreach ai/*.cpp |> !compile-engine |> ai__%B.o
+: foreach ai/planning/*.cpp |> !compile-engine |> ai_planning__%B.o
+: foreach core/*.cpp |> !compile-engine |> core__%B.o
+: foreach memory/*.cpp |> !compile-engine |> memory__%B.o
+: foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o
+: foreach utils/*.cpp |> !compile-engine |> utils__%B.o
+: foreach world/*.cpp |> !compile-engine |> world__%B.o
+
+# : foreach graphics/*.cpp |> !compile-engine |> graphics__%B.o
+# : foreach graphics/renderer/*.cpp |> !compile-engine |> graphics_renderer__%B.o
+: core_components.cpp |> !compile-engine |> %B.o
+
 : foreach $(DEPENDENCIES)/physfs/src/*.c |> !compile-c |>
 
 # Link binary
-: *.o $(DEPENDENCIES)/*.a |> !link-exe |>
+: *.o $(DEPENDENCIES)/*.a $(DEPENDENCIES)/luajit/src/libluajit.a |> !link-exe |>
 
 # Preserve source files in debug build, for better debugging experience
 ifdef CONFIG_DEBUG_BUILD_

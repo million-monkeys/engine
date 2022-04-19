@@ -1,0 +1,165 @@
+namespace = "core"
+
+##################################################
+# Core un-namespaced components ##################
+
+[[component]]
+    _name_        = "named"
+    _description_ = "Provides a name by which to look this component up by in the scene"
+    name          = "hashed-string"
+
+[[component]]
+    _name_        = "global"
+    _description_ = "A tag which causes this entity to remain in the scene even when scenes are changed and it does NOT get reloaded if the original scene is loaded again"
+
+[[component]]
+    _name_ = "position"
+    x = "float"
+    y = "float"
+    z = "float"
+
+[[component]]
+    _name_   = "transform"
+    rotation = "vec3"
+    scale    = { type = "vec3", default = { x = 1.0, y = 1.0, z = 1.0 } }
+
+##################################################
+# Graphics components           ##################
+
+[[component]]
+    _name_      = "layer"
+    _namespace_ = "graphics"
+    [component.layer]
+        type    = "uint8"
+        default = 1
+        [[component.layer.options]]
+            label = "Background"
+            value = 1
+        [[component.layer.options]]
+            label = "Terrain"
+            value = 2
+        [[component.layer.options]]
+            label = "Objects"
+            value = 3
+        [[component.layer.options]]
+            label = "Characters"
+            value = 4
+        [[component.layer.options]]
+            label = "Foreground"
+            value = 5
+
+[[component]]
+    _name_        = "sprite"
+    _namespace_   = "graphics"
+    _description_ = "An image-based visual representation"
+
+[[component]]
+    _name_        = "static-image"
+    _namespace_   = "graphics"
+    _description_ = "A single image visual representation"
+    image         = "texture"
+
+[[component]]
+    _name_        = "billboard"
+    _namespace_   = "graphics"
+    _description_ = "Visual that is always oriented towards the camera"
+
+[[component]]
+    _name_        = "model"
+    _namespace_   = "graphics"
+    _description_ = "A 3D mesh-based visual representation"
+    mesh          = "mesh"
+
+[[component]]
+    _name_            = "material"
+    _namespace_       = "graphics"
+    _description_     = "A material with which to render a model"
+    color             = { type = "rgb", default = { r = 1.0, g = 1.0, b = 1.0 } }
+    albedo            = "texture"
+    normal            = "texture"
+    metalic           = "texture"
+    roughness         = "texture"
+    ambient-occlusion = "texture"
+
+[[component]]
+    _name_        = "point-light"
+    _namespace_   = "graphics"
+    _description_ = "An emitter of light, in all directions"
+    radius        = { type = "float", default = 1.0 }
+    color         = { type = "rgb", default = { r = 1.0, g = 1.0, b = 1.0 } }
+    intensity     = { type = "float", default = 1.0 }
+
+[[component]]
+    _name_        = "spot-light"
+    _namespace_   = "graphics"
+    _description_ = "An emitter of light, in one direction"
+    range         = { type = "float", default = 1.0 }
+    color         = { type = "rgb", default = { r = 1.0, g = 1.0, b = 1.0 } }
+    direction     = { type = "vec3", default = { x = 1.0, y = 1.0, z = 1.0 } }
+    intensity     = { type = "float", default = 1.0 }
+
+    ##################################################
+    # Physics components            ##################
+
+[[component]]
+    _name_        = "static-body"
+    _namespace_   = "physics"
+    _description_ = "A static (immobile) physics object"
+    shape         = "resource"
+    physics-body  = "ptr:btRigidBody"
+
+[[component]]
+    _name_        = "dynamic-body"
+    _namespace_   = "physics"
+    _description_ = "A physics object whose motion is dictated by the physics engine"
+    shape         = "resource"
+    mass          = "float"
+    physics-body  = "ptr:btRigidBody"
+
+[[component]]
+    _name_        = "kinematic-body"
+    _namespace_   = "physics"
+    _description_ = "A physics object whose motion is externally controlled"
+    shape         = "resource"
+    mass          = "float"
+    physics-body  = "ptr:btRigidBody"
+
+[[component]]
+    _name_        = "collision-sensor"
+    _namespace_   = "physics"
+    _description_ = "Entity sends signal when a physics body collides with it"
+    [component.collision-mask]
+        #type    = "flags"
+        type    = "uint8"
+        default = 0
+        [[component.collision-mask.options]]
+            label = "Terrain"
+            value = 1
+        [[component.collision-mask.options]]
+            label = "Objects"
+            value = 2
+        [[component.collision-mask.options]]
+            label        = "Characters"
+            value        = 3
+            on-collision = "signal"
+
+[[component]]
+    _name_        = "trigger-region"
+    _namespace_   = "physics"
+    _description_ = "A region which emits an event when a physics body enters or exits its area"
+    shape         = "resource"
+    on-enter      = "signal"
+    on-exit       = "signal"
+    [component.trigger-mask]
+        #type    = "flags"
+        type    = "uint8"
+        default = 0
+        [[component.trigger-mask.options]]
+            label = "Terrain"
+            value = 1
+        [[component.trigger-mask.options]]
+            label = "Objects"
+            value = 2
+        [[component.trigger-mask.options]]
+            label = "Characters"
+            value = 3

@@ -2,6 +2,7 @@
 #include "config.hpp"
 #include <game.hpp>
 #include <utils/parser.hpp>
+#include <filesystem>
 
 #include <cxxopts.hpp>
 
@@ -24,10 +25,11 @@ bool core::readUserConfig (int argc, char* argv[])
         ("p,profiling", "Enable profiling")
 #endif
         ("l,loglevel", "Log level", cxxopts::value<std::string>())
-        ("g,gamefiles", "Path(s) to game files", cxxopts::value<std::vector<std::string>>())
+        ("x,overridefiles", "Set override path(s) to game files", cxxopts::value<std::vector<std::string>>())
+        ("g,gamefiles", "Add override path(s) to game files", cxxopts::value<std::vector<std::string>>())
         ("m,modules", "Modules list file", cxxopts::value<std::string>())
         ("modulepath", "Path to Module files", cxxopts::value<std::string>())
-        ("i,init", "Initialisation file", cxxopts::value<std::string>()->default_value("init.toml"));
+        ("i,init", "Initialisation file", cxxopts::value<std::string>()->default_value("config.toml"));
     auto result = options.parse(argc, argv);
 
     //******************************************************//
@@ -38,7 +40,10 @@ bool core::readUserConfig (int argc, char* argv[])
     //                                                      //
     //******************************************************//
     try {
-        const auto config = parser::parse_toml(result["init"].as<std::string>(), parser::FileLocation::FileSystem);
+        std::string config_file = result["init"].as<std::string>();
+        const auto config = parser::parse_toml(config_file, parser::FileLocation::FileSystem);
+
+         std::filesystem::path base_path = std::filesystem::path{config_file}.parent_path();
 
         //******************************************************//
         // TELEMETRY
@@ -59,34 +64,30 @@ bool core::readUserConfig (int argc, char* argv[])
         // GAME
         //******************************************************//
         // Set default settings for [game] section
-        entt::monostate<"game/sources"_hs>{} = std::vector<std::string>{"common"};
+        std::vector<std::string> source_files{};
+        // Add overrides without removing the configured paths
+        if (result["gamefiles"].count() > 0) {
+            source_files = result["gamefiles"].as<std::vector<std::string>>();
+        }
 
         // Overwrite with settings
         if (config.contains("game")) {
             const auto& game = config.at("game");
-            if (game.contains("sources")) {
-                const auto& sources = game.at("sources").as_array();
-                std::vector<std::string> source_files;
+            if (game.contains("data")) {
+                const auto& sources = game.at("data").as_array();
                 for (const auto& source : sources) {
-                    source_files.push_back(source.as_string());
+                    source_files.push_back((base_path / source.as_string().str).string());
                 }
-                entt::monostate<"game/sources"_hs>{} = source_files;
             }
-
-            entt::monostate<"game/modules-file"_hs>{} = toml::find_or<std::string>(game, "modules", "modules.toml");
-            maybe_set<"game/config-file"_hs, std::string>(game, "config");
-        } else {
-            entt::monostate<"game/modules-file"_hs>{} = std::string{"modules.toml"};
-            entt::monostate<"game/config-file"_hs>{} = std::string{"game.toml"};
         }
+        
         // Override game sources, if specified on commandline
-        if (result["gamefiles"].count() > 0) {
-            entt::monostate<"game/sources"_hs>{} = result["gamefiles"].as<std::vector<std::string>>();;
+        if (result["overridefiles"].count() > 0) {
+            source_files = result["overridefiles"].as<std::vector<std::string>>();
         }
-        // Override module list file, if specified on commandline
-        if (result["modules"].count() > 0) {
-            entt::monostate<"game/modules-file"_hs>{} = result["modules"].as<std::string>();;
-        }
+        entt::monostate<"game/sources"_hs>{} = source_files;
+
+        entt::monostate<"game/config-file"_hs>{} = std::string{"game.toml"};
         // Set module path, if specified on commandline (modules loaded relative to this path)
         if (result["modulepath"].count() > 0) {
             entt::monostate<"game/modules-path"_hs>{} = result["modulepath"].as<std::string>();;
@@ -131,7 +132,7 @@ bool core::readUserConfig (int argc, char* argv[])
             entt::monostate<"graphics/resolution/height"_hs>{} = height;
             entt::monostate<"graphics/fullscreen"_hs>{} = toml::find_or<bool>(graphics, "fullscreen", false);
             entt::monostate<"graphics/v-sync"_hs>{} = toml::find_or<bool>(graphics, "vsync", true);
-            entt::monostate<"graphics/renderer/field-of-view"_hs>{} = toml::find_or<float>(graphics, "fov", 60.0f);
+            entt::monostate<"graphics/renderer/field-of-view"_hs>{} = float(toml::find_or<double>(graphics, "fov", 60.0));
             entt::monostate<"graphics/debug-rendering"_hs>{} = toml::find_or<bool>(graphics, "debug", false);
             entt::monostate<"graphics/resolution/resizable"_hs>{} = toml::find_or<bool>(graphics, "resizable", false);
         } else {
@@ -164,7 +165,7 @@ bool core::readUserConfig (int argc, char* argv[])
         if (config.contains("dev-mode")) {
             const auto& devmode = config.at("dev-mode");
             entt::monostate<"dev-mode/enabled"_hs>{} = toml::find_or<bool>(devmode, "enabled", false);
-            entt::monostate<"dev-mode/reload-interval"_hs>{} = ElapsedTime(toml::find_or<float>(devmode, "reload-interval", 5.0f) * 1000000L);
+            entt::monostate<"dev-mode/reload-interval"_hs>{} = ElapsedTime(toml::find_or<double>(devmode, "reload-interval", 5.0f) * 1000000L);
         } else {
             entt::monostate<"dev-mode/enabled"_hs>{} = bool{false};
         }
@@ -187,8 +188,7 @@ bool core::readGameConfig () {
     //                                                      //
     //******************************************************//
     try {
-        const std::string& game_config = entt::monostate<"game/config-file"_hs>();
-        const auto config = parser::parse_toml(game_config);
+        const auto config = parser::parse_toml("game.toml");
         
         //******************************************************//
         // GAME
@@ -198,7 +198,7 @@ bool core::readGameConfig () {
             return false;
         }
         const auto& game = config.at("game");
-        entt::monostate<"game/scene-list-file"_hs>{} = toml::find<std::string>(game, "scenes");
+        entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
         entt::monostate<"game/start-scene"_hs>{} = toml::find<std::string>(game, "start-scene");
 
         //******************************************************//
@@ -272,7 +272,7 @@ bool core::readGameConfig () {
                 gz = toml::find_or<double>(gravity, "z", 0);
             }
             entt::monostate<"physics/gravity"_hs>{} = glm::vec3{gx, gy, gz};
-            entt::monostate<"physics/time-step"_hs>{} = float(1.0 / toml::find_or<double>(physics, "target-framerate", 30.0));
+            entt::monostate<"physics/time-step"_hs>{} = float(1.0f / toml::find_or<int>(physics, "target-framerate", 30));
         } else {
             // No [physics] section, use default settings
             entt::monostate<"physics/time-step"_hs>{} = float(1.0f / 30.0f);

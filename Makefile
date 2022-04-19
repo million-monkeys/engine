@@ -4,7 +4,8 @@ name = game
 
 init:
 	@pip install --user mkdocs mkdocs-bootswatch pymdown-extensions entangled-filters mkdocs-kroki-plugin pygments; \
-	tup variant builds/*.config
+	tup variant builds/*.config; \
+	cd third-party/luajit && make;
 
 docs:
 	mkdocs build
@@ -13,12 +14,13 @@ clean-executables:
 	rm -f $(name) $(name)-tests $(name)-debug $(name)-release $(name)-debug-with-asan
 
 clean: clean-executables
+	cd third-party/luajit && make clean; \
 	rm -rf docs; \
 	rm -rf  build-*
 
 watch:
 	@tmux new-session make --no-print-directory watch-docs \; \
-		split-window -v cd src && make --no-print-directory entangled \; \
+		split-window -v make --no-print-directory entangled \; \
 		select-layout even-vertical \; \
 		rename-window "Watchers" \; \
 		new-window make --no-print-directory watch-tests \; \
@@ -30,8 +32,9 @@ watch-docs:
 
 watch-tests:
 	@while true; do \
-		inotifywait -e close_write target/build-tests/$(name)-tests ; \
-		make --no-print-directory test; \
+		inotifywait -e close_write $(name)-tests ; \
+		while [ ! -f $(name)-tests ]; do sleep 0.5; done; \
+		./$(name)-tests; \
 		echo ""; \
 		sleep 1; \
 	done
@@ -40,7 +43,7 @@ test: target = tests
 test: build
 
 tup-monitor:
-	cd target && ./monitor.sh
+	tup monitor -f -a build-tests
 
 entangled:
 	entangled daemon
@@ -54,7 +57,7 @@ else
 build: executable = $(name)-$(target)
 endif
 build:
-	tup build-$(target) && cp build-$(target)/$(name)-$(target) ../$(executable)
+	tup build-$(target)
 
 release:
 	tup generate --config build-release/tup.config compile-release.sh

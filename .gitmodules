@@ -55,3 +55,12 @@
 [submodule "third-party/parallelhashmap"]
 	path = third-party/parallelhashmap
 	url = https://github.com/greg7mdp/parallel-hashmap.git
+[submodule "third-party/doctest"]
+	path = third-party/doctest
+	url = https://github.com/doctest/doctest.git
+[submodule "third-party/magic_enum"]
+	path = third-party/magic_enum
+	url = git@github.com:Neargye/magic_enum.git
+[submodule "third-party/luajit"]
+	path = third-party/luajit
+	url = git@github.com:LuaJIT/LuaJIT.git

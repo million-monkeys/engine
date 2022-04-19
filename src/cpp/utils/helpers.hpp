@@ -28,10 +28,10 @@ namespace helpers {
     } // impl::
 
     ///////////////////////////////////////////////////////////////////////////
-    // Type alias for a spp::sparse_hash_map with hashed strings as keys
+    // Type alias for a phmap::flat_hash_map with hashed strings as keys
     ///////////////////////////////////////////////////////////////////////////
     template <typename T>
-    using hashed_string_map = spp::sparse_hash_map<entt::hashed_string::hash_type, T, entt::identity>;
+    using hashed_string_map = phmap::flat_hash_map<entt::hashed_string::hash_type, T, entt::identity>;
 
     ///////////////////////////////////////////////////////////////////////////
     // Utility to make a variant visitor out of lambdas, using the *overloaded
@@ -340,5 +340,42 @@ namespace helpers {
             return {};
         }
     };
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Create an iterable from an object with a 'data' pointer and a 'count' variable
+    ///////////////////////////////////////////////////////////////////////////
+    template <typename T>
+    class Iterable {
+    public:
+        Iterable(T iterable) : iterable(iterable) {}
+        ~Iterable() {}
+        typename T::Type* begin() const {return iterable.data;}
+        typename T::Type* end() const {return iterable.data + iterable.count;}
+        typename T::Type& first() const {return *iterable.data;}
+        typename T::Type& last() const {return *(iterable.data + iterable.count - 1);}
+    private:
+        T iterable;
+    };
+    template <typename T>
+    class ConstIterable {
+    public:
+        ConstIterable(T iterable) : iterable(iterable) {}
+        ~ConstIterable() {}
+        const typename T::Type* begin() const {return iterable.data;}
+        const typename T::Type* end() const {return iterable.data + iterable.count;}
+        const typename T::Type& first() const {return *iterable.data;}
+        const typename T::Type& last() const {return *(iterable.data + iterable.count - 1);}
+    private:
+        const T iterable;
+    };
+
+    template <typename T>
+    Iterable<T> iterate (T iterable) {
+        return Iterable<T>(iterable);
+    }
+    template <typename T>
+    ConstIterable<T> const_iterate (const T iterable) {
+        return ConstIterable<T>(iterable);
+    }
 
 } // helpers::

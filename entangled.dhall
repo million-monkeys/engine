@@ -88,7 +88,7 @@ let syntax : entangled.Syntax =
    stored.  An entry of `None Text`, which is the default, keeps the database
    in memory, but this way you cannot insert new files on a running daemon.
   -}
-let database = Some "../.entangled/db.sqlite"
+let database = Some ".entangled/db.sqlite"
 
 {- Watch list
    ----------
@@ -99,7 +99,7 @@ let database = Some "../.entangled/db.sqlite"
    the files are listed here. In the case of a glob pattern, this is
    alpha-numerical order (same as `ls`).
   -}
-let watchList = [ "md/**/*.md" ]
+let watchList = [ "src/md/**/*.md" ]
 
 in { entangled = entangled.Config :: { database = database
                                      , watchList = watchList
