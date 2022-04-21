@@ -5,8 +5,6 @@
 #include "engine.hpp"
 #include "graphics/graphics.hpp"
 
-using CM = monkeys::api::Module::CallbackMasks;
-
 core::Engine::~Engine ()
 {
 

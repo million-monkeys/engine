@@ -38,6 +38,48 @@ void core::Engine::deallocModule (void* ptr) {
     delete [] reinterpret_cast<std::byte*>(ptr);
 }
 
+void core::Engine::registerModule (std::uint32_t flags, monkeys::api::Module* mod)
+{
+    // All modules have the before-frame hook registered
+    addModuleHook(CM::BEFORE_FRAME, mod);
+
+    // Register optional hooks
+    for (auto hook : {CM::AFTER_FRAME, CM::LOAD_SCENE, CM::UNLOAD_SCENE, CM::BEFORE_UPDATE, CM::PREPARE_RENDER, CM::BEFORE_RENDER, CM::AFTER_RENDER}) {
+        if (flags & magic_enum::enum_integer(hook)) {
+            addModuleHook(hook, mod);
+        }
+    }
+}
+
+void core::Engine::addModuleHook (monkeys::api::Module::CallbackMasks hook, monkeys::api::Module* mod) {
+    switch (hook) {
+        case CM::BEFORE_FRAME:
+            m_hooks_beforeFrame.push_back(mod);
+            break;
+        case CM::AFTER_FRAME:
+            m_hooks_afterFrame.push_back(mod);
+            break;
+        case CM::BEFORE_UPDATE:
+            m_hooks_beforeUpdate.push_back(mod);
+            break;
+        case CM::PREPARE_RENDER:
+            m_hooks_prepareRender.push_back(mod);
+            break;
+        case CM::BEFORE_RENDER:
+            m_hooks_beforeRender.push_back(mod);
+            break;
+        case CM::AFTER_RENDER:
+            m_hooks_afterRender.push_back(mod);
+            break;
+        case CM::LOAD_SCENE:
+            m_hooks_loadScene.push_back(mod);
+            break;
+        case CM::UNLOAD_SCENE:
+            m_hooks_unloadScene.push_back(mod);
+            break;
+    };
+}
+
 void core::Engine::installComponent (const monkeys::api::definitions::Component& component)
 {
     scripting::registerComponent(component.id.value(), component.type_id);

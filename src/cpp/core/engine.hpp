@@ -10,6 +10,8 @@
 #include <SDL.h>
 
 namespace core {
+    using CM = monkeys::api::Module::CallbackMasks;
+
     // Component used by the prototypes registry to identify the prototype entity
     struct EntityPrototypeID {
         entt::hashed_string::hash_type id;
@@ -46,9 +48,11 @@ namespace core {
         // Execute the Taskflow graph of tasks, returns true if still running
         bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);
 
+        // Register module hooks
+        void registerModule (std::uint32_t, monkeys::api::Module*);
+
         // Call all modules that are added as a specific engine hook
         template <monkeys::api::Module::CallbackMasks Hook, typename... T> void callModuleHook (T... args) {
-            using CM = monkeys::api::Module::CallbackMasks;
             if constexpr (Hook == CM::BEFORE_FRAME) {
                 EASY_BLOCK("callModuleHook<BEFORE_FRAME>", profiler::colors::Indigo100);
                 for (auto& mod : m_hooks_beforeFrame) {
@@ -97,6 +101,9 @@ namespace core {
         void deallocModule(void *) final;
         void installComponent (const monkeys::api::definitions::Component& component) final;
         std::byte* requestEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) final;
+
+        // Add a module to be called by a specific engine hook
+        void addModuleHook (monkeys::api::Module::CallbackMasks hook, monkeys::api::Module* module);
 
         // Copy all entities from one registry to another
         void copyRegistry (const entt::registry& from, entt::registry& to);
