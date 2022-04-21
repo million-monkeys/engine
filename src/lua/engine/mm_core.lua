@@ -34,10 +34,16 @@ local function register_events(self, events_list)
     end
 end
 
+local function register_script(self, script)
+    self.event_maps[script.resource_id] = script.event_map
+end
+
 return {
     component_types = {},
     event_types = {},
+    event_maps = {},
     register_components = register_components,
     register_events = register_events,
+    register_scripts = register_script,
     table_merge = table_merge
 }

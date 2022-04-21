@@ -156,6 +156,32 @@ extern "C" void* allocate_event (const char* event_name, std::uint32_t target_en
     return g_engine->allocateEvent(event_type, target, size);
 }
 
+using storage_type = typename entt::storage_traits<entt::entity, components::core::ScriptedBehavior>::storage_type;
+
+storage_type::const_iterable g_scripted_behavior_iterable;
+storage_type::const_iterable::const_iterator g_scripted_behavior_iterator;
+
+extern "C" void setup_scripted_behavior_iterator ()
+{
+    const auto& registry = g_engine->registry(monkeys::Registry::Runtime);
+    const auto& storage = registry.storage<components::core::ScriptedBehavior>();
+    g_scripted_behavior_iterable = storage.each();
+    g_scripted_behavior_iterator = g_scripted_behavior_iterable.begin();
+}
+
+extern "C" std::uint32_t get_next_scripted_behavior (const components::core::ScriptedBehavior** behavior)
+{
+    if (g_scripted_behavior_iterator != g_scripted_behavior_iterable.end()) {
+        const auto&& [entity, sb] = *g_scripted_behavior_iterator;
+        ++g_scripted_behavior_iterator;
+        *behavior = &sb;
+        return magic_enum::enum_integer(entity);
+    } else {
+        *behavior = nullptr;
+        return magic_enum::enum_integer(entt::entity{entt::null});
+    }
+}
+
 extern "C" void output_log (std::uint32_t level, const char* message)
 {
     switch (level) {

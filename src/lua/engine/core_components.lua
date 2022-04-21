@@ -16,29 +16,8 @@ ffi.cdef [[
 		struct {float x, y, z;} rotation;
 		struct {float x, y, z;} scale;
 	};
-
-	struct Component_physics_StaticBody {
-		uint32_t shape;
-		struct btRigidBody* physics_body;
-	};
-	struct Component_physics_DynamicBody {
-		uint32_t shape;
-		float mass;
-		struct btRigidBody* physics_body;
-	};
-	struct Component_physics_KinematicBody {
-		uint32_t shape;
-		float mass;
-		struct btRigidBody* physics_body;
-	};
-	struct Component_physics_CollisionSensor {
-		uint8_t collision_mask;
-	};
-	struct Component_physics_TriggerRegion {
-		uint32_t shape;
-		uint32_t on_enter;
-		uint32_t on_exit;
-		uint8_t trigger_mask;
+	struct Component_Core_ScriptedBehavior {
+		uint32_t resource_id;
 	};
 
 	struct Component_graphics_Layer {
@@ -76,6 +55,30 @@ ffi.cdef [[
 		float intensity;
 	};
 
+	struct Component_physics_StaticBody {
+		uint32_t shape;
+		struct btRigidBody* physics_body;
+	};
+	struct Component_physics_DynamicBody {
+		uint32_t shape;
+		float mass;
+		struct btRigidBody* physics_body;
+	};
+	struct Component_physics_KinematicBody {
+		uint32_t shape;
+		float mass;
+		struct btRigidBody* physics_body;
+	};
+	struct Component_physics_CollisionSensor {
+		uint8_t collision_mask;
+	};
+	struct Component_physics_TriggerRegion {
+		uint32_t shape;
+		uint32_t on_enter;
+		uint32_t on_exit;
+		uint8_t trigger_mask;
+	};
+
 ]]
 local core = require('mm_core')
 core:register_components({
@@ -83,6 +86,7 @@ core:register_components({
 	["global"] = "struct Component_Core_Global*",
 	["position"] = "struct Component_Core_Position*",
 	["transform"] = "struct Component_Core_Transform*",
+	["scripted-behavior"] = "struct Component_Core_ScriptedBehavior*",
 	["graphics/layer"] = "struct Component_graphics_Layer*",
 	["graphics/sprite"] = "struct Component_graphics_Sprite*",
 	["graphics/static-image"] = "struct Component_graphics_StaticImage*",

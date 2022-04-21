@@ -77,8 +77,6 @@ local function get_entity_by_id(self, entity_id)
             remove = remove_component,
             destroy = destroy_entity
         }
-    else
-        return nil
     end
 end
 
@@ -86,28 +84,24 @@ local function get_entity_by_name(self, entity_name)
     local id = C.entity_lookup_by_name(self._registry, entity_name)
     if id ~= NULL_ENTITY then
         return get_entity_by_id(self, id)
-    else
-        return nil
     end
 end
 
 local function create_entity(self, prototype)
     local id
-    if prototype ~= nil then
+    if prototype then
         id = C.entity_create_from_prototype(self._registry, prototype)
     else
         id = C.entity_create(self._registry)
     end
     if id ~= NULL_ENTITY then
         return get_entity_by_id(self, id)
-    else
-        return nil
     end
 end
 
 local function emit_event(event_name, target)
     local event_info = core.event_types[event_name]
-    if event_info ~= nil then
+    if event_info then
         if target == nil then
             target = NULL_ENTITY
         end
@@ -124,14 +118,14 @@ return {
         entity = get_entity_by_id,
         lookup = get_entity_by_name,
         create = create_entity,
-        valid = function(id) return id ~= NULL_ENTITY end
+        valid  = function(id) return id ~= NULL_ENTITY end
     },
     emit = emit_event,
     log = {
-        debug = function(...) log_output(LOG_LEVELS.DEBUG, ...) end,
-        info = function(...) log_output(LOG_LEVELS.INFO, ...) end,
+        debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
+        info    = function(...) log_output(LOG_LEVELS.INFO,    ...) end,
         warning = function(...) log_output(LOG_LEVELS.WARNING, ...) end,
-        error = function(...) log_output(LOG_LEVELS.ERROR, ...) end,
-        critical = function(...) log_output(LOG_LEVELS.CRITICAL, ...) end,
+        error   = function(...) log_output(LOG_LEVELS.ERROR,   ...) end,
+        critical= function(...) log_output(LOG_LEVELS.CRITICAL,...) end,
     }
 }

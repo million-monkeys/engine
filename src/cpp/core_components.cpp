@@ -105,6 +105,30 @@ namespace init_core {
 			};
 			engine->registerComponent<components::core::Transform>(component_def);
 		}
+		{ // components::core::ScriptedBehavior
+			monkeys::api::definitions::Component component_def {"scripted-behavior"_hs, entt::type_hash<components::core::ScriptedBehavior>::value(), "core", "ScriptedBehavior"};
+			component_def.size_in_bytes = sizeof(components::core::ScriptedBehavior);
+			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
+				
+				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, entt::hashed_string::value(toml::find<std::string>(table, "resource-id").c_str()));
+			};
+            
+			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::ScriptedBehavior>(entity)); };
+			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::ScriptedBehavior>(entity); };
+			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+				switch (op) {
+					case monkeys::api::definitions::ManageOperation::Add:
+						registry.emplace_or_replace<components::core::ScriptedBehavior>(entity);
+						break;
+					case monkeys::api::definitions::ManageOperation::Remove:
+						registry.remove<components::core::ScriptedBehavior>(entity);
+						break;
+					default: break;
+				}
+			};
+			engine->registerComponent<components::core::ScriptedBehavior>(component_def);
+		}
 		{ // components::core::graphics::Layer
 			monkeys::api::definitions::Component component_def {"graphics/layer"_hs, entt::type_hash<components::core::graphics::Layer>::value(), "core::graphics", "Layer"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Layer);
