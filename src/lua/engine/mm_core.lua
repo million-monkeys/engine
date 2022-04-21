@@ -1,11 +1,11 @@
-local ffi = require("ffi")
+local ffi = require('ffi')
 
 local function table_merge(...)
     local tables_to_merge = { ... }
-    assert(#tables_to_merge > 1, "There should be at least two tables to merge them")
+    assert(#tables_to_merge > 1, 'There should be at least two tables to merge them')
 
     for k, t in ipairs(tables_to_merge) do
-        assert(type(t) == "table", string.format("Expected a table as function parameter %d", k))
+        assert(type(t) == 'table', string.format('Expected a table as function parameter %d', k))
     end
 
     local result = tables_to_merge[1]
@@ -24,8 +24,14 @@ local function register_components(self, components_table)
     self.component_types = table_merge(self.component_types, components_table)
 end
 
-local function register_events(self, events_table)
-    self.event_types = table_merge(self.event_types, events_table)
+local function register_events(self, events_list)
+    for _, event in ipairs(events_list) do
+        local event_type = 'struct ' .. event.type
+        self.event_types[event.name] = {
+            type = event_type .. '*',
+            size = ffi.sizeof(event_type),
+        }
+    end
 end
 
 return {

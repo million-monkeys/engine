@@ -62,6 +62,9 @@ namespace monkeys::api {
             installComponent(component);
         }
 
+        // Allocate space for an event in the event stream, returning a raw pointer to its payload
+        virtual std::byte* allocateEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) = 0;
+
         /* User API (Note that users should use the API wrapper classes in gou.hpp) */
         /* ------------------------------------------------------------------------ */
 
@@ -95,10 +98,22 @@ namespace monkeys::api {
         template <typename T>
         [[maybe_unused]] T& emit (entt::entity target=entt::null)
         {
-            return *(new (requestEvent(T::EventID, target, sizeof(T))) T{});
+            return *(new (allocateEvent(T::EventID, target, sizeof(T))) T{});
         }
 
+        /** Access an iterable collection of all emitted events */
         virtual const monkeys::events::Iterable& events () = 0;
+
+        /** Retrieve the payload from an individual event */
+        template <typename EventT>
+        const EventT& event (const monkeys::events::Envelope& envelope) {
+            if (EventT::EventID == envelope.type && sizeof(EventT) == envelope.size) {
+                return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(monkeys::events::Envelope));
+            } else {
+                spdlog::error("Could not cast event {} to {}", envelope.type, EventT::EventID.data());
+                throw std::runtime_error("bad event type");
+            }
+        }
 
     private:
         // Allow engine to decide where the module classes are allocated
@@ -106,7 +121,5 @@ namespace monkeys::api {
         virtual void deallocModule(void *) = 0;
         // Register components with the engine
         virtual void installComponent (const monkeys::api::definitions::Component& component) = 0;
-        // Emit an event
-        virtual std::byte* requestEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) = 0;
     };
 }

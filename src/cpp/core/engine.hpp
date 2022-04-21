@@ -4,8 +4,9 @@
 #include <taskflow/taskflow.hpp>
 #include <million/definitions.hpp>
 #include <entt/entity/organizer.hpp>
-
 #include <world/scenes.hpp>
+
+#include "scripting/core.hpp"
 
 #include <SDL.h>
 
@@ -96,11 +97,19 @@ namespace core {
             }
         }
 
+        // Allocate space for an event in the event stream, returning a raw pointer to its payload
+        std::byte* allocateEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) final;
+
+        // std::byte* allocateEventInternal (entt::hashed_string id, entt::entity target, std::uint8_t size)
+        // {
+        //     auto envelope = m_event_pool.emplace<monkeys::events::Envelope>(T::EventID, target, size);
+        //     return m_event_pool.unaligned_allocate(size);
+        // }
+
     private:
         void* allocModule(std::size_t) final;
         void deallocModule(void *) final;
         void installComponent (const monkeys::api::definitions::Component& component) final;
-        std::byte* requestEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) final;
 
         // Add a module to be called by a specific engine hook
         void addModuleHook (monkeys::api::Module::CallbackMasks hook, monkeys::api::Module* module);
@@ -183,6 +192,8 @@ namespace core {
 
         // User input
         SDL_GameController* m_game_controller;
+
+        scripting::Engine m_scripting_engine;
     };
 
 }

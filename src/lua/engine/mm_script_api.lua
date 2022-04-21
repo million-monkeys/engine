@@ -1,4 +1,4 @@
-local ffi = require("ffi")
+local ffi = require('ffi')
 ffi.cdef [[
     uint32_t null_entity_value ();
     uint32_t entity_create (uint32_t which_registry);
@@ -9,6 +9,7 @@ ffi.cdef [[
     void* component_add_to_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
+    void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
 ]]
 local C = ffi.C
 local core = require('mm_core')
@@ -31,12 +32,12 @@ end
 local function select_regitsry(self, registry_name)
     if registry_name == 'runtime' then
         self._registry = 0
-    elseif registry_name == "background" then
+    elseif registry_name == 'background' then
         self._registry = 1
-    elseif registry_name == "prototype" then
+    elseif registry_name == 'prototype' then
         self._registry = 2
     else
-        log_output(LOG_LEVELS.ERROR, "Invalid registry: %s", registry_name)
+        C.output_log(LOG_LEVELS.ERROR, 'Invalid registry: '..registry_name)
     end
 end
 
@@ -104,7 +105,16 @@ local function create_entity(self, prototype)
     end
 end
 
-local function emit_event(event)
+local function emit_event(event_name, target)
+    local event_info = core.event_types[event_name]
+    if event_info ~= nil then
+        if target == nil then
+            target = NULL_ENTITY
+        end
+        return ffi.cast(event_info.type, C.allocate_event(event_name, target, event_info.size))
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Event "'..event_name..'" not found')
+    end
 end
 
 return {

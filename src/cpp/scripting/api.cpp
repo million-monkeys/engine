@@ -12,7 +12,7 @@ void set_engine (core::Engine* engine)
 
 phmap::flat_hash_map<entt::hashed_string::hash_type, entt::id_type> g_component_types;
 
-void scripting::registerComponent (entt::hashed_string::hash_type name, entt::id_type id)
+void scripting::Engine::registerComponent (entt::hashed_string::hash_type name, entt::id_type id)
 {
     g_component_types[name] = id;
 }
@@ -149,11 +149,11 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
     }
 }
 
-extern "C" void emit_event (const char* event_name, std::uint32_t sender, void* event)
+extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size)
 {
-    [[maybe_unused]] entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
-    [[maybe_unused]] entt::entity entity = static_cast<entt::entity>(sender);
-    // TODO: Copy `event` data into event stream
+    entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
+    entt::entity target = static_cast<entt::entity>(target_entity);
+    return g_engine->allocateEvent(event_type, target, size);
 }
 
 extern "C" void output_log (std::uint32_t level, const char* message)

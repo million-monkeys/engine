@@ -20,7 +20,8 @@ int get_global_event_pool_size () {
 core::Engine::Engine() :
     m_scene_manager(*this),
     m_events_iterable(nullptr, nullptr),
-    m_event_pool(get_global_event_pool_size())
+    m_event_pool(get_global_event_pool_size()),
+    m_scripting_engine(this)
 {
     // Manage Named entities
     m_runtime_registry.on_construct<components::core::Named>().connect<&core::Engine::onAddNamedEntity>(this);
@@ -82,13 +83,13 @@ void core::Engine::addModuleHook (monkeys::api::Module::CallbackMasks hook, monk
 
 void core::Engine::installComponent (const monkeys::api::definitions::Component& component)
 {
-    scripting::registerComponent(component.id.value(), component.type_id);
+    m_scripting_engine.registerComponent(component.id.value(), component.type_id);
 }
 
 bool core::Engine::init ()
 {
     init_core::register_components(this);
-    if (!scripting::init(this)) {
+    if (!m_scripting_engine.init()) {
         spdlog::critical("Could not initialize scripting subsystem");
         return false;
     }
@@ -106,7 +107,7 @@ void core::Engine::reset ()
     //     delete pool;
     // }
     // Halt the scripting system
-    scripting::term();
+    m_scripting_engine.term();
     // Clear the runtime registry
     m_runtime_registry = {};
     // Clear background registry

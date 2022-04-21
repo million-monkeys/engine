@@ -90,11 +90,10 @@ int game_main (int argc, char** argv)
         } else {
             // engine.setupGame();
 
-            scripting::load("test.lua");
-
             // Run main loop
             spdlog::info("Game Running...");
             // GAME LOOP HERE
+            engine.execute(0, 0, 0);
 
             // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
             // engine.reset();

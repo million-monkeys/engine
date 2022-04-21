@@ -5,7 +5,15 @@
 
 void set_engine (core::Engine* engine);
 
-lua_State* g_lua_state = nullptr;
+scripting::Engine::Engine (core::Engine* engine)
+{
+    set_engine(engine);
+}
+
+scripting::Engine::~Engine ()
+{
+
+}
 
 void setLuaPath(lua_State* state, const std::string& path)
 {
@@ -27,7 +35,7 @@ static int packageLoader(lua_State* state)
         std::string filename = module_name;
         filename.append(".lua");
         auto source = helpers::readToString(filename);
-        if (luaL_loadbuffer(g_lua_state, source.c_str(), source.size(), filename.c_str()) != 0) {
+        if (luaL_loadbuffer(state, source.c_str(), source.size(), filename.c_str()) != 0) {
             spdlog::error("[script] Failed to load package '{}': {}", module_name, lua_tostring(state, -1));
             lua_pushstring(state, "");
         }
@@ -40,6 +48,15 @@ static int packageLoader(lua_State* state)
 
 bool setupPackageLoader(lua_State* state)
 {
+    // Remove third and fourth loader (C lib loader & combined loader)
+    // Then set the custom package path
+    luaL_dostring(state, R"lua(
+        table.remove(package.loaders, 3)
+        table.remove(package.loaders, 3)
+        package.path = './?.lua;?/init.lua'
+    )lua");
+
+    // Get the package loaders list
 	lua_getglobal(state, "package");
 	if (lua_type(state, -1) != LUA_TTABLE) {
 		spdlog::error("Lua \"package\" is not a table");
@@ -50,10 +67,8 @@ bool setupPackageLoader(lua_State* state)
         spdlog::error("Lua \"package.loaders\" is not a table");
         return false;
     }
-    luaL_dostring(state, "table.remove(package.loaders, 3)");
-    luaL_dostring(state, "table.remove(package.loaders, 3)");
-    luaL_dostring(state, "package.path = './?.lua;?/init.lua'");
 
+    // Add the custom package loader to the end of the list
 	lua_pushinteger(state, 3);
 	lua_pushcfunction(state, packageLoader);
 	lua_rawset(state, -3);
@@ -62,32 +77,30 @@ bool setupPackageLoader(lua_State* state)
     return true;
 }
 
-bool scripting::init (core::Engine* engine)
+bool scripting::Engine::init ()
 {
-    set_engine(engine);
-
-    g_lua_state = luaL_newstate();
-    if (!g_lua_state) {
+    m_lua_state = luaL_newstate();
+    if (!m_lua_state) {
         return false;
     }
-    luaL_openlibs(g_lua_state);
-    setupPackageLoader(g_lua_state);
-    luaL_dostring(g_lua_state, "require('core_components')");
+    luaL_openlibs(m_lua_state);
+    setupPackageLoader(m_lua_state);
+    luaL_dostring(m_lua_state, "require('core_components')");
 
     return true;
 }
 
-void scripting::term ()
+void scripting::Engine::term ()
 {
-    lua_close(g_lua_state);
+    lua_close(m_lua_state);
 }
 
-bool scripting::load (const std::string& filename)
+bool scripting::Engine::load (const std::string& filename)
 {
     try {
         spdlog::debug("[script] Loading: {}", filename);
         auto source = helpers::readToString(filename);
-        int status = luaL_loadbuffer(g_lua_state, source.c_str(), source.size(), filename.c_str());
+        int status = luaL_loadbuffer(m_lua_state, source.c_str(), source.size(), filename.c_str());
         if (status != 0) {
             if (status == LUA_ERRSYNTAX) {
                 spdlog::error("[script] Syntax error in script: {}", filename);
@@ -96,9 +109,9 @@ bool scripting::load (const std::string& filename)
             }
             return false;
         }
-        int ret = lua_pcall(g_lua_state, 0, 0, 0);
+        int ret = lua_pcall(m_lua_state, 0, 0, 0);
         if (ret != 0) {
-            spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+            spdlog::error("[script] Runtime error {}", lua_tostring(m_lua_state, -1));
             return false;
         }
     } catch (const std::invalid_argument& e) {

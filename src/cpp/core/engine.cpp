@@ -20,6 +20,12 @@ monkeys::resources::Handle core::Engine::findResource (entt::hashed_string::hash
     return {};
 }
 
+struct TestEvent {
+    static constexpr entt::hashed_string EventID = "test-event"_hs;
+    int a;
+    int b;
+};
+
 bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
 {
     EASY_FUNCTION(profiler::colors::Blue100);
@@ -30,9 +36,9 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
 
     // // Process previous frames events, looking for ones the core engine cares about
     // Yes, its a bit wasteful to loop them all like this, but they should be hot in cache so ¯\_(ツ)_/¯
-    for (auto& event : events()) {
+    for (const auto& ev : events()) {
         EASY_BLOCK("Handling event", profiler::colors::Amber100);
-        switch (event.type) {
+        switch (ev.type) {
             case "engine/exit"_hs:
                 return false;
             case "engine/set-system-status/running"_hs:
@@ -69,13 +75,23 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     // Run the before-frame hook for each module, updating the current time
     callModuleHook<CM::BEFORE_FRAME>(current_time, delta, frame_count);
 
-    if (m_system_status == SystemStatus::Running) {
-        // Execute the taskflow graph if systems are running
-        EASY_BLOCK("Executing tasks", profiler::colors::Indigo200);
-        m_executor.run(m_coordinator);
-    } else {
-        // If systems are stopped, only pump events
-        pumpEvents();
+    // if (m_system_status == SystemStatus::Running) {
+    //     // Execute the taskflow graph if systems are running
+    //     EASY_BLOCK("Executing tasks", profiler::colors::Indigo200);
+    //     m_executor.run(m_coordinator);
+    // } else {
+    //     // If systems are stopped, only pump events
+    //     pumpEvents();
+    // }
+
+    m_scripting_engine.load("test.lua");
+    pumpEvents();
+
+    for (const auto& ev : events()) {
+        if (ev.type == "test-event"_hs) {
+            auto& test_event = event<TestEvent>(ev);
+            spdlog::info("Got test-event: {}, {}", test_event.a, test_event.b);
+        }
     }
 
     // Run the after-frame hook for each module

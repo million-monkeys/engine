@@ -8,7 +8,7 @@ using EventPool = core::Engine::EventPool;
 
 thread_local EventPool* g_event_pool = nullptr;
 
-std::byte* core::Engine::requestEvent (entt::hashed_string::hash_type type, entt::entity target, std::uint8_t payload_size)
+std::byte* core::Engine::allocateEvent (entt::hashed_string::hash_type type, entt::entity target, std::uint8_t payload_size)
 {
     if (g_event_pool == nullptr) {
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
