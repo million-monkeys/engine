@@ -1,40 +1,47 @@
 #pragma once
 
 #include "alignment.hpp"
+#include "out_of_space_policies.hpp"
 
 namespace heterogeneous {
-    template <typename Align = alignment::NoAlign>
+    template <typename PoolAlign = alignment::NoAlign, typename ItemAlign = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
     class StackPool {
     private:
         template <typename T>
         T* alloc () {
-            return Align::align<T>(nallocate(sizeof(T)));
+            return ItemAlign::template align<T>(unaligned_allocate(ItemAlign::adjust_size(sizeof(T))));
         }
     public:
-        using Type = T;
-        using AlignType = Align;
+        using PoolAlignType = PoolAlign;
+        using ItemAlignType = ItemAlign;
+        using OutOfSpacePolicyType = OutOfSpacePolicy;
 
         StackPool (std::uint32_t size) :
-            memory(new std::byte[size]),
+            size(PoolAlign::adjust_size(size)),
+            buffer(new std::byte[size]),
+            base(PoolAlign::template align<std::byte>(buffer)),
             next(0),
-            size(size),
             items(0) {
 
         }
         ~StackPool() {
-            delete [] memory;
+            delete [] buffer;
         }
 
         // Allocate, but don't construct
-        std::byte* allocate (std::uint32_t bytes) {
-            if (next + bytes < size) {
+        std::byte* unaligned_allocate (std::uint32_t bytes) {
+            if (next + bytes <= size) {
                 ++items;
-                std::byte* ptr = memory + next;
-                next = next + Align::adjust_size(bytes);
-                return object;
+                std::byte* ptr = base + next;
+                next = next + bytes;
+                return ptr;
             } else {
-                throw std::runtime_error("StackPool allocated more items than reserved space");
+                return OutOfSpacePolicy::template apply<std::byte>("heterogeneous::StackPool");
             }
+        }
+
+        std::byte* allocate (std::uint32_t bytes) {
+            return ItemAlign::template align<std::byte>(unaligned_allocate(ItemAlign::adjust_size(bytes)));
         }
             
         // Allocate and construct
@@ -66,15 +73,29 @@ namespace heterogeneous {
         }
 
         // Copy items from other into StackPool
-        template <typename PT>
-        void copy (StackPool<typename PT::AlignType>& other) {
-            std::memcpy(reinterpret_cast<void*>(memory), reinterpret_cast<const void*>(other.pool), next);
+        template <typename SP>
+        void copy (StackPool<typename SP::PoolAlignType, typename SP::ItemAlignType, typename SP::OutOfSpacePolicyType>& other) {
+            if (next + other.next <= size) {
+                std::memcpy(reinterpret_cast<void*>(base + next), reinterpret_cast<const void*>(other.base), other.next);
+                next += other.next;
+            } else {
+                OutOfSpacePolicy::template apply<void>("heterogeneous::StackPool");
+            }
+        }
+
+        std::byte* begin () const {
+            return base;
+        }
+        
+        std::byte* end () const {
+            return base + next;
         }
 
     private:
-        std::byte* const memory;
-        std::uint32_t next;
         const std::uint32_t size;
+        std::byte* const buffer;
+        std::byte* const base;
+        std::uint32_t next;
         std::uint32_t items;
     };
 }

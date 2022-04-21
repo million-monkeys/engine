@@ -7,6 +7,8 @@
 
 #include <world/scenes.hpp>
 
+#include <SDL.h>
+
 namespace core {
     // Component used by the prototypes registry to identify the prototype entity
     struct EntityPrototypeID {
@@ -16,6 +18,8 @@ namespace core {
     class Engine : public monkeys::api::Engine
     {
     public:
+        using EventPool = memory::heterogeneous::StackPool<memory::alignment::AlignCacheLine>;
+
         Engine();
         virtual ~Engine();
 
@@ -28,17 +32,71 @@ namespace core {
         entt::entity loadEntity (monkeys::Registry, entt::hashed_string) final;
         void mergeEntity (monkeys::Registry, entt::entity, entt::hashed_string, bool) final;
         monkeys::resources::Handle findResource (entt::hashed_string::hash_type) final;
+        const monkeys::events::Iterable& events () final;
 
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);
 
+        // Time
+        DeltaTime deltaTime () { return m_current_time_delta; }
+
         bool init ();
         void reset ();
+
+        // Execute the Taskflow graph of tasks, returns true if still running
+        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);
+
+        // Call all modules that are added as a specific engine hook
+        template <monkeys::api::Module::CallbackMasks Hook, typename... T> void callModuleHook (T... args) {
+            using CM = monkeys::api::Module::CallbackMasks;
+            if constexpr (Hook == CM::BEFORE_FRAME) {
+                EASY_BLOCK("callModuleHook<BEFORE_FRAME>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_beforeFrame) {
+                    mod->on_before_frame(args...);
+                }
+            } else if constexpr (Hook == CM::AFTER_FRAME) {
+                EASY_BLOCK("callModuleHook<AFTER_FRAME>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_afterFrame) {
+                    mod->on_after_frame(args...);
+                }
+            } else if constexpr (Hook == CM::LOAD_SCENE) {
+                EASY_BLOCK("callModuleHook<LOAD_SCENE>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_loadScene) {
+                    mod->on_load_scene(args...);
+                }
+            } else if constexpr (Hook == CM::UNLOAD_SCENE) {
+                EASY_BLOCK("callModuleHook<UNLOAD_SCENE>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_unloadScene) {
+                    mod->on_unload_scene(args...);
+                }
+            } else if constexpr (Hook == CM::PREPARE_RENDER) {
+                EASY_BLOCK("callModuleHook<PREPARE_RENDER>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_prepareRender) {
+                    mod->on_prepare_render(args...);
+                }
+            } else if constexpr (Hook == CM::BEFORE_RENDER) {
+                EASY_BLOCK("callModuleHook<BEFORE_RENDER>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_beforeRender) {
+                    mod->on_before_render(args...);
+                }
+            } else if constexpr (Hook == CM::AFTER_RENDER) {
+                EASY_BLOCK("callModuleHook<AFTER_RENDER>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_afterRender) {
+                    mod->on_after_render(args...);
+                }
+            } else if constexpr (Hook == CM::BEFORE_UPDATE) {
+                EASY_BLOCK("callModuleHook<BEFORE_UPDATE>", profiler::colors::Indigo100);
+                for (auto& mod : m_hooks_beforeUpdate) {
+                    mod->on_before_update(args...);
+                }
+            }
+        }
 
     private:
         void* allocModule(std::size_t) final;
         void deallocModule(void *) final;
         void installComponent (const monkeys::api::definitions::Component& component) final;
+        std::byte* requestEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) final;
 
         // Copy all entities from one registry to another
         void copyRegistry (const entt::registry& from, entt::registry& to);
@@ -50,6 +108,26 @@ namespace core {
         // Callbacks to manage prototype entities
         void onAddPrototypeEntity (entt::registry&, entt::entity);
         void onRemovePrototypeEntity (entt::registry&, entt::entity);
+
+        // Process input events
+        void handleInput ();
+
+        // Make previously emitted events visible to consumers
+        void pumpEvents ();
+        void refreshEventsIterable ();
+
+        // Emit an event directly to the global pool (warning: unsynchronised)
+        template <typename T>
+        [[maybe_unused]] T& internalEmitEvent (entt::entity target=entt::null)
+        {
+            auto envelope = m_event_pool.emplace<monkeys::events::Envelope>(T::EventID, target, sizeof(T));
+            m_event_pool.unaligned_allocate(sizeof(T));
+            return *(new (reinterpret_cast<std::byte*>(envelope) + sizeof(monkeys::events::Envelope)) T{});
+        }
+        [[maybe_unused]] void internalEmitEvent (entt::hashed_string id, entt::entity target=entt::null)
+        {
+            m_event_pool.emplace<monkeys::events::Envelope>(id, target, std::uint32_t(0));
+        }
 
         struct NamedEntityInfo {
             entt::entity entity;
@@ -71,6 +149,33 @@ namespace core {
         phmap::flat_hash_map<monkeys::SystemStage, entt::organizer> m_organizers;
         tf::Taskflow m_coordinator;
         tf::Executor m_executor;
+
+        enum class SystemStatus {
+            Running,
+            Stopped,
+        };
+        SystemStatus m_system_status;
+
+        // Timing
+        DeltaTime m_current_time_delta = 0;
+
+        // Event system
+        monkeys::events::Iterable m_events_iterable;
+        std::vector<EventPool*> m_event_pools;
+        EventPool m_event_pool;
+
+        // Module Hooks
+        std::vector<monkeys::api::Module*> m_hooks_beforeFrame;
+        std::vector<monkeys::api::Module*> m_hooks_afterFrame;
+        std::vector<monkeys::api::Module*> m_hooks_beforeUpdate;
+        std::vector<monkeys::api::Module*> m_hooks_loadScene;
+        std::vector<monkeys::api::Module*> m_hooks_unloadScene;
+        std::vector<monkeys::api::Module*> m_hooks_prepareRender;
+        std::vector<monkeys::api::Module*> m_hooks_beforeRender;
+        std::vector<monkeys::api::Module*> m_hooks_afterRender;
+
+        // User input
+        SDL_GameController* m_game_controller;
     };
 
 }

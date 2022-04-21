@@ -41,6 +41,18 @@ extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
     }
 }
 
+extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_registry, const char* prototype)
+{
+    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    if (selected_registry.has_value()) {
+        return magic_enum::enum_integer(g_engine->loadEntity(selected_registry.value(), entt::hashed_string{prototype}));
+    } else {
+        // Invalid registry
+        spdlog::error("[script] entity_create called with invalid registry: {}", which_registry);
+        return magic_enum::enum_integer(entt::entity{entt::null});
+    }
+}
+
 extern "C" void entity_destroy (std::uint32_t which_registry, std::uint32_t entity)
 {
     auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);

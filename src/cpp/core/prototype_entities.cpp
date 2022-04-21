@@ -24,6 +24,8 @@ entt::entity core::Engine::loadEntity (monkeys::Registry which, entt::hashed_str
         auto new_entity = m_runtime_registry.create();
         mergeEntityInternal(m_prototype_registry, registry(which), it->second, new_entity, true);
         return new_entity;
+    } else {
+        spdlog::warn("Could not create entity. Prototype does not exist: \"{}\"", prototype_id.data());
     }
     return entt::null;
 }

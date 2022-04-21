@@ -40,15 +40,13 @@ namespace monkeys::api {
         // virtual detail::type_context *type_context() const = 0;
 
         /** Internal module creation API */
-        template <class Module>
-        Module* createModule (const std::string& name)
+        template <class Module> Module* createModule (const std::string& name)
         {
             return new (allocModule(sizeof(Module))) Module(name, *this);
         }
 
         /** Internal module destruction API */
-        template <class Module>
-        void destroyModule (Module* mod)
+        template <class Module> void destroyModule (Module* mod)
         {
             mod->~Module();
             deallocModule(mod);
@@ -84,14 +82,23 @@ namespace monkeys::api {
         /** Get the string name of a named entity */
         virtual const std::string& findEntityName (const components::core::Named& named) const = 0;
 
-        /** Load an entity into specified registry from a template */
+        /** Load an entity into specified registry from a prototype */
         virtual entt::entity loadEntity (monkeys::Registry, entt::hashed_string) = 0;
 
-        /** Merge a template into an entity in the specified registrywhich */
+        /** Merge a prototype into an entity in the specified registry which */
         virtual void mergeEntity (monkeys::Registry, entt::entity, entt::hashed_string, bool) = 0;
 
         // Retrieve a resource handle by name
         virtual monkeys::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
+
+        /** Emit an event to the event stream */
+        template <typename T>
+        [[maybe_unused]] T& emit (entt::entity target=entt::null)
+        {
+            return *(new (requestEvent(T::EventID, target, sizeof(T))) T{});
+        }
+
+        virtual const monkeys::events::Iterable& events () = 0;
 
     private:
         // Allow engine to decide where the module classes are allocated
@@ -99,5 +106,7 @@ namespace monkeys::api {
         virtual void deallocModule(void *) = 0;
         // Register components with the engine
         virtual void installComponent (const monkeys::api::definitions::Component& component) = 0;
+        // Emit an event
+        virtual std::byte* requestEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) = 0;
     };
 }

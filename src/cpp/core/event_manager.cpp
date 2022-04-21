@@ -1,127 +1,102 @@
 
 #include <game.hpp>
+#include "engine.hpp"
 
-#include <iterator> 
+#include <iterator>
 
-namespace engine {
-    class System {
+using EventPool = core::Engine::EventPool;
 
+thread_local EventPool* g_event_pool = nullptr;
+
+std::byte* core::Engine::requestEvent (entt::hashed_string::hash_type type, entt::entity target, std::uint8_t payload_size)
+{
+    if (g_event_pool == nullptr) {
+        // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
+        const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
+        g_event_pool = new EventPool(event_pool_size);
+        m_event_pools.push_back(g_event_pool); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
+    }
+    monkeys::events::Envelope* envelope = g_event_pool->emplace<monkeys::events::Envelope>(type, target, payload_size);
+    g_event_pool->unaligned_allocate(payload_size);
+    return reinterpret_cast<std::byte*>(envelope) + sizeof(monkeys::events::Envelope);
+}
+
+// Move events from the thread local pools into the global event pool
+void core::Engine::pumpEvents ()
+{
+    EASY_FUNCTION(profiler::colors::Amber200);
+    m_event_pool.reset();
+    // Copy thread local events into global pool and reset thread local pools
+    for (auto* pool : m_event_pools) {
+        m_event_pool.copy<EventPool>(*pool);
+        pool->reset();
+    }
+    refreshEventsIterable();
+}
+
+// Make the global event pool visible to consumers
+void core::Engine::refreshEventsIterable ()
+{
+    m_events_iterable = monkeys::events::Iterable{
+        m_event_pool.begin(),
+        m_event_pool.end()
     };
 }
 
-namespace events {
+const monkeys::events::Iterable& core::Engine::events ()
+{
+    return m_events_iterable;
+}
 
-    using ID = entt::hashed_string;
+// namespace events {
 
-    template <typename T>
-    struct EventNameRegistry {
-        static constexpr events::ID EventID;
-    };
+//     using ID = entt::hashed_string;
 
-    namespace internal {
-        void declare (ID name, entt::id_type type_id, std::uint8_t size)
-        {
-#ifdef DEBUG_BUILD
-            if (size > 62) {
-                spdlog::error("Event {} is {} bytes in size, must not exceed 62 bytes", name.data(), size);
-                throw std::logic_error("Declared event struct is too large");
-            }
-#endif
-        }
-        std::byte* emit (entt::id_type event_type, std::uint8_t size)
-        {
-            return nullptr;
-        }
-        std::byte* post (entt::id_type event_type, std::uint8_t size, entt::entity entity)
-        {
-            return nullptr;
-        }
-    }
+//     namespace internal {
+//         void declare (ID name, entt::id_type type_id, std::uint8_t size)
+//         {
+// #ifdef DEBUG_BUILD
+//             if (size > 62) {
+//                 spdlog::error("Event {} is {} bytes in size, must not exceed 62 bytes", name.data(), size);
+//                 throw std::logic_error("Declared event struct is too large");
+//             }
+// #endif
+//         }
+
+//     }
     
-    template <typename T, typename... Rest>
-    void declare ()
-    {
-        internal::declare(EventNameRegistry<T>::EventID, entt::type_index<T>::value(), sizeof(T));
-        if constexpr (sizeof...(Rest) > 0) {
-            declare<Rest...>();
-        }
-    }
-
-    template <typename T>
-    [[maybe_unused]] T& emit ()
-    {
-        return *(new (internal::emit(entt::type_index<T>::value(), sizeof(T))) T{});
-    }
-
-    template <typename T, typename... Args>
-    [[maybe_unused]] T& emit (Args... args)
-    {
-        return *(new (internal::emit(entt::type_index<T>::value(), sizeof(T))) T{args...});
-    }
-
-    template <typename T>
-    [[maybe_unused]] T& post (entt::entity receiver)
-    {
-        return *(new (internal::post(entt::type_index<T>::value(), sizeof(T), receiver)) T{});
-    }
-
-    template <typename T, typename... Args>
-    [[maybe_unused]] T& post (entt::entity receiver, Args... args)
-    {
-        return *(new (internal::post(entt::type_index<T>::value(), sizeof(T), receiver)) T{args...});
-    }
-
-    struct EventIterator {
-        using iterator_category = std::forward_iterator_tag;
-        using difference_type   = std::ptrdiff_t;
-        using value_type        = int;
-        using pointer           = value_type*;
-        using reference         = value_type&;
-    };
-    struct EventIterable {
-        const EventIterator begin() const { return m_begin;}
-        const EventIterator end() const { return m_end;}
-    private:
-        const EventIterator m_begin;
-        const EventIterator m_end;
-    };
-
-}
-
-#define DECLARE_EVENT(obj, name)  template<> constexpr events::ID events::EventNameRegistry<struct obj>::EventID = events::ID{name}; struct __attribute__((packed)) obj
+//     template <typename T, typename... Rest>
+//     void declare ()
+//     {
+//         internal::declare(EventNameRegistry<T>::EventID, entt::type_index<T>::value(), sizeof(T));
+//         if constexpr (sizeof...(Rest) > 0) {
+//             declare<Rest...>();
+//         }
+//     }
+// }
 
 DECLARE_EVENT(MyEvent, "my_event") {
     int foo;
 };
 DECLARE_EVENT(TestEvent, "test_event") {
-    int parameter;
 };
 DECLARE_EVENT(AnotherEvent, "another_event") {
     float value1;
     float value2;
 };
 
-class MySystem : public engine::System
+void run_system ()
 {
-public:
-
-    MySystem () : engine::System()
-    {
-        events::declare<TestEvent, AnotherEvent, MyEvent>();
-    }
-
-    void run_system ()
-    {
-        // Emit an event
-        events::emit<TestEvent>(4);
-        // Emit an event, receiving reference for setting parameters
-        auto& ev = events::emit<AnotherEvent>();
-        ev.value1 = 1.0f;
-        ev.value2 = 2.0f;
-        // Post event to specific entity 
-        events::post<MyEvent>(an_entity, 100);
-    }
-
-private:
+    core::Engine engine;
     entt::entity an_entity = entt::null;
-};
+    
+    // Emit an event
+    engine.emit<TestEvent>();
+    // Emit an event, receiving reference for setting parameters
+    auto& ev = engine.emit<AnotherEvent>();
+    ev.value1 = 1.0f;
+    ev.value2 = 2.0f;
+    // Post event to specific entity 
+    auto& myev = engine.emit<MyEvent>(an_entity);
+    myev.foo = 123;
+}

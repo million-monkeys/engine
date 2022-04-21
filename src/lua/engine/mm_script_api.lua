@@ -2,6 +2,7 @@ local ffi = require("ffi")
 ffi.cdef [[
     uint32_t null_entity_value ();
     uint32_t entity_create (uint32_t which_registry);
+    uint32_t entity_create_from_prototype (uint32_t which_registry, const char* prototype);
     void entity_destroy (uint32_t which_registry, uint32_t entity);
     uint32_t entity_lookup_by_name (uint32_t which_registry, const char* name);
     void* component_get_for_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
@@ -89,8 +90,13 @@ local function get_entity_by_name(self, entity_name)
     end
 end
 
-local function create_entity(self)
-    local id = C.entity_create(self._registry)
+local function create_entity(self, prototype)
+    local id
+    if prototype ~= nil then
+        id = C.entity_create_from_prototype(self._registry, prototype)
+    else
+        id = C.entity_create(self._registry)
+    end
     if id ~= NULL_ENTITY then
         return get_entity_by_id(self, id)
     else

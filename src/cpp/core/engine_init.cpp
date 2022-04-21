@@ -18,23 +18,17 @@ int get_global_event_pool_size () {
 }
 
 core::Engine::Engine() :
-    m_scene_manager(*this)
+    m_scene_manager(*this),
+    m_events_iterable(nullptr, nullptr),
+    m_event_pool(get_global_event_pool_size())
 {
-
+    // Manage Named entities
+    m_runtime_registry.on_construct<components::core::Named>().connect<&core::Engine::onAddNamedEntity>(this);
+    m_runtime_registry.on_destroy<components::core::Named>().connect<&core::Engine::onRemoveNamedEntity>(this);
+    // Manage prototype entities
+    m_prototype_registry.on_construct<core::EntityPrototypeID>().connect<&core::Engine::onAddPrototypeEntity>(this);
+    m_prototype_registry.on_destroy<core::EntityPrototypeID>().connect<&core::Engine::onRemovePrototypeEntity>(this);
 }
-
-// core::Engine::Engine () :
-//     m_scene_manager(*this),
-//     m_executor(get_num_workers()),
-//     m_event_pool(get_global_event_pool_size())
-// {
-//     // Manage Named entities
-//     m_registry.on_construct<components::Named>().connect<&core::Engine::onAddNamedEntity>(this);
-//     m_registry.on_destroy<components::Named>().connect<&core::Engine::onRemoveNamedEntity>(this);
-//     // Manage prototype entities
-//     m_prototype_registry.on_construct<core::EntityPrototypeID>().connect<&core::Engine::onAddPrototypeEntity>(this);
-//     m_prototype_registry.on_destroy<core::EntityPrototypeID>().connect<&core::Engine::onRemovePrototypeEntity>(this);
-// }
 
 void* core::Engine::allocModule (std::size_t bytes) {
     return reinterpret_cast<void*>(new std::byte[bytes]);

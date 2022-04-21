@@ -1,8 +1,7 @@
 #pragma once
 
 #include "alignment.hpp"
-
-#include "utils/helpers.hpp"
+#include "out_of_space_policies.hpp"
 
 #include <type_traits>
 #include <stdexcept>
@@ -13,7 +12,7 @@ namespace homogeneous {
 
     namespace impl {
 
-        template <typename NextT, typename T, typename Align = alignment::NoAlign>
+        template <typename T, typename Align, typename OutOfSpacePolicy>
         class BaseStackPool {
         private:
             virtual std::uint32_t fetch () const = 0;
@@ -25,18 +24,18 @@ namespace homogeneous {
                 if (fetch() < size) {
                     return (pool + fetch_add());
                 } else {
-                    throw std::runtime_error("StackPool allocated more items than reserved space");
+                    return OutOfSpacePolicy::template apply<T>("homogeneous::BaseStackPool");
                 }
             }
         public:
             using Type = T;
             using AlignType = Align;
+            using OutOfSpacePolicyType = OutOfSpacePolicy;
 
             BaseStackPool (std::uint32_t size) :
                 memory(new std::byte[Align::adjust_size(sizeof(T) * size)]),
                 pool(Align::template align<T>(memory)),
-                size(size),
-                next(0) {
+                size(size) {
 
             }
             virtual ~BaseStackPool() {
@@ -91,7 +90,7 @@ namespace homogeneous {
             // Copy buffer into StackPool
             void copy (T* buffer, uint32_t count) {
                 if (remaining() < count) {
-                    throw std::runtime_error("StackPool attempted to copy more elements than remaining space allows");
+                    OutOfSpacePolicy::template apply<void>("homogeneous::BaseStackPool");
                 }
                 // TODO: benchmark copy_n, copy, memmove and memcpy
                 std::copy_n(buffer, count, end());
@@ -101,7 +100,7 @@ namespace homogeneous {
 
             // Copy items from other into StackPool
             template <typename PT>
-            void copy (StackPool<typename PT::Type, typename PT::AlignType>& other) {
+            void copy (BaseStackPool<typename PT::Type, typename PT::AlignType, typename PT::OutOfSpacePolicyType>& other) {
                 copy(other.pool, other.count());
             }
 
@@ -109,43 +108,43 @@ namespace homogeneous {
             std::byte* const memory;
             T* const pool;
             const std::uint32_t size;
-        protected:
-            NextT next;
         };
 
     }
 
 
     // A basic stack allocator. Objects can be allocated from the top of the stack, but are deallocated all at once. Pointers to elements are stable until reset() is called.
-    template <typename T, typename Align = alignment::NoAlign>
-    class StackPool : public impl::StackPool<std::uint32_t, Align> {
+    template <typename T, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
+    class StackPool : public impl::BaseStackPool<T, Align, OutOfSpacePolicy> {
     private:
         std::uint32_t fetch () final { return next; }
         std::uint32_t fetch_add () final { return next++; }
         void put (std::uint32_t value) final { next = value; }
+        std::uint32_t next;
     public:
         static_assert(std::is_trivial<T>::value, "StackPool<T> must contain a trivial type");
-        StackPool (std::uint32_t size) : BaseStackPool(size) {}
+        StackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
         virtual ~StackPool() {}
     };
 
 
     // Same as StackPool, but uses an atomic next pointer allowing multiple threads to allocate objects from it concurrently. Pointers to elements are stable until reset() is called.
-    template <typename T, typename Align = alignment::NoAlign>
-    class AtomicStackPool : public impl::StackPool<std::atomic_uint32_t, Align> {
+    template <typename T, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
+    class AtomicStackPool : public impl::BaseStackPool<T, Align, OutOfSpacePolicy> {
     private:
         std::uint32_t fetch () final { return next.load(); }
-        std::uint32_t fetch_add () final { return next.fetch_add()++; }
-        void put (std::uint32_t value) final { next.set(value); }
+        std::uint32_t fetch_add () final { return next.fetch_add(1); }
+        void put (std::uint32_t value) final { next.store(value); }
+        std::atomic_uint32_t next;
     public:
         static_assert(std::is_trivial<T>::value, "AtomicStackPool<T> must contain a trivial type");
-        AtomicStackPool (std::uint32_t size) : BaseStackPool(size) {}
+        AtomicStackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
         virtual ~AtomicStackPool() {}
     };
 
 
     // A free-list based pool. Objects can be allocated and deallocated, unused space will be reused. Pointers to elements are stable until reset() is called.
-    template <typename T, typename Align = alignment::NoAlign>
+    template <typename T, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
     class Pool {
     private:
         [[nodiscard]] T* allocate () {
@@ -155,7 +154,7 @@ namespace homogeneous {
                 --free;
                 return &item->object;
             } else {
-                throw std::runtime_error("Pool allocated more items than reserved space");
+                return OutOfSpacePolicy::template apply<T>("homogeneous::Pool");
             }
         }
     public:
