@@ -156,27 +156,43 @@ extern "C" void* allocate_event (const char* event_name, std::uint32_t target_en
     return g_engine->allocateEvent(event_type, target, size);
 }
 
-using storage_type = typename entt::storage_traits<entt::entity, components::core::ScriptedBehavior>::storage_type;
+struct BehaviorIterator {
+    using const_iterable = typename entt::storage_traits<entt::entity, components::core::ScriptedBehavior>::storage_type::const_iterable;
+    const_iterable::const_iterator next;
+    const_iterable::const_iterator end;
+    static BehaviorIterator* start (const_iterable);
+    void cleanup ();
+};
 
-storage_type::const_iterable g_scripted_behavior_iterable;
-storage_type::const_iterable::const_iterator g_scripted_behavior_iterator;
+// memory::homogeneous::BitsetPool<BehaviorIterator, 4> g_iterator_pool;
+BehaviorIterator g_iterator;
+BehaviorIterator* BehaviorIterator::start (BehaviorIterator::const_iterable iter)
+{
+    // return g_iterator_pool.emplace(iter.begin(), iter.end());
+    g_iterator = {iter.begin(), iter.end()};
+    return &g_iterator;
+}
+void BehaviorIterator::cleanup ()
+{
+    // g_iterator_pool.discard(iter);
+}
 
-extern "C" void setup_scripted_behavior_iterator ()
+extern "C" BehaviorIterator* setup_scripted_behavior_iterator ()
 {
     const auto& registry = g_engine->registry(monkeys::Registry::Runtime);
     const auto& storage = registry.storage<components::core::ScriptedBehavior>();
-    g_scripted_behavior_iterable = storage.each();
-    g_scripted_behavior_iterator = g_scripted_behavior_iterable.begin();
+    return BehaviorIterator::start(storage.each());
 }
 
-extern "C" std::uint32_t get_next_scripted_behavior (const components::core::ScriptedBehavior** behavior)
+extern "C" std::uint32_t get_next_scripted_behavior (BehaviorIterator* iter, const components::core::ScriptedBehavior** behavior)
 {
-    if (g_scripted_behavior_iterator != g_scripted_behavior_iterable.end()) {
-        const auto&& [entity, sb] = *g_scripted_behavior_iterator;
-        ++g_scripted_behavior_iterator;
+    if (iter->next != iter->end) {
+        const auto&& [entity, sb] = *iter->next;
+        ++iter->next;
         *behavior = &sb;
         return magic_enum::enum_integer(entity);
     } else {
+        iter->cleanup();    
         *behavior = nullptr;
         return magic_enum::enum_integer(entt::entity{entt::null});
     }

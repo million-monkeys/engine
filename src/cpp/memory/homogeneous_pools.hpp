@@ -16,13 +16,14 @@ namespace homogeneous {
         class BaseStackPool {
         private:
             virtual std::uint32_t fetch () const = 0;
-            virtual std::uint32_t fetch_add () const = 0;
+            virtual std::uint32_t fetch_add () = 0;
             virtual void put (std::uint32_t) = 0;
 
             // Allocate, but don't construct
             [[nodiscard]] T* allocate () {
-                if (fetch() < size) {
-                    return (pool + fetch_add());
+                auto next = fetch_add();
+                if (next < size) {
+                    return pool + next;
                 } else {
                     return OutOfSpacePolicy::template apply<T>("homogeneous::BaseStackPool");
                 }
@@ -56,6 +57,14 @@ namespace homogeneous {
             }
 
             void reset () {
+                if constexpr (! std::is_trivial<T>::value) {
+                    // Not a trivial type, so need to call the constructor
+                    auto it = begin();
+                    while (it != end()) {
+                        it->~T();
+                        ++it;
+                    }
+                }
                 put(0);
             }
 
@@ -117,12 +126,11 @@ namespace homogeneous {
     template <typename T, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
     class StackPool : public impl::BaseStackPool<T, Align, OutOfSpacePolicy> {
     private:
-        std::uint32_t fetch () final { return next; }
+        std::uint32_t fetch () const final { return next; }
         std::uint32_t fetch_add () final { return next++; }
         void put (std::uint32_t value) final { next = value; }
         std::uint32_t next;
     public:
-        static_assert(std::is_trivial<T>::value, "StackPool<T> must contain a trivial type");
         StackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
         virtual ~StackPool() {}
     };
@@ -132,12 +140,11 @@ namespace homogeneous {
     template <typename T, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
     class AtomicStackPool : public impl::BaseStackPool<T, Align, OutOfSpacePolicy> {
     private:
-        std::uint32_t fetch () final { return next.load(); }
+        std::uint32_t fetch () const final { return next.load(); }
         std::uint32_t fetch_add () final { return next.fetch_add(1); }
         void put (std::uint32_t value) final { next.store(value); }
         std::atomic_uint32_t next;
     public:
-        static_assert(std::is_trivial<T>::value, "AtomicStackPool<T> must contain a trivial type");
         AtomicStackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
         virtual ~AtomicStackPool() {}
     };
@@ -290,4 +297,114 @@ namespace homogeneous {
     private:
         std::vector<T, Allocator> pool;
     };
+
+    
+    namespace detail {
+        constexpr int roundUp (int n) {
+            for (auto i : {8, 16, 32, 64}) {
+                if (n < i) return i;
+            }
+            return 0;
+        }
+        template <int N>
+        struct BitsetUnderlying {
+            static_assert(N != 0, "Size must be greater than 0 and less than or equal to 64");
+            using Type = std::uint8_t;
+        };
+        template <> struct BitsetUnderlying<8>  { using Type = std::uint8_t;  };
+        template <> struct BitsetUnderlying<16> { using Type = std::uint16_t; };
+        template <> struct BitsetUnderlying<32> { using Type = std::uint32_t; };
+        template <> struct BitsetUnderlying<64> { using Type = std::uint64_t; };
+    }
+
+    // A pool using a bitset to determine which items are free
+    template <typename T, std::size_t N, typename Align = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
+    class BitsetPool {
+    private:
+            // Allocate, but don't construct
+            [[nodiscard]] T* allocate () {
+                if (bitset & calcResetValue(N)) {
+                    // replace __builtin_ctz with std::countr_zero(x) from <bits> when switching to C++20
+                    unsigned bit = __builtin_ctz(bitset);
+                    T* ptr = (pool + bit);
+                    bitset ^= (1 << bit);
+                    return ptr;
+                } else {
+                    return OutOfSpacePolicy::template apply<T>("homogeneous::BaseStackPool");
+                }
+            }
+
+            constexpr unsigned calcResetValue (unsigned n) {
+                unsigned value = 0;
+                do {
+                    value = (value << 1) | 1;
+                } while (--n);
+                return value;
+            }
+    public:
+        BitsetPool () :
+            memory(new std::byte[Align::adjust_size(sizeof(T) * N)]),
+            pool(Align::template align<T>(memory)),
+            bitset(calcResetValue(N))
+        {
+        }
+        ~BitsetPool () { delete [] memory; }
+
+        template <typename... Args>
+        [[nodiscard]] T* emplace (Args&&... args) {
+            return new(allocate()) T{args...};
+        }
+
+        [[nodiscard]] T* insert (const T& other) {
+            return new(allocate()) T(other);
+        }
+
+        void discard (T* object) {
+            // Not a trivial type, so need to call the constructor
+            if constexpr (! std::is_trivial<T>::value) {
+                object->~T();
+            }
+            bitset |= (1 << (object - pool) / sizeof(T));
+        }
+
+        void reset () {
+            // Not a trivial type, so need to call the constructor
+            if constexpr (! std::is_trivial<T>::value) {
+                T* ptr = pool;
+                unsigned bit = N;
+                do {
+                    --bit;
+                    if (! (bitset >> bit) & 1) {
+                        ptr->~T();
+                    }
+                    ++ptr;
+                } while (bit);
+            }
+            bitset = calcResetValue(N);
+        }
+
+        std::uint32_t remaining () const {
+            return N - count();
+        }
+
+        std::uint32_t count () const {
+            std::uint32_t c = 0;
+            unsigned bit = N;
+            do {
+                --bit;
+                c += 1 - (bitset >> bit) & 1;
+            } while (bit);
+            return c;
+        }
+
+        std::uint32_t capacity () const {
+            return N;
+        }
+
+    private:
+        std::byte* const memory;
+        T* const pool;
+        typename detail::BitsetUnderlying<detail::roundUp(N)>::Type bitset;
+    };
+
 }

@@ -10,8 +10,8 @@ struct EventEnvelope {
     uint32_t target;
     void* data;
 };
-void setup_scripted_behavior_iterator ();
-uint32_t get_next_scripted_behavior (const struct ScriptedBehavior**);
+struct BehaviorIterator* setup_scripted_behavior_iterator ();
+uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct ScriptedBehavior**);
 ]]
 local core = require('mm_core')
 local mm = require('mm_script_api')
@@ -31,10 +31,10 @@ end
 function handle_events (num_events, events_buffer)
     local scripted_behavior = ffi.new('const struct ScriptedBehavior*[1]')
     -- Reset iterator
-    C.setup_scripted_behavior_iterator()
+    local iterator = C.setup_scripted_behavior_iterator()
     while true do
         -- Get entity and ScriptedBehavior instance and advance iterator
-        local entity = mm.registry:entity(C.get_next_scripted_behavior(scripted_behavior))
+        local entity = mm.registry:entity(C.get_next_scripted_behavior(iterator, scripted_behavior))
         if not entity then
             -- Entity not valid, no more scripted behaviors, abort processing
             return
