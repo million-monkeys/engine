@@ -82,6 +82,7 @@ bool scripting::init (core::Engine& engine)
     setupPackageLoader(g_lua_state);
     luaL_dostring(g_lua_state, "require('core_components')");
     luaL_dostring(g_lua_state, "require('ScriptedBehaviorService')");
+    load(entt::monostate<"game/script-events"_hs>());
 
     return true;
 }

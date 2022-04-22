@@ -200,6 +200,7 @@ bool core::readGameConfig () {
         const auto& game = config.at("game");
         entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
         entt::monostate<"game/start-scene"_hs>{} = toml::find<std::string>(game, "start-scene");
+        entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
 
         //******************************************************//
         // GRAPHICS
