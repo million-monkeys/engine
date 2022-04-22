@@ -43,7 +43,9 @@ namespace monkeys {
     }
 
     namespace resources {
-        struct Handle {};
+        struct Handle {
+            entt::hashed_string::hash_type id;
+        };
     }
 
     namespace events {
@@ -94,6 +96,7 @@ namespace monkeys {
             Iterable (std::byte* b, std::byte* e) : m_begin_ptr(b), m_end_ptr(e) {}
             const Iterator begin() const { return Iterator(m_begin_ptr);}
             const Iterator end() const { return Iterator(m_end_ptr);}
+            std::size_t size () const { return m_end_ptr - m_begin_ptr; }
         private:
             const std::byte* m_begin_ptr;
             const std::byte* m_end_ptr;

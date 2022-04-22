@@ -38,6 +38,7 @@ endif
 : foreach ai/planning/*.cpp |> !compile-engine |> ai_planning__%B.o
 : foreach core/*.cpp |> !compile-engine |> core__%B.o
 : foreach memory/*.cpp |> !compile-engine |> memory__%B.o
+: foreach resources/*.cpp |> !compile-engine |> resources__%B.o
 : foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o
 : foreach utils/*.cpp |> !compile-engine |> utils__%B.o
 : foreach world/*.cpp |> !compile-engine |> world__%B.o

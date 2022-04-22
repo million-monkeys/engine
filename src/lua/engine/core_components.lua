@@ -17,7 +17,7 @@ ffi.cdef [[
 		struct {float x, y, z;} scale;
 	};
 	struct Component_Core_ScriptedBehavior {
-		uint32_t resource_id;
+		uint32_t resource;
 	};
 
 	struct Component_graphics_Layer {

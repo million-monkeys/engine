@@ -12,12 +12,10 @@ void set_engine (core::Engine* engine)
 
 phmap::flat_hash_map<entt::hashed_string::hash_type, entt::id_type> g_component_types;
 
-void scripting::Engine::registerComponent (entt::hashed_string::hash_type name, entt::id_type id)
+void scripting::registerComponent (entt::hashed_string::hash_type name, entt::id_type id)
 {
     g_component_types[name] = id;
 }
-
-entt::registry dummy_registry;
 
 /******************************************************************************
  * Functions exposed to scripts
@@ -220,4 +218,9 @@ extern "C" void output_log (std::uint32_t level, const char* message)
         spdlog::warn("[script] invalid log level: {}", level);
         break;
     }
+}
+
+extern "C" std::uint32_t get_ref (const char* name)
+{
+    return entt::hashed_string::value(name);
 }

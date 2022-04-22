@@ -1,19 +1,12 @@
 
 #include "core.hpp"
+
 #include <lua.hpp>
 #include <spdlog/fmt/fmt.h>
 
 void set_engine (core::Engine* engine);
 
-scripting::Engine::Engine (core::Engine* engine)
-{
-    set_engine(engine);
-}
-
-scripting::Engine::~Engine ()
-{
-
-}
+lua_State* g_lua_state;
 
 void setLuaPath(lua_State* state, const std::string& path)
 {
@@ -77,46 +70,69 @@ bool setupPackageLoader(lua_State* state)
     return true;
 }
 
-bool scripting::Engine::init ()
+bool scripting::init (core::Engine& engine)
 {
-    m_lua_state = luaL_newstate();
-    if (!m_lua_state) {
+    set_engine(&engine);
+
+    g_lua_state = luaL_newstate();
+    if (!g_lua_state) {
         return false;
     }
-    luaL_openlibs(m_lua_state);
-    setupPackageLoader(m_lua_state);
-    luaL_dostring(m_lua_state, "require('core_components')");
+    luaL_openlibs(g_lua_state);
+    setupPackageLoader(g_lua_state);
+    luaL_dostring(g_lua_state, "require('core_components')");
+    luaL_dostring(g_lua_state, "require('ScriptedBehaviorService')");
 
     return true;
 }
 
-void scripting::Engine::term ()
+void scripting::term ()
 {
-    lua_close(m_lua_state);
+    lua_close(g_lua_state);
 }
 
-bool scripting::Engine::load (const std::string& filename)
+bool scripting::load (const std::string& filename)
 {
     try {
         spdlog::debug("[script] Loading: {}", filename);
         auto source = helpers::readToString(filename);
-        int status = luaL_loadbuffer(m_lua_state, source.c_str(), source.size(), filename.c_str());
-        if (status != 0) {
-            if (status == LUA_ERRSYNTAX) {
-                spdlog::error("[script] Syntax error in script: {}", filename);
-            } else {
-                spdlog::error("[script] Could not load script: {}", filename);
-            }
-            return false;
-        }
-        int ret = lua_pcall(m_lua_state, 0, 0, 0);
-        if (ret != 0) {
-            spdlog::error("[script] Runtime error {}", lua_tostring(m_lua_state, -1));
-            return false;
-        }
+        return evaluate(filename, source);
     } catch (const std::invalid_argument& e) {
         spdlog::error("[script] Script file not found: {}", filename);
         return false;
     }
     return true;
+}
+
+bool scripting::evaluate (const std::string& name, const std::string& source)
+{
+    int status = luaL_loadbuffer(g_lua_state, source.c_str(), source.size(), name.c_str());
+    if (status != 0) {
+        if (status == LUA_ERRSYNTAX) {
+            spdlog::error("[script] Syntax error in script: {} {}", name, lua_tostring(g_lua_state, -1));
+            lua_pop(g_lua_state, 1);
+        } else {
+            spdlog::error("[script] Could not load script: {}", name);
+        }
+        return false;
+    }
+    int ret = lua_pcall(g_lua_state, 0, 0, 0);
+    if (ret != 0) {
+        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        return false;
+    }
+    return true;
+}
+
+void scripting::processEvents (monkeys::api::Engine& engine)
+{
+    auto& events = engine.events();
+
+    lua_getglobal(g_lua_state, "handle_events");
+    lua_pushlightuserdata(g_lua_state, const_cast<void*>(reinterpret_cast<const void*>(&*events.begin()))); // We promise not to modify it...
+    lua_pushnumber(g_lua_state, events.size());
+    int ret = lua_pcall(g_lua_state, 2, 0, 0);
+    if (ret != 0) {
+        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+    }
 }

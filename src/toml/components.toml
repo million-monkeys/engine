@@ -25,7 +25,7 @@ namespace = "core"
 
 [[component]]
     _name_       = "scripted-behavior"
-    resource-id = "ref"
+    resource     = "resource"
 
 ##################################################
 # Graphics components           ##################

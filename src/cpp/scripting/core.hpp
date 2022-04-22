@@ -5,22 +5,14 @@
 namespace core {
     class Engine;
 }
-struct lua_State;
 
 namespace scripting {
 
-    class Engine {
-    public:
-        Engine (core::Engine* engine);
-        ~Engine ();
+    bool init (core::Engine& engine);
+    void registerComponent (entt::hashed_string::hash_type name, entt::id_type id);
+    bool evaluate (const std::string& name, const std::string& source);
+    bool load (const std::string& filename);
+    void processEvents (monkeys::api::Engine& engine);
+    void term ();
 
-        bool init ();
-        void registerComponent (entt::hashed_string::hash_type name, entt::id_type id);
-        [[maybe_unused]] bool load (const std::string& filename);
-        void term ();
-
-    private:
-        core::Engine* m_engine;
-        lua_State* m_lua_state;
-    };
 }

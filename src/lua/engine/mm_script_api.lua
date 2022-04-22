@@ -1,3 +1,4 @@
+local core = require('mm_core')
 local ffi = require('ffi')
 ffi.cdef [[
     uint32_t null_entity_value ();
@@ -12,7 +13,6 @@ ffi.cdef [[
     void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
 ]]
 local C = ffi.C
-local core = require('mm_core')
 
 local NULL_ENTITY = C.null_entity_value()
 
@@ -100,7 +100,7 @@ local function create_entity(self, prototype)
 end
 
 local function emit_event(event_name, target)
-    local event_info = core.event_types[event_name]
+    local event_info = core.event_types_by_name[event_name]
     if event_info then
         if target == nil then
             target = NULL_ENTITY
@@ -120,6 +120,7 @@ return {
         create = create_entity,
         valid  = function(id) return id ~= NULL_ENTITY end
     },
+    ref = C.get_ref,
     emit = emit_event,
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
@@ -127,5 +128,13 @@ return {
         warning = function(...) log_output(LOG_LEVELS.WARNING, ...) end,
         error   = function(...) log_output(LOG_LEVELS.ERROR,   ...) end,
         critical= function(...) log_output(LOG_LEVELS.CRITICAL,...) end,
-    }
+    },
+    dump=function (obj, label)
+        if label then
+            print(label..':')
+        end
+        for k, v in pairs(obj) do
+            print('', k, v)
+        end
+    end
 }

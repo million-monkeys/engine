@@ -192,8 +192,6 @@ namespace core {
 
         // User input
         SDL_GameController* m_game_controller;
-
-        scripting::Engine m_scripting_engine;
     };
 
 }

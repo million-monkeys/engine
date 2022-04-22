@@ -5,6 +5,8 @@
 #include "engine.hpp"
 #include "graphics/graphics.hpp"
 
+#include "resources/resources.hpp"
+
 core::Engine::~Engine ()
 {
 
@@ -84,7 +86,16 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     //     pumpEvents();
     // }
 
-    m_scripting_engine.load("test.lua");
+    ScriptedEvents se_resource;
+
+    if (!se_resource.load("script1"_hs, "script1.res.toml")) {
+        spdlog::error("Could not load resource: script1");
+    }
+    if (!se_resource.load("script2"_hs, "script2.res.toml")) {
+        spdlog::error("Could not load resource: script1");
+    }
+
+    scripting::load("test.lua");
     pumpEvents();
 
     for (const auto& ev : events()) {
@@ -93,6 +104,11 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
             spdlog::info("Got test-event: {}, {}", test_event.a, test_event.b);
         }
     }
+
+    scripting::processEvents(*this);
+
+    se_resource.unload("script1"_hs);
+    se_resource.unload("script2"_hs);
 
     // Run the after-frame hook for each module
     callModuleHook<CM::AFTER_FRAME>();

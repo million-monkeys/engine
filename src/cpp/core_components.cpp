@@ -111,7 +111,7 @@ namespace init_core {
 			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, entt::hashed_string::value(toml::find<std::string>(table, "resource-id").c_str()));
+				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "resource").c_str())));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::ScriptedBehavior>(entity)); };
