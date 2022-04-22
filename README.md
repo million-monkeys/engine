@@ -62,6 +62,7 @@ The development setup of running entangled to keep markdown and source files in 
 * [Immer](https://github.com/arximboldi/immer) - Immutable data structures (Boost Software License 1.0)
 * [LuaJIT](https://github.com/LuaJIT/LuaJIT) - Just-In-Time compiler for the Lua programming language. (MIT License)
 * [magic_enum](https://github.com/Neargye/magic_enum) - Static reflection for enums (MIT License)
+* [mimalloc](https://github.com/microsoft/mimalloc) - mimalloc is a compact general purpose allocator with excellent performance (MIT License)
 * [ordered-map](https://github.com/Tessil/ordered-map) - Order-preserving hash map/set (MIT License)
 * [parallel-hashmap](https://github.com/greg7mdp/parallel-hashmap) - A collection of fast and memory efficient map, unordered_map, set and unordered_set replacements ( Apache-2.0 License)
 * [PhysFS++](https://github.com/danielytics/physfs-hpp) - C++ wrapper for PhysicsFS (zlib License + [notes](https://github.com/Ybalrid/physfs-hpp/blob/master/LICENSE.txt))
@@ -82,4 +83,4 @@ Optional:
 
 # License
 
-Game is released under the terms of the [MIT License](https://github.com/danielytics/gou/blob/master/LICENSE).
+The Million Monkeys game engine is released under the terms of the [MIT License](https://github.com/million-monkeys/engine/blob/main/LICENSE).

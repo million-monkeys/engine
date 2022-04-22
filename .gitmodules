@@ -64,3 +64,6 @@
 [submodule "third-party/luajit"]
 	path = third-party/luajit
 	url = git@github.com:LuaJIT/LuaJIT.git
+[submodule "third-party/mimalloc"]
+	path = third-party/mimalloc
+	url = git@github.com:microsoft/mimalloc.git
