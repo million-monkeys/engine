@@ -1,12 +1,14 @@
 
-#include "core.hpp"
+#include "scripting.hpp"
 
 #include <lua.hpp>
+#include <mutex>
 #include <spdlog/fmt/fmt.h>
 
 void set_engine (core::Engine* engine);
 
 lua_State* g_lua_state;
+std::mutex g_vm_mutex;
 
 void setLuaPath(lua_State* state, const std::string& path)
 {
@@ -70,9 +72,9 @@ bool setupPackageLoader(lua_State* state)
     return true;
 }
 
-bool scripting::init (core::Engine& engine)
+bool scripting::init (core::Engine* engine)
 {
-    set_engine(&engine);
+    set_engine(engine);
 
     g_lua_state = luaL_newstate();
     if (!g_lua_state) {
@@ -80,8 +82,17 @@ bool scripting::init (core::Engine& engine)
     }
     luaL_openlibs(g_lua_state);
     setupPackageLoader(g_lua_state);
+
+    // Make sure core types are declared before anything else
+    luaL_dostring(g_lua_state, "require('mm_core')");
+
+    // Declare core components
     luaL_dostring(g_lua_state, "require('core_components')");
-    luaL_dostring(g_lua_state, "require('ScriptedBehaviorService')");
+
+    // Create system for ScriptedBehavior
+    luaL_dostring(g_lua_state, "require('ScriptedBehaviorSystem')");
+
+    // Make sure game-specific events are declared
     load(entt::monostate<"game/script-events"_hs>());
 
     return true;
@@ -107,6 +118,9 @@ bool scripting::load (const std::string& filename)
 
 bool scripting::evaluate (const std::string& name, const std::string& source)
 {
+    // Only one thread can execute Lua code at once
+    std::lock_guard<std::mutex> guard(g_vm_mutex);
+
     int status = luaL_loadbuffer(g_lua_state, source.c_str(), source.size(), name.c_str());
     if (status != 0) {
         if (status == LUA_ERRSYNTAX) {
@@ -128,6 +142,9 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
 void scripting::processEvents (monkeys::api::Engine& engine)
 {
     auto& events = engine.events();
+
+    // Only one thread can execute Lua code at once
+    std::lock_guard<std::mutex> guard(g_vm_mutex);
 
     lua_getglobal(g_lua_state, "handle_events");
     lua_pushlightuserdata(g_lua_state, const_cast<void*>(reinterpret_cast<const void*>(&*events.begin()))); // We promise not to modify it...

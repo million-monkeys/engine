@@ -2,6 +2,7 @@
 #define MILLION_MONKEYS__HPP
 
 #include <components/core.hpp>
+#include <events/engine.hpp>
 
 #include "types.hpp"
 #include "module.hpp"

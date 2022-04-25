@@ -1,15 +1,14 @@
 
 #include "engine.hpp"
-
-
-#include "engine.hpp"
 #include "graphics/graphics.hpp"
-
 #include "resources/resources.hpp"
+#include "scripting/scripting.hpp"
+
+void destroyInputData (struct core::InputData*);
 
 core::Engine::~Engine ()
 {
-
+    destroyInputData(m_input_data);
 }
 
 void core::Engine::readBinaryFile (const std::string& filename, std::string& buffer) const
@@ -19,7 +18,23 @@ void core::Engine::readBinaryFile (const std::string& filename, std::string& buf
 
 monkeys::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name)
 {
-    return {};
+    auto it = m_named_resources.find(name);
+    if (it != m_named_resources.end()) {
+        spdlog::debug("Resource with name {:#x} found: {:#x}", name, it->second.handle);
+        return it->second;
+    }
+    spdlog::debug("Resource with name {:#x} not found", name);
+    return monkeys::resources::Handle::invalid();
+}
+
+monkeys::resources::Handle core::Engine::loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
+{
+    auto handle = resources::load(type, filename, name);
+    if (name != 0) {
+        m_named_resources[name] = handle;
+        spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
+    }
+    return handle;
 }
 
 struct TestEvent {
@@ -32,6 +47,9 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
 {
     EASY_FUNCTION(profiler::colors::Blue100);
     m_current_time_delta = delta;
+
+    // Check if any resources are loaded
+    resources::poll(this);
 
     // Read input device states and dispatch events. Input events are emitted directly into the global pool, immediately readable "this frame" (no frame delay!)
     handleInput();
@@ -66,9 +84,11 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                 m_runtime_registry.clear();
                 break;
             case "scene/load"_hs:
-                // TODO: Create scene load event
-                // m_scene_manager.loadScene(event.hash_value);
-                break;
+                {
+                    auto& new_scene = eventData<events::engine::LoadScene>(ev);
+                    m_scene_manager.loadScene(monkeys::Registry::Background, new_scene.scene_id);
+                    break;
+                }
             default:
                 break;
         };
@@ -86,29 +106,20 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     //     pumpEvents();
     // }
 
-    ScriptedEvents se_resource;
-
-    if (!se_resource.load("script1"_hs, "script1.res.toml")) {
-        spdlog::error("Could not load resource: script1");
-    }
-    if (!se_resource.load("script2"_hs, "script2.res.toml")) {
-        spdlog::error("Could not load resource: script1");
-    }
-
-    scripting::load("test.lua");
-    pumpEvents();
-
     for (const auto& ev : events()) {
         if (ev.type == "test-event"_hs) {
-            auto& test_event = event<TestEvent>(ev);
+            auto& test_event = eventData<TestEvent>(ev);
             spdlog::info("Got test-event: {}, {}", test_event.a, test_event.b);
+        } else if (ev.type == "resource/loaded"_hs) {
+            auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
+            if (loaded.name == "script2"_hs) {
+                scripting::load("test.lua");
+            }
         }
     }
 
     scripting::processEvents(*this);
-
-    se_resource.unload("script1"_hs);
-    se_resource.unload("script2"_hs);
+    pumpEvents();
 
     // Run the after-frame hook for each module
     callModuleHook<CM::AFTER_FRAME>();

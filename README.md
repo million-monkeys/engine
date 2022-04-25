@@ -50,6 +50,7 @@ The development setup of running entangled to keep markdown and source files in 
 
 * C++17 and OpenGL 4.6 (4.1 on OSX)
 * [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) - Framework for creating and executing behavior trees (MIT License)
+* [moodycamel::ConcurrentQueue](https://github.com/cameron314/concurrentqueue) - A fast multi-producer, multi-consumer lock-free concurrent queue for C++11 (choice of Simplified BSD and Boost Software License V1)
 * [cr.h](https://github.com/fungos/cr) - Module live reload library (MIT License)
 * [cxxopts](https://github.com/jarro2783/cxxopts) - Lightweight C++ command line option parser (MIT License)
 * [doctest](https://github.com/doctest/doctest) - Fast header-only testing framework (MIT License)

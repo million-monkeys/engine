@@ -1,6 +1,24 @@
 
 #include "engine.hpp"
 
+#include <SDL.h>
+
+namespace core {
+    struct InputData {
+        SDL_GameController* game_controller;
+    };
+}
+
+struct core::InputData* createInputData ()
+{
+    return new core::InputData{nullptr};
+}
+
+void destroyInputData (struct core::InputData* data)
+{
+    delete data;
+}
+
 void core::Engine::handleInput ()
 {
     EASY_FUNCTION(profiler::colors::LightBlue100);
@@ -51,15 +69,15 @@ void core::Engine::handleInput ()
             }
             case SDL_CONTROLLERDEVICEADDED:
                 // TODO: Handle multiple gamepads
-                m_game_controller = SDL_GameControllerOpen(event.cdevice.which);
-                if (m_game_controller == 0) {
+                m_input_data->game_controller = SDL_GameControllerOpen(event.cdevice.which);
+                if (m_input_data->game_controller == 0) {
                     spdlog::error("Could not open gamepad {}: {}", event.cdevice.which, SDL_GetError());
                 } else {
-                    spdlog::info("Gamepad detected {}", SDL_GameControllerName(m_game_controller));
+                    spdlog::info("Gamepad detected {}", SDL_GameControllerName(m_input_data->game_controller));
                 }
                 break;
             case SDL_CONTROLLERDEVICEREMOVED:
-                SDL_GameControllerClose(m_game_controller);
+                SDL_GameControllerClose(m_input_data->game_controller);
                 break;
             case SDL_CONTROLLERBUTTONDOWN:
             case SDL_CONTROLLERBUTTONUP:

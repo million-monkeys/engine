@@ -27,6 +27,17 @@ namespace monkeys {
 
 namespace monkeys::api {
 
+    namespace resources {
+        class Loader {
+        public:
+            virtual ~Loader() {}
+            virtual bool load (monkeys::resources::Handle handle, const std::string& filename) = 0;
+            virtual void unload (monkeys::resources::Handle handle) = 0;
+
+            virtual entt::hashed_string name () const = 0;
+        };
+    }
+
     // The engine-provided API to modules
     class Engine
     {
@@ -94,6 +105,14 @@ namespace monkeys::api {
         // Retrieve a resource handle by name
         virtual monkeys::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
 
+        // Load a new resource
+        virtual monkeys::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
+
+        monkeys::resources::Handle loadResource (entt::hashed_string type, const std::string& filename)
+        {
+            return loadResource(type, filename, 0);
+        }
+
         /** Emit an event to the event stream */
         template <typename T>
         [[maybe_unused]] T& emit (entt::entity target=entt::null)
@@ -106,7 +125,7 @@ namespace monkeys::api {
 
         /** Retrieve the payload from an individual event */
         template <typename EventT>
-        const EventT& event (const monkeys::events::Envelope& envelope) {
+        const EventT& eventData (const monkeys::events::Envelope& envelope) {
             if (EventT::EventID == envelope.type && sizeof(EventT) == envelope.size) {
                 return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(monkeys::events::Envelope));
             } else {

@@ -1,6 +1,9 @@
 
 #include "engine.hpp"
-#include "scripting/core.hpp"
+#include "resources/resources.hpp"
+#include "scripting/scripting.hpp"
+
+struct core::InputData* createInputData (); // Just to avoid having to include SDL.h from engine.hpp
 
 namespace init_core {
     void register_components (monkeys::api::Engine*);
@@ -20,7 +23,8 @@ int get_global_event_pool_size () {
 core::Engine::Engine() :
     m_scene_manager(*this),
     m_events_iterable(nullptr, nullptr),
-    m_event_pool(get_global_event_pool_size())
+    m_event_pool(get_global_event_pool_size()),
+    m_input_data(createInputData())
 {
     // Manage Named entities
     m_runtime_registry.on_construct<components::core::Named>().connect<&core::Engine::onAddNamedEntity>(this);
@@ -88,10 +92,15 @@ void core::Engine::installComponent (const monkeys::api::definitions::Component&
 bool core::Engine::init ()
 {
     init_core::register_components(this);
-    if (! scripting::init(*this)) {
+    resources::init();
+    if (! scripting::init(this)) {
         spdlog::critical("Could not initialize scripting subsystem");
         return false;
     }
+
+    loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
+    loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
+        
     return true;
 }
 
@@ -107,6 +116,8 @@ void core::Engine::reset ()
     // }
     // Halt the scripting system
     scripting::term();
+    // Uninstall resources managers
+    resources::term();
     // Clear the runtime registry
     m_runtime_registry = {};
     // Clear background registry

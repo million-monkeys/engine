@@ -1,5 +1,5 @@
 
-#include "core.hpp"
+#include "scripting.hpp"
 #include "core/engine.hpp"
 
 // Script functions need access to an engine instance
@@ -10,7 +10,7 @@ void set_engine (core::Engine* engine)
     g_engine = engine;
 }
 
-phmap::flat_hash_map<entt::hashed_string::hash_type, entt::id_type> g_component_types;
+phmap::flat_hash_map<entt::hashed_string::hash_type, entt::id_type, helpers::Identity> g_component_types;
 
 void scripting::registerComponent (entt::hashed_string::hash_type name, entt::id_type id)
 {
@@ -223,4 +223,16 @@ extern "C" void output_log (std::uint32_t level, const char* message)
 extern "C" std::uint32_t get_ref (const char* name)
 {
     return entt::hashed_string::value(name);
+}
+
+extern "C" std::uint32_t load_resource (const char* type, const char* filename, const char* name)
+{
+    auto handle = g_engine->loadResource(entt::hashed_string{type}, std::string{filename}, name != nullptr ? entt::hashed_string::value(name) : 0);
+    return handle.handle;
+}
+
+extern "C" std::uint32_t find_resource (const char* name)
+{
+    auto handle = g_engine->findResource(entt::hashed_string::value(name));
+    return handle.handle;
 }

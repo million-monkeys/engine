@@ -3,6 +3,9 @@
 #include "engine.hpp"
 
 #include <iterator>
+#include <mutex>
+
+std::mutex g_pool_mutex;
 
 using EventPool = core::Engine::EventPool;
 
@@ -14,6 +17,9 @@ std::byte* core::Engine::allocateEvent (entt::hashed_string::hash_type type, ent
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
         const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
         g_event_pool = new EventPool(event_pool_size);
+
+        // Only one thread can access event pools list at once
+        std::lock_guard<std::mutex> guard(g_pool_mutex);
         m_event_pools.push_back(g_event_pool); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
     }
     monkeys::events::Envelope* envelope = g_event_pool->emplace<monkeys::events::Envelope>(type, target, payload_size);
@@ -74,29 +80,3 @@ const monkeys::events::Iterable& core::Engine::events ()
 //         }
 //     }
 // }
-
-DECLARE_EVENT(MyEvent, "my_event") {
-    int foo;
-};
-DECLARE_EVENT(TestEvent, "test_event") {
-};
-DECLARE_EVENT(AnotherEvent, "another_event") {
-    float value1;
-    float value2;
-};
-
-void run_system ()
-{
-    core::Engine engine;
-    entt::entity an_entity = entt::null;
-    
-    // Emit an event
-    engine.emit<TestEvent>();
-    // Emit an event, receiving reference for setting parameters
-    auto& ev = engine.emit<AnotherEvent>();
-    ev.value1 = 1.0f;
-    ev.value2 = 2.0f;
-    // Post event to specific entity 
-    auto& myev = engine.emit<MyEvent>(an_entity);
-    myev.foo = 123;
-}

@@ -1,6 +1,13 @@
 local ffi = require('ffi')
 ffi.cdef[[
+    struct Vec2 {float x, y;};
+    struct Vec3 {float x, y, z;};
+    struct Vec4 {float x, y, z, w;};
+    struct RGB {float r, g, b;};
+    struct RGBA {float r, g, b, a;};
     uint32_t get_ref (const char* name);
+
+    struct NameOnlyEvent {};
 ]]
 local C = ffi.C
 
@@ -48,7 +55,7 @@ local function unregister_script(self, resource_id)
     table.remove(self.event_maps, resource_id)
 end
 
-return {
+local obj = {
     component_types = {},
     event_types_by_name = {},
     event_types_by_id = {},
@@ -59,3 +66,9 @@ return {
     unregister_script = unregister_script,
     table_merge = table_merge
 }
+
+obj:register_events({
+    {name="engine/exit", type="NameOnlyEvent"},
+})
+
+return obj

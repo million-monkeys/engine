@@ -6,10 +6,6 @@
 #include <entt/entity/organizer.hpp>
 #include <world/scenes.hpp>
 
-#include "scripting/core.hpp"
-
-#include <SDL.h>
-
 namespace core {
     using CM = monkeys::api::Module::CallbackMasks;
 
@@ -35,6 +31,7 @@ namespace core {
         entt::entity loadEntity (monkeys::Registry, entt::hashed_string) final;
         void mergeEntity (monkeys::Registry, entt::entity, entt::hashed_string, bool) final;
         monkeys::resources::Handle findResource (entt::hashed_string::hash_type) final;
+        monkeys::resources::Handle loadResource (entt::hashed_string, const std::string&, entt::hashed_string::hash_type) final;
         const monkeys::events::Iterable& events () final;
 
         // Load component and add it to entity
@@ -191,7 +188,10 @@ namespace core {
         std::vector<monkeys::api::Module*> m_hooks_afterRender;
 
         // User input
-        SDL_GameController* m_game_controller;
+        struct InputData* m_input_data;
+
+        // Resource name bindings
+        phmap::flat_hash_map<entt::hashed_string::hash_type, monkeys::resources::Handle, helpers::Identity> m_named_resources;
     };
 
 }

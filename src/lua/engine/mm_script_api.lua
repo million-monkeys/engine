@@ -11,6 +11,8 @@ ffi.cdef [[
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
     void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
+    uint32_t load_resource (const char* type, const char* filename, const char* name);
+    uint32_t find_resource (const char* name);
 ]]
 local C = ffi.C
 
@@ -23,6 +25,9 @@ local LOG_LEVELS = {
     INFO = 3,
     DEBUG = 4
 }
+
+-- Populated with game attributes by engine
+local ATTRS_TABLE = {}
 
 local function log_output(level, fmt, ...)
     local message = string.format(fmt, ...)
@@ -69,7 +74,7 @@ end
 
 local function get_entity_by_id(self, entity_id)
     if entity_id ~= NULL_ENTITY then
-        return {
+        local entity = {
             _registry = self._registry,
             id = entity_id,
             get = get_component,
@@ -77,6 +82,7 @@ local function get_entity_by_id(self, entity_id)
             remove = remove_component,
             destroy = destroy_entity
         }
+        return setmetatable(entity, {__index = get_component})
     end
 end
 
@@ -112,6 +118,10 @@ local function emit_event(event_name, target)
 end
 
 return {
+    time = {
+        delta = 0
+    },
+    attrs = ATTRS_TABLE,
     registry = {
         _registry = 0, -- Default to runtime registry
         select_registry = select_regitsry,
@@ -119,6 +129,14 @@ return {
         lookup = get_entity_by_name,
         create = create_entity,
         valid  = function(id) return id ~= NULL_ENTITY end
+    },
+    resource = {
+        load = function (type, file, name)
+            return C.load_resource(type, file, name)
+        end,
+        find = function (name)
+            return C.find_resource(name)
+        end
     },
     ref = C.get_ref,
     emit = emit_event,

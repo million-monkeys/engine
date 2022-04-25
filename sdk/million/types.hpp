@@ -43,8 +43,17 @@ namespace monkeys {
     }
 
     namespace resources {
+
         struct Handle {
-            entt::hashed_string::hash_type id;
+            std::uint32_t handle;
+            // 12 bits = type, 20 bits = id
+            const std::uint32_t type () const { return handle >> 20; }
+            const std::uint32_t id () const { return handle & 0xfffff; }
+
+            const bool valid () const { return handle != invalid().handle; }
+            static constexpr Handle invalid () { return Handle{0xffffffff}; }
+
+            static constexpr Handle make (std::uint32_t type, std::uint32_t id) { return Handle{type << 20 | (id & 0xfffff)}; }
         };
     }
 

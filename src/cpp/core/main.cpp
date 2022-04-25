@@ -1,8 +1,8 @@
 
 #include <game.hpp>
 #include "config.hpp"
-#include "scripting/core.hpp"
 #include "core/engine.hpp"
+#include "utils/timekeeping.hpp"
 
 #include <map>
 
@@ -79,6 +79,17 @@ int game_main (int argc, char** argv)
         return -1;
     }
 
+#ifdef BUILD_WITH_EASY_PROFILER
+    {
+        const bool& profiling_enabled = entt::monostate<"tools/profiling"_hs>{};
+        if (profiling_enabled) {
+            spdlog::info("Starting easy_profiler");
+            profiler::startListen();
+        }
+        spdlog::info("Is easy_profiler listening: {}", profiler::isListening());
+    }
+#endif
+
     bool clean_exit = true;
     try {
         core::Engine engine;
@@ -90,13 +101,42 @@ int game_main (int argc, char** argv)
         } else {
             // engine.setupGame();
 
+            // Initialise timekeeping
+            timekeeping::FrameTimer frame_timer;
+
+    // #ifdef DEV_MODE
+    //         ElapsedTime last_update_time = 0L; // microseconds
+    //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
+    // #endif
+
             // Run main loop
             spdlog::info("Game Running...");
-            // GAME LOOP HERE
-            engine.execute(0, 0, 0);
+            do {
+                // // Execute systems and copy current frames events for processing next frame
+                if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
+                    break;
+                }
+
+                // Update timekeeping
+                frame_timer.update();
+
+                // WIP: For now just die after a short time
+                if (frame_timer.sinceStart() > 5.0f) {
+                    break;
+                }
+
+    // #ifdef DEV_MODE
+                // In dev mode, update plugins every few seconds for hot code reloading
+                // if (frame_timer.sinceStart() - last_update_time > update_interval) {
+                //     last_update_time = frame_timer.sinceStart();
+                //     moduleManager.update();
+                // }
+    // #endif
+            } while (true);
+            frame_timer.reportAverage();
 
             // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
-            // engine.reset();
+            engine.reset();
             // moduleManager.unload();
             logger->flush();
         }
