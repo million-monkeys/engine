@@ -1,5 +1,9 @@
 # Game
 
+Work in Progress.
+
+Much of the code is still being moved from [the previous iteration](https://github.com/danielytics/gou)
+
 # Introduction
 
 # Directory Structure
@@ -84,4 +88,4 @@ Optional:
 
 # License
 
-The Million Monkeys game engine is released under the terms of the [MIT License](https://github.com/million-monkeys/engine/blob/main/LICENSE).
+The Million million game engine is released under the terms of the [MIT License](https://github.com/million-million/engine/blob/main/LICENSE).
