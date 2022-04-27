@@ -5,7 +5,7 @@
 // Script functions need access to an engine instance
 core::Engine* g_engine = nullptr;
 
-void set_engine (core::Engine* engine)
+void init_scripting_api (core::Engine* engine)
 {
     g_engine = engine;
 }
@@ -151,7 +151,15 @@ extern "C" void* allocate_event (const char* event_name, std::uint32_t target_en
 {
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     entt::entity target = static_cast<entt::entity>(target_entity);
-    return g_engine->allocateEvent(event_type, target, size);
+    return g_engine->m_scripts_event_pool.push(event_type, target, size);
+}
+
+extern "C" std::uint32_t get_stream (const char** buffer)
+{
+    auto stream = g_engine->m_scripts_event_pool.iter();
+    auto& first = *stream.begin();
+    *buffer = reinterpret_cast<const char*>(&first);
+    return stream.size();
 }
 
 struct BehaviorIterator {

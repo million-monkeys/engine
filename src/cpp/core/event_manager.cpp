@@ -34,9 +34,13 @@ void core::Engine::pumpEvents ()
         pool.reset();
     }
     // Swap all event streams internal pools
-    for (auto& [_, stream] : m_named_streams) {
+    for (auto& [name, stream] : m_named_streams) {
         stream.pool->swap();
     }
+    // Copy script event pool into global pool
+    m_scripts_event_pool.copyInto(m_event_pool);
+    // Clear the script event pool
+    m_scripts_event_pool.reset();
 }
 
 const million::events::Iterable core::Engine::events () const

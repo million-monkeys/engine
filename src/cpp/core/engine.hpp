@@ -110,6 +110,8 @@ namespace core {
         //     return m_event_pool.unaligned_allocate(size);
         // }
 
+        EventPool m_scripts_event_pool;
+
     private:
         void* allocModule(std::size_t) final;
         void deallocModule(void *) final;

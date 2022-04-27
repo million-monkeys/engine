@@ -20,7 +20,13 @@ int get_global_event_pool_size () {
     return pool_size * get_num_workers();
 }
 
+int get_scripts_event_pool_size () {
+    const std::uint32_t pool_size = entt::monostate<"memory/events/scripts-pool-size"_hs>();
+    return pool_size;
+}
+
 core::Engine::Engine() :
+    m_scripts_event_pool(get_scripts_event_pool_size()),
     m_scene_manager(*this),
     m_events_iterable(nullptr, nullptr),
     m_event_pool(get_global_event_pool_size()),

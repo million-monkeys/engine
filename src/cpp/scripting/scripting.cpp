@@ -5,7 +5,7 @@
 #include <mutex>
 #include <spdlog/fmt/fmt.h>
 
-void set_engine (core::Engine* engine);
+void init_scripting_api (core::Engine* engine);
 
 lua_State* g_lua_state;
 std::mutex g_vm_mutex;
@@ -74,7 +74,7 @@ bool setupPackageLoader(lua_State* state)
 
 bool scripting::init (core::Engine* engine)
 {
-    set_engine(engine);
+    init_scripting_api(engine);
 
     g_lua_state = luaL_newstate();
     if (!g_lua_state) {

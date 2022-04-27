@@ -12,7 +12,7 @@ namespace core {
             return {pool.begin(), pool.end()};
         }
     protected:
-        std::byte* push (PoolT& pool, entt::hashed_string::hash_type event_id, entt::entity source, uint32_t payload_size)
+        static std::byte* push (PoolT& pool, entt::hashed_string::hash_type event_id, entt::entity source, uint32_t payload_size)
         {
             std::byte* ptr = pool.allocate(sizeof(million::events::Envelope) + payload_size);
             new (ptr) million::events::Envelope{event_id, source, payload_size};

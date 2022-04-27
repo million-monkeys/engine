@@ -122,6 +122,7 @@ int game_main (int argc, char** argv)
 
                 // WIP: For now just die after a short time
                 if (frame_timer.sinceStart() > 5.0f) {
+                    spdlog::warn("Terminating because of WIP");
                     break;
                 }
 

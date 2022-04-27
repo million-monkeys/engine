@@ -244,13 +244,17 @@ bool core::readGameConfig () {
         // MEMORY
         //******************************************************//
         // Default settings for [memory] section
-        entt::monostate<"memory/events/pool-size"_hs>{} = std::uint32_t{96};
+        entt::monostate<"memory/events/pool-size"_hs>{} = std::uint32_t{1024};
+        entt::monostate<"memory/events/stream-size"_hs>{} = std::uint32_t{1024};
+        entt::monostate<"memory/events/scripts-pool-size"_hs>{} = std::uint32_t{2048};
 
         // Overwrite with settings
         if (config.contains("memory")) {
             const auto& memory = config.at("memory");
             if (memory.contains("events")) {
                 maybe_set<"memory/events/pool-size"_hs, std::uint32_t>(memory.at("events"), "per-thread-pool-size");
+                maybe_set<"memory/events/scripts-pool-size"_hs, std::uint32_t>(memory.at("events"), "scripts-pool-size");
+                maybe_set<"memory/events/stream-size"_hs, std::uint32_t>(memory.at("events"), "per-stream-pool-size");
             }
         } else {
             

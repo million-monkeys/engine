@@ -9,6 +9,7 @@ struct EventEnvelope {
 };
 struct BehaviorIterator* setup_scripted_behavior_iterator ();
 uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
+uint32_t get_stream (const char** buffer);
 ]]
 local C = ffi.C
 local core = require('mm_core')
@@ -61,8 +62,28 @@ local function process_events (scripted_behavior, events_buffer, buffer_size)
     end
 end
 
+local function process_stream (scripted_behavior, last_buffer_size)
+    local events_buffer = ffi.new('const char*[1]')
+    local buffer_size = C.get_stream(events_buffer)
+    if buffer_size > last_buffer_size then
+        process_events(scripted_behavior, events_buffer[0] + last_buffer_size, buffer_size - last_buffer_size)
+    end
+    return buffer_size
+end
+
 function handle_events (events_buffer, buffer_size)
     local events_buffer = ffi.cast("char*", events_buffer)
     local scripted_behavior = ffi.new('const struct Component_Core_ScriptedBehavior*[1]')
+    -- Process global events
     process_events(scripted_behavior, events_buffer, buffer_size)
+
+    -- Process script event stream until no new events are received, or 5 iterations, whichever happens first
+    local count = 0
+    local prev_buffer_size = 0
+    local buffer_size = 0
+    repeat
+        count = count + 1
+        prev_buffer_size = buffer_size
+        buffer_size = process_stream(scripted_behavior, prev_buffer_size)
+    until buffer_size == prev_buffer_size or count >= 5
 end
