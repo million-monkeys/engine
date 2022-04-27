@@ -6,7 +6,7 @@
 struct core::InputData* createInputData (); // Just to avoid having to include SDL.h from engine.hpp
 
 namespace init_core {
-    void register_components (monkeys::api::Engine*);
+    void register_components (million::api::Engine*);
 }
 
 // Taskflow workers = number of hardware threads - 1, unless there is only one hardware thread
@@ -42,7 +42,7 @@ void core::Engine::deallocModule (void* ptr) {
     delete [] reinterpret_cast<std::byte*>(ptr);
 }
 
-void core::Engine::registerModule (std::uint32_t flags, monkeys::api::Module* mod)
+void core::Engine::registerModule (std::uint32_t flags, million::api::Module* mod)
 {
     // All modules have the before-frame hook registered
     addModuleHook(CM::BEFORE_FRAME, mod);
@@ -55,7 +55,7 @@ void core::Engine::registerModule (std::uint32_t flags, monkeys::api::Module* mo
     }
 }
 
-void core::Engine::addModuleHook (monkeys::api::Module::CallbackMasks hook, monkeys::api::Module* mod) {
+void core::Engine::addModuleHook (million::api::Module::CallbackMasks hook, million::api::Module* mod) {
     switch (hook) {
         case CM::BEFORE_FRAME:
             m_hooks_beforeFrame.push_back(mod);
@@ -84,7 +84,7 @@ void core::Engine::addModuleHook (monkeys::api::Module::CallbackMasks hook, monk
     };
 }
 
-void core::Engine::installComponent (const monkeys::api::definitions::Component& component)
+void core::Engine::installComponent (const million::api::definitions::Component& component)
 {
     scripting::registerComponent(component.id.value(), component.type_id);
 }

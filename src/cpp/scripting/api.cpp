@@ -28,7 +28,7 @@ extern "C" std::uint32_t null_entity_value ()
 
 extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
         return magic_enum::enum_integer(registry.create());
@@ -41,7 +41,7 @@ extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
 
 extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_registry, const char* prototype)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         return magic_enum::enum_integer(g_engine->loadEntity(selected_registry.value(), entt::hashed_string{prototype}));
     } else {
@@ -53,7 +53,7 @@ extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_regis
 
 extern "C" void entity_destroy (std::uint32_t which_registry, std::uint32_t entity)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
         registry.destroy(static_cast<entt::entity>(entity));
@@ -70,7 +70,7 @@ extern "C" std::uint32_t entity_lookup_by_name (std::uint32_t which_registry, co
 
 extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
@@ -96,7 +96,7 @@ extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::ui
 
 extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
@@ -124,7 +124,7 @@ extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uin
 
 extern "C" void component_remove_from_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
-    auto selected_registry = magic_enum::enum_cast<monkeys::Registry>(which_registry);
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
@@ -147,7 +147,7 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
     }
 }
 
-extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size)
+extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size, bool emit_later)
 {
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     entt::entity target = static_cast<entt::entity>(target_entity);
@@ -177,7 +177,7 @@ void BehaviorIterator::cleanup ()
 
 extern "C" BehaviorIterator* setup_scripted_behavior_iterator ()
 {
-    const auto& registry = g_engine->registry(monkeys::Registry::Runtime);
+    const auto& registry = g_engine->registry(million::Registry::Runtime);
     const auto& storage = registry.storage<components::core::ScriptedBehavior>();
     return BehaviorIterator::start(storage.each());
 }

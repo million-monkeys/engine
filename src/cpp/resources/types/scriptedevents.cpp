@@ -3,7 +3,7 @@
 #include "scripting/scripting.hpp"
 #include "utils/parser.hpp"
 
-bool resources::types::ScriptedEvents::load (monkeys::resources::Handle handle, const std::string& filename)
+bool resources::types::ScriptedEvents::load (million::resources::Handle handle, const std::string& filename)
 {
     try {
         auto config = parser::parse_toml(filename);
@@ -72,7 +72,7 @@ bool resources::types::ScriptedEvents::load (monkeys::resources::Handle handle, 
     return true;
 }
 
-void resources::types::ScriptedEvents::unload (monkeys::resources::Handle handle)
+void resources::types::ScriptedEvents::unload (million::resources::Handle handle)
 {
     std::ostringstream oss;
     oss << "local core = require('mm_core')\n";

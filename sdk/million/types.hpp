@@ -6,7 +6,7 @@
 using Time = float;
 using DeltaTime = Time;
 
-namespace monkeys {
+namespace million {
 
     namespace types {
         enum class Type {
@@ -58,10 +58,24 @@ namespace monkeys {
     }
 
     namespace events {
+        /// Internal type: not expected to be used directly.
         struct Envelope {
             entt::hashed_string::hash_type type;
             entt::entity target;
             std::uint32_t size;
+        };
+
+        /// Internal type: not expected to be used directly.
+        class Stream
+        {
+        public:
+            virtual ~Stream () {}
+            template <typename Event, typename Function>
+            void emit (entt::entity source, Function fn) {
+                fn(*(new (push(Event::EventID, source, sizeof(Event))) Event{}));
+            }
+        protected:
+            virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, uint32_t) = 0;
         };
 
         struct Iterator {
@@ -103,8 +117,8 @@ namespace monkeys {
         
         struct Iterable {
             Iterable (std::byte* b, std::byte* e) : m_begin_ptr(b), m_end_ptr(e) {}
-            const Iterator begin() const { return Iterator(m_begin_ptr);}
-            const Iterator end() const { return Iterator(m_end_ptr);}
+            Iterator begin() const { return Iterator(m_begin_ptr);}
+            Iterator end() const { return Iterator(m_end_ptr);}
             std::size_t size () const { return m_end_ptr - m_begin_ptr; }
         private:
             const std::byte* m_begin_ptr;

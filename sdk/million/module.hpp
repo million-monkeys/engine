@@ -2,7 +2,7 @@
 
 #include "types.hpp"
 
-namespace monkeys::api {
+namespace million::api {
     // The module-provided API to the engine
     class Module {
     public:
@@ -20,7 +20,7 @@ namespace monkeys::api {
 
             /** Notes on data access.
              * It is always safe to access data passed into the hooks as arguments. Sharing data between hooks, however, must follow some rules.
-             * The Million Monkeys game engine executes hooks in one of two thread contexts: 'engine' and 'renderer'
+             * The Million million game engine executes hooks in one of two thread contexts: 'engine' and 'renderer'
              * You must not share data (eg member variables of your Module instance) between these two contexts, as they may run concurrently, unless
              * the data is atomic or protected by a lock, however locks should be avoided to maintain high performance.
              * 

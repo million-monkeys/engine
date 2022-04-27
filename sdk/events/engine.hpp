@@ -11,7 +11,7 @@ namespace events::engine {
 
     DECLARE_EVENT(ResourceLoaded, "resource/loaded") {
         entt::hashed_string::hash_type name;
-        monkeys::resources::Handle handle;
+        million::resources::Handle handle;
     };
 
 }

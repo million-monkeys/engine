@@ -36,7 +36,7 @@ void world::SceneManager::loadSceneList (const std::string& filename)
     }
 }
 
-void world::SceneManager::loadScene (monkeys::Registry which, entt::hashed_string scene)
+void world::SceneManager::loadScene (million::Registry which, entt::hashed_string scene)
 {
     EASY_FUNCTION(profiler::colors::RichYellow);
     // using CM = gou::api::Module::CallbackMasks;
@@ -44,7 +44,7 @@ void world::SceneManager::loadScene (monkeys::Registry which, entt::hashed_strin
     auto it = m_scenes.find(scene);
     if (it != m_scenes.end()) {
         auto& scene_registry = m_engine.registry(which);
-        auto& prototype_registry = m_engine.registry(monkeys::Registry::Prototype);
+        auto& prototype_registry = m_engine.registry(million::Registry::Prototype);
 
         // Unload previous scene, if there is one
         if (m_current_scene != entt::hashed_string{}) {

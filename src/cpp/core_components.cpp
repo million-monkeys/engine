@@ -8,12 +8,12 @@ using namespace entt::literals;
 
 namespace init_core {
 
-    void register_components (monkeys::api::Engine* engine)
+    void register_components (million::api::Engine* engine)
     {
 		{ // components::core::Named
-			monkeys::api::definitions::Component component_def {"named"_hs, entt::type_hash<components::core::Named>::value(), "core", "Named"};
+			million::api::definitions::Component component_def {"named"_hs, entt::type_hash<components::core::Named>::value(), "core", "Named"};
 			component_def.size_in_bytes = sizeof(components::core::Named);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::Named>(entity, entt::hashed_string{toml::find<std::string>(table, "name").c_str()});
@@ -21,12 +21,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::Named>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::Named>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::Named>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::Named>(entity);
 						break;
 					default: break;
@@ -35,20 +35,20 @@ namespace init_core {
 			engine->registerComponent<components::core::Named>(component_def);
 		}
 		{ // components::core::Global
-			monkeys::api::definitions::Component component_def {"global"_hs, entt::type_hash<components::core::Global>::value(), "core", "Global"};
+			million::api::definitions::Component component_def {"global"_hs, entt::type_hash<components::core::Global>::value(), "core", "Global"};
 			component_def.size_in_bytes = sizeof(components::core::Global);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				registry.emplace_or_replace<components::core::Global>(entity);
 			};
             
 			component_def.getter = nullptr;
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::Global>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::Global>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::Global>(entity);
 						break;
 					default: break;
@@ -57,9 +57,9 @@ namespace init_core {
 			engine->registerComponent<components::core::Global>(component_def);
 		}
 		{ // components::core::Position
-			monkeys::api::definitions::Component component_def {"position"_hs, entt::type_hash<components::core::Position>::value(), "core", "Position"};
+			million::api::definitions::Component component_def {"position"_hs, entt::type_hash<components::core::Position>::value(), "core", "Position"};
 			component_def.size_in_bytes = sizeof(components::core::Position);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::Position>(entity, float(toml::find<toml::floating>(table, "x")), float(toml::find<toml::floating>(table, "y")), float(toml::find<toml::floating>(table, "z")));
@@ -67,12 +67,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::Position>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::Position>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::Position>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::Position>(entity);
 						break;
 					default: break;
@@ -81,9 +81,9 @@ namespace init_core {
 			engine->registerComponent<components::core::Position>(component_def);
 		}
 		{ // components::core::Transform
-			monkeys::api::definitions::Component component_def {"transform"_hs, entt::type_hash<components::core::Transform>::value(), "core", "Transform"};
+			million::api::definitions::Component component_def {"transform"_hs, entt::type_hash<components::core::Transform>::value(), "core", "Transform"};
 			component_def.size_in_bytes = sizeof(components::core::Transform);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				auto rotation = table.at("rotation");
 				auto scale = table.at("scale");
@@ -92,12 +92,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::Transform>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::Transform>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::Transform>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::Transform>(entity);
 						break;
 					default: break;
@@ -106,9 +106,9 @@ namespace init_core {
 			engine->registerComponent<components::core::Transform>(component_def);
 		}
 		{ // components::core::ScriptedBehavior
-			monkeys::api::definitions::Component component_def {"scripted-behavior"_hs, entt::type_hash<components::core::ScriptedBehavior>::value(), "core", "ScriptedBehavior"};
+			million::api::definitions::Component component_def {"scripted-behavior"_hs, entt::type_hash<components::core::ScriptedBehavior>::value(), "core", "ScriptedBehavior"};
 			component_def.size_in_bytes = sizeof(components::core::ScriptedBehavior);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "resource").c_str())));
@@ -116,12 +116,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::ScriptedBehavior>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::ScriptedBehavior>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::ScriptedBehavior>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::ScriptedBehavior>(entity);
 						break;
 					default: break;
@@ -130,9 +130,9 @@ namespace init_core {
 			engine->registerComponent<components::core::ScriptedBehavior>(component_def);
 		}
 		{ // components::core::graphics::Layer
-			monkeys::api::definitions::Component component_def {"graphics/layer"_hs, entt::type_hash<components::core::graphics::Layer>::value(), "core::graphics", "Layer"};
+			million::api::definitions::Component component_def {"graphics/layer"_hs, entt::type_hash<components::core::graphics::Layer>::value(), "core::graphics", "Layer"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Layer);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::graphics::Layer>(entity, std::uint8_t(toml::find<toml::integer>(table, "layer")));
@@ -140,12 +140,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::Layer>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::Layer>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::Layer>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::Layer>(entity);
 						break;
 					default: break;
@@ -154,20 +154,20 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::Layer>(component_def);
 		}
 		{ // components::core::graphics::Sprite
-			monkeys::api::definitions::Component component_def {"graphics/sprite"_hs, entt::type_hash<components::core::graphics::Sprite>::value(), "core::graphics", "Sprite"};
+			million::api::definitions::Component component_def {"graphics/sprite"_hs, entt::type_hash<components::core::graphics::Sprite>::value(), "core::graphics", "Sprite"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Sprite);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				registry.emplace_or_replace<components::core::graphics::Sprite>(entity);
 			};
             
 			component_def.getter = nullptr;
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::Sprite>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::Sprite>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::Sprite>(entity);
 						break;
 					default: break;
@@ -176,9 +176,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::Sprite>(component_def);
 		}
 		{ // components::core::graphics::StaticImage
-			monkeys::api::definitions::Component component_def {"graphics/static-image"_hs, entt::type_hash<components::core::graphics::StaticImage>::value(), "core::graphics", "StaticImage"};
+			million::api::definitions::Component component_def {"graphics/static-image"_hs, entt::type_hash<components::core::graphics::StaticImage>::value(), "core::graphics", "StaticImage"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::StaticImage);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::graphics::StaticImage>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "image").c_str())));
@@ -186,12 +186,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::StaticImage>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::StaticImage>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::StaticImage>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::StaticImage>(entity);
 						break;
 					default: break;
@@ -200,20 +200,20 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::StaticImage>(component_def);
 		}
 		{ // components::core::graphics::Billboard
-			monkeys::api::definitions::Component component_def {"graphics/billboard"_hs, entt::type_hash<components::core::graphics::Billboard>::value(), "core::graphics", "Billboard"};
+			million::api::definitions::Component component_def {"graphics/billboard"_hs, entt::type_hash<components::core::graphics::Billboard>::value(), "core::graphics", "Billboard"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Billboard);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				registry.emplace_or_replace<components::core::graphics::Billboard>(entity);
 			};
             
 			component_def.getter = nullptr;
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::Billboard>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::Billboard>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::Billboard>(entity);
 						break;
 					default: break;
@@ -222,9 +222,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::Billboard>(component_def);
 		}
 		{ // components::core::graphics::Model
-			monkeys::api::definitions::Component component_def {"graphics/model"_hs, entt::type_hash<components::core::graphics::Model>::value(), "core::graphics", "Model"};
+			million::api::definitions::Component component_def {"graphics/model"_hs, entt::type_hash<components::core::graphics::Model>::value(), "core::graphics", "Model"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Model);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::graphics::Model>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "mesh").c_str())));
@@ -232,12 +232,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::Model>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::Model>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::Model>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::Model>(entity);
 						break;
 					default: break;
@@ -246,9 +246,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::Model>(component_def);
 		}
 		{ // components::core::graphics::Material
-			monkeys::api::definitions::Component component_def {"graphics/material"_hs, entt::type_hash<components::core::graphics::Material>::value(), "core::graphics", "Material"};
+			million::api::definitions::Component component_def {"graphics/material"_hs, entt::type_hash<components::core::graphics::Material>::value(), "core::graphics", "Material"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::Material);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				auto color = table.at("color");
 				registry.emplace_or_replace<components::core::graphics::Material>(entity, glm::vec3{float(toml::find<toml::floating>(color, "r")), float(toml::find<toml::floating>(color, "g")), float(toml::find<toml::floating>(color, "b"))}, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "albedo").c_str())), engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "normal").c_str())), engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "metalic").c_str())), engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "roughness").c_str())), engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "ambient-occlusion").c_str())));
@@ -256,12 +256,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::Material>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::Material>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::Material>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::Material>(entity);
 						break;
 					default: break;
@@ -270,9 +270,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::Material>(component_def);
 		}
 		{ // components::core::graphics::PointLight
-			monkeys::api::definitions::Component component_def {"graphics/point-light"_hs, entt::type_hash<components::core::graphics::PointLight>::value(), "core::graphics", "PointLight"};
+			million::api::definitions::Component component_def {"graphics/point-light"_hs, entt::type_hash<components::core::graphics::PointLight>::value(), "core::graphics", "PointLight"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::PointLight);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				auto color = table.at("color");
 				registry.emplace_or_replace<components::core::graphics::PointLight>(entity, float(toml::find<toml::floating>(table, "radius")), glm::vec3{float(toml::find<toml::floating>(color, "r")), float(toml::find<toml::floating>(color, "g")), float(toml::find<toml::floating>(color, "b"))}, float(toml::find<toml::floating>(table, "intensity")));
@@ -280,12 +280,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::PointLight>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::PointLight>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::PointLight>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::PointLight>(entity);
 						break;
 					default: break;
@@ -294,9 +294,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::PointLight>(component_def);
 		}
 		{ // components::core::graphics::SpotLight
-			monkeys::api::definitions::Component component_def {"graphics/spot-light"_hs, entt::type_hash<components::core::graphics::SpotLight>::value(), "core::graphics", "SpotLight"};
+			million::api::definitions::Component component_def {"graphics/spot-light"_hs, entt::type_hash<components::core::graphics::SpotLight>::value(), "core::graphics", "SpotLight"};
 			component_def.size_in_bytes = sizeof(components::core::graphics::SpotLight);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				auto color = table.at("color");
 				auto direction = table.at("direction");
@@ -305,12 +305,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::SpotLight>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::graphics::SpotLight>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::graphics::SpotLight>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::graphics::SpotLight>(entity);
 						break;
 					default: break;
@@ -319,9 +319,9 @@ namespace init_core {
 			engine->registerComponent<components::core::graphics::SpotLight>(component_def);
 		}
 		{ // components::core::physics::StaticBody
-			monkeys::api::definitions::Component component_def {"physics/static-body"_hs, entt::type_hash<components::core::physics::StaticBody>::value(), "core::physics", "StaticBody"};
+			million::api::definitions::Component component_def {"physics/static-body"_hs, entt::type_hash<components::core::physics::StaticBody>::value(), "core::physics", "StaticBody"};
 			component_def.size_in_bytes = sizeof(components::core::physics::StaticBody);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::physics::StaticBody>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "shape").c_str())), nullptr);
@@ -329,12 +329,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::StaticBody>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::StaticBody>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::physics::StaticBody>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::physics::StaticBody>(entity);
 						break;
 					default: break;
@@ -343,9 +343,9 @@ namespace init_core {
 			engine->registerComponent<components::core::physics::StaticBody>(component_def);
 		}
 		{ // components::core::physics::DynamicBody
-			monkeys::api::definitions::Component component_def {"physics/dynamic-body"_hs, entt::type_hash<components::core::physics::DynamicBody>::value(), "core::physics", "DynamicBody"};
+			million::api::definitions::Component component_def {"physics/dynamic-body"_hs, entt::type_hash<components::core::physics::DynamicBody>::value(), "core::physics", "DynamicBody"};
 			component_def.size_in_bytes = sizeof(components::core::physics::DynamicBody);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::physics::DynamicBody>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "shape").c_str())), float(toml::find<toml::floating>(table, "mass")), nullptr);
@@ -353,12 +353,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::DynamicBody>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::DynamicBody>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::physics::DynamicBody>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::physics::DynamicBody>(entity);
 						break;
 					default: break;
@@ -367,9 +367,9 @@ namespace init_core {
 			engine->registerComponent<components::core::physics::DynamicBody>(component_def);
 		}
 		{ // components::core::physics::KinematicBody
-			monkeys::api::definitions::Component component_def {"physics/kinematic-body"_hs, entt::type_hash<components::core::physics::KinematicBody>::value(), "core::physics", "KinematicBody"};
+			million::api::definitions::Component component_def {"physics/kinematic-body"_hs, entt::type_hash<components::core::physics::KinematicBody>::value(), "core::physics", "KinematicBody"};
 			component_def.size_in_bytes = sizeof(components::core::physics::KinematicBody);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::physics::KinematicBody>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "shape").c_str())), float(toml::find<toml::floating>(table, "mass")), nullptr);
@@ -377,12 +377,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::KinematicBody>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::KinematicBody>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::physics::KinematicBody>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::physics::KinematicBody>(entity);
 						break;
 					default: break;
@@ -391,9 +391,9 @@ namespace init_core {
 			engine->registerComponent<components::core::physics::KinematicBody>(component_def);
 		}
 		{ // components::core::physics::CollisionSensor
-			monkeys::api::definitions::Component component_def {"physics/collision-sensor"_hs, entt::type_hash<components::core::physics::CollisionSensor>::value(), "core::physics", "CollisionSensor"};
+			million::api::definitions::Component component_def {"physics/collision-sensor"_hs, entt::type_hash<components::core::physics::CollisionSensor>::value(), "core::physics", "CollisionSensor"};
 			component_def.size_in_bytes = sizeof(components::core::physics::CollisionSensor);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::physics::CollisionSensor>(entity, std::uint8_t(toml::find<toml::integer>(table, "collision-mask")));
@@ -401,12 +401,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::CollisionSensor>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::CollisionSensor>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::physics::CollisionSensor>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::physics::CollisionSensor>(entity);
 						break;
 					default: break;
@@ -415,9 +415,9 @@ namespace init_core {
 			engine->registerComponent<components::core::physics::CollisionSensor>(component_def);
 		}
 		{ // components::core::physics::TriggerRegion
-			monkeys::api::definitions::Component component_def {"physics/trigger-region"_hs, entt::type_hash<components::core::physics::TriggerRegion>::value(), "core::physics", "TriggerRegion"};
+			million::api::definitions::Component component_def {"physics/trigger-region"_hs, entt::type_hash<components::core::physics::TriggerRegion>::value(), "core::physics", "TriggerRegion"};
 			component_def.size_in_bytes = sizeof(components::core::physics::TriggerRegion);
-			component_def.loader = [](monkeys::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+			component_def.loader = [](million::api::Engine* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
 				registry.emplace_or_replace<components::core::physics::TriggerRegion>(entity, engine->findResource(entt::hashed_string::value(toml::find<std::string>(table, "shape").c_str())), entt::hashed_string::value(toml::find<std::string>(table, "on-enter").c_str()), entt::hashed_string::value(toml::find<std::string>(table, "on-exit").c_str()), std::uint8_t(toml::find<toml::integer>(table, "trigger-mask")));
@@ -425,12 +425,12 @@ namespace init_core {
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::TriggerRegion>(entity)); };
 			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::TriggerRegion>(entity); };
-			component_def.manage = [](entt::registry& registry, entt::entity entity, monkeys::api::definitions::ManageOperation op){
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
-					case monkeys::api::definitions::ManageOperation::Add:
+					case million::api::definitions::ManageOperation::Add:
 						registry.emplace_or_replace<components::core::physics::TriggerRegion>(entity);
 						break;
-					case monkeys::api::definitions::ManageOperation::Remove:
+					case million::api::definitions::ManageOperation::Remove:
 						registry.remove<components::core::physics::TriggerRegion>(entity);
 						break;
 					default: break;

@@ -16,7 +16,7 @@ void mergeEntityInternal (entt::registry& source_registry, entt::registry& desti
     }
 }
 
-entt::entity core::Engine::loadEntity (monkeys::Registry which, entt::hashed_string prototype_id)
+entt::entity core::Engine::loadEntity (million::Registry which, entt::hashed_string prototype_id)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
     auto it = m_prototype_entities.find(prototype_id);
@@ -30,7 +30,7 @@ entt::entity core::Engine::loadEntity (monkeys::Registry which, entt::hashed_str
     return entt::null;
 }
 
-void core::Engine::mergeEntity (monkeys::Registry which, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components)
+void core::Engine::mergeEntity (million::Registry which, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
     auto it = m_prototype_entities.find(prototype_id);

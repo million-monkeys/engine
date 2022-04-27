@@ -16,7 +16,7 @@ void core::Engine::readBinaryFile (const std::string& filename, std::string& buf
     buffer = helpers::readToString(filename);
 }
 
-monkeys::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name)
+million::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name)
 {
     auto it = m_named_resources.find(name);
     if (it != m_named_resources.end()) {
@@ -24,10 +24,10 @@ monkeys::resources::Handle core::Engine::findResource (entt::hashed_string::hash
         return it->second;
     }
     spdlog::debug("Resource with name {:#x} not found", name);
-    return monkeys::resources::Handle::invalid();
+    return million::resources::Handle::invalid();
 }
 
-monkeys::resources::Handle core::Engine::loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
+million::resources::Handle core::Engine::loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
     auto handle = resources::load(type, filename, name);
     if (name != 0) {
@@ -36,12 +36,6 @@ monkeys::resources::Handle core::Engine::loadResource (entt::hashed_string type,
     }
     return handle;
 }
-
-struct TestEvent {
-    static constexpr entt::hashed_string EventID = "test-event"_hs;
-    int a;
-    int b;
-};
 
 bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
 {
@@ -86,7 +80,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
             case "scene/load"_hs:
                 {
                     auto& new_scene = eventData<events::engine::LoadScene>(ev);
-                    m_scene_manager.loadScene(monkeys::Registry::Background, new_scene.scene_id);
+                    m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id);
                     break;
                 }
             default:
@@ -107,10 +101,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     // }
 
     for (const auto& ev : events()) {
-        if (ev.type == "test-event"_hs) {
-            auto& test_event = eventData<TestEvent>(ev);
-            spdlog::info("Got test-event: {}, {}", test_event.a, test_event.b);
-        } else if (ev.type == "resource/loaded"_hs) {
+        if (ev.type == "resource/loaded"_hs) {
             auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
             if (loaded.name == "script2"_hs) {
                 scripting::load("test.lua");

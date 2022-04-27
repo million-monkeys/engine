@@ -1,5 +1,5 @@
-#ifndef MILLION_MONKEYS__HPP
-#define MILLION_MONKEYS__HPP
+#ifndef MILLION_million__HPP
+#define MILLION_million__HPP
 
 #include <components/core.hpp>
 #include <events/engine.hpp>

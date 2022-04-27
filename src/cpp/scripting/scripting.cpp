@@ -139,7 +139,7 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
     return true;
 }
 
-void scripting::processEvents (monkeys::api::Engine& engine)
+void scripting::processEvents (million::api::Engine& engine)
 {
     auto& events = engine.events();
 

@@ -5,6 +5,8 @@
 
 #include <atomic>
 
+#include <spdlog/spdlog.h>
+
 namespace heterogeneous {
 
     namespace impl {
@@ -29,8 +31,17 @@ namespace heterogeneous {
                 buffer(new std::byte[size]),
                 base(PoolAlign::template align<std::byte>(buffer))
             {}
+            BaseStackPool (BaseStackPool&& other) :
+                size(other.size),
+                buffer(other.buffer),
+                base(other.base)
+            {
+                other.buffer = nullptr;
+            }
             ~BaseStackPool() {
-                delete [] buffer;
+                if (buffer) {
+                    delete [] buffer;
+                }
             }
 
             // Allocate, but don't construct
@@ -74,7 +85,7 @@ namespace heterogeneous {
             // Copy items from other into StackPool
             // AtomicStackPool WARNING: copy() is atomic, however `other` must not be reset while copy() is in progress. `other` may be added to, but this new memory will not be copied.
             template <typename SP>
-            void copy (BaseStackPool<typename SP::PoolAlignType, typename SP::ItemAlignType, typename SP::OutOfSpacePolicyType>& other) {
+            void pushAll (const BaseStackPool<typename SP::PoolAlignType, typename SP::ItemAlignType, typename SP::OutOfSpacePolicyType>& other) {
                 auto other_next = other.fetch();
                 auto next = fetch_add(other_next);
                 if (next <= size) {
@@ -94,7 +105,7 @@ namespace heterogeneous {
 
         private:
             const std::uint32_t size;
-            std::byte* const buffer;
+            std::byte* buffer;
             std::byte* const base;
         };
     }
@@ -113,6 +124,7 @@ namespace heterogeneous {
         std::uint32_t next;
     public:
         StackPool (std::uint32_t size) : impl::BaseStackPool<PoolAlign, ItemAlign, OutOfSpacePolicy>(size), next(0) {}
+        StackPool (StackPool&& other) : impl::BaseStackPool<PoolAlign, ItemAlign, OutOfSpacePolicy>(std::move(other)), next(other.next) {}
         virtual ~StackPool() {}
     };
 
@@ -120,12 +132,13 @@ namespace heterogeneous {
     template <typename PoolAlign = alignment::NoAlign, typename ItemAlign = alignment::NoAlign, typename OutOfSpacePolicy = out_of_space_policies::Throw>
     class AtomicStackPool : public impl::BaseStackPool<PoolAlign, ItemAlign, OutOfSpacePolicy> {
     private:
-        std::uint32_t fetch () final { return next.load(); }
+        std::uint32_t fetch () const final { return next.load(); }
         std::uint32_t fetch_add (std::uint32_t amount) final { return next.fetch_add(amount); }
         void put (std::uint32_t value) final { next.store(value); }
         std::atomic_uint32_t next;
     public:
         AtomicStackPool (std::uint32_t size) : impl::BaseStackPool<PoolAlign, ItemAlign, OutOfSpacePolicy>(size), next(0) {}
+        AtomicStackPool (AtomicStackPool&& other) : impl::BaseStackPool<PoolAlign, ItemAlign, OutOfSpacePolicy>(std::move(other)), next(other.next) {}
         virtual ~AtomicStackPool() {}
     };
 }

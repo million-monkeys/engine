@@ -19,7 +19,7 @@ namespace scheduler {
         entt::registry m_registry;
 
         // Task System
-        phmap::flat_hash_map<monkeys::SystemStage, entt::organizer> m_organizers;
+        phmap::flat_hash_map<million::SystemStage, entt::organizer> m_organizers;
         tf::Taskflow m_coordinator;
         tf::Executor m_executor;
 

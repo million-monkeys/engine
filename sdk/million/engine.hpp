@@ -5,8 +5,9 @@
 
 #include "types.hpp"
 #include "definitions.hpp"
+#include "game_systems.hpp"
 
-namespace monkeys {
+namespace million {
     // Access to the ECS registry
     enum class Registry : std::uint32_t {
         // The main registry, used to run the game
@@ -25,14 +26,14 @@ namespace monkeys {
     };
 }
 
-namespace monkeys::api {
+namespace million::api {
 
     namespace resources {
         class Loader {
         public:
             virtual ~Loader() {}
-            virtual bool load (monkeys::resources::Handle handle, const std::string& filename) = 0;
-            virtual void unload (monkeys::resources::Handle handle) = 0;
+            virtual bool load (million::resources::Handle handle, const std::string& filename) = 0;
+            virtual void unload (million::resources::Handle handle) = 0;
 
             virtual entt::hashed_string name () const = 0;
         };
@@ -65,9 +66,9 @@ namespace monkeys::api {
 
         /** Internal component registration template */
         template <typename T>
-        void registerComponent (const monkeys::api::definitions::Component& component)
+        void registerComponent (const million::api::definitions::Component& component)
         {
-            magic_enum::enum_for_each<monkeys::Registry>([this] (auto which) {
+            magic_enum::enum_for_each<million::Registry>([this] (auto which) {
                 static_cast<void>(registry(which).template storage<T>());
             });
             installComponent(component);
@@ -85,10 +86,10 @@ namespace monkeys::api {
         // virtual const detail::EventsIterator& events() = 0;
 
         /** Access an ECS registry */
-        virtual entt::registry& registry (monkeys::Registry) = 0;
+        virtual entt::registry& registry (million::Registry) = 0;
 
         /** Access ECS organizers through which to register systems */
-        virtual entt::organizer& organizer (monkeys::SystemStage) = 0;
+        virtual entt::organizer& organizer (million::SystemStage) = 0;
 
         /** Find a named entity. Returns entt::null if no such entity exists */
         virtual entt::entity findEntity (entt::hashed_string) const = 0;
@@ -97,18 +98,18 @@ namespace monkeys::api {
         virtual const std::string& findEntityName (const components::core::Named& named) const = 0;
 
         /** Load an entity into specified registry from a prototype */
-        virtual entt::entity loadEntity (monkeys::Registry, entt::hashed_string) = 0;
+        virtual entt::entity loadEntity (million::Registry, entt::hashed_string) = 0;
 
         /** Merge a prototype into an entity in the specified registry which */
-        virtual void mergeEntity (monkeys::Registry, entt::entity, entt::hashed_string, bool) = 0;
+        virtual void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) = 0;
 
         // Retrieve a resource handle by name
-        virtual monkeys::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
+        virtual million::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
 
         // Load a new resource
-        virtual monkeys::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
+        virtual million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
 
-        monkeys::resources::Handle loadResource (entt::hashed_string type, const std::string& filename)
+        million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename)
         {
             return loadResource(type, filename, 0);
         }
@@ -120,14 +121,20 @@ namespace monkeys::api {
             return *(new (allocateEvent(T::EventID, target, sizeof(T))) T{});
         }
 
+        /** Create a new named event stream */
+        virtual million::events::Stream& createStream (entt::hashed_string) = 0;
+
         /** Access an iterable collection of all emitted events */
-        virtual const monkeys::events::Iterable& events () = 0;
+        virtual const million::events::Iterable events () const = 0;
+
+        /** Retrieve events from a named event stream  */
+        virtual const million::events::Iterable events (entt::hashed_string) const = 0;
 
         /** Retrieve the payload from an individual event */
         template <typename EventT>
-        const EventT& eventData (const monkeys::events::Envelope& envelope) {
+        const EventT& eventData (const million::events::Envelope& envelope) {
             if (EventT::EventID == envelope.type && sizeof(EventT) == envelope.size) {
-                return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(monkeys::events::Envelope));
+                return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(million::events::Envelope));
             } else {
                 spdlog::error("Could not cast event {} to {}", envelope.type, EventT::EventID.data());
                 throw std::runtime_error("bad event type");
@@ -139,6 +146,6 @@ namespace monkeys::api {
         virtual void* allocModule(std::size_t) = 0;
         virtual void deallocModule(void *) = 0;
         // Register components with the engine
-        virtual void installComponent (const monkeys::api::definitions::Component& component) = 0;
+        virtual void installComponent (const million::api::definitions::Component& component) = 0;
     };
 }

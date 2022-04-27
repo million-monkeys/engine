@@ -28,27 +28,27 @@ namespace components::core {
 	};
 
 	struct ScriptedBehavior {
-		monkeys::resources::Handle resource;
+		million::resources::Handle resource;
 	};
 
 	namespace physics {
 
 		// A static (immobile) physics object
 		struct StaticBody {
-			monkeys::resources::Handle shape;
+			million::resources::Handle shape;
 			btRigidBody* physics_body;
 		};
 
 		// A physics object whose motion is dictated by the physics engine
 		struct DynamicBody {
-			monkeys::resources::Handle shape;
+			million::resources::Handle shape;
 			float mass;
 			btRigidBody* physics_body;
 		};
 
 		// A physics object whose motion is externally controlled
 		struct KinematicBody {
-			monkeys::resources::Handle shape;
+			million::resources::Handle shape;
 			float mass;
 			btRigidBody* physics_body;
 		};
@@ -60,7 +60,7 @@ namespace components::core {
 
 		// A region which emits an event when a physics body enters or exits its area
 		struct TriggerRegion {
-			monkeys::resources::Handle shape;
+			million::resources::Handle shape;
 			entt::hashed_string::hash_type on_enter;
 			entt::hashed_string::hash_type on_exit;
 			std::uint8_t trigger_mask;
@@ -81,7 +81,7 @@ namespace components::core {
 
 		// A single image visual representation
 		struct StaticImage {
-			monkeys::resources::Handle image;
+			million::resources::Handle image;
 		};
 
 		// Visual that is always oriented towards the camera
@@ -91,17 +91,17 @@ namespace components::core {
 
 		// A 3D mesh-based visual representation
 		struct Model {
-			monkeys::resources::Handle mesh;
+			million::resources::Handle mesh;
 		};
 
 		// A material with which to render a model
 		struct Material {
 			glm::vec3 color;
-			monkeys::resources::Handle albedo;
-			monkeys::resources::Handle normal;
-			monkeys::resources::Handle metalic;
-			monkeys::resources::Handle roughness;
-			monkeys::resources::Handle ambient_occlusion;
+			million::resources::Handle albedo;
+			million::resources::Handle normal;
+			million::resources::Handle metalic;
+			million::resources::Handle roughness;
+			million::resources::Handle ambient_occlusion;
 		};
 
 		// An emitter of light, in all directions

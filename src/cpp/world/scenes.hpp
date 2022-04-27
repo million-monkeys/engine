@@ -15,7 +15,7 @@ namespace world {
         ~SceneManager ();
 
         void loadSceneList (const std::string& filename);
-        void loadScene (monkeys::Registry which, entt::hashed_string scene);
+        void loadScene (million::Registry which, entt::hashed_string scene);
 
     private:
         core::Engine& m_engine;

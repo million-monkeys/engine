@@ -10,7 +10,7 @@ ffi.cdef [[
     void* component_add_to_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
-    void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
+    void* allocate_event (const char* event_name, uint32_t target, uint8_t size, bool emit_later);
     uint32_t load_resource (const char* type, const char* filename, const char* name);
     uint32_t find_resource (const char* name);
 ]]
@@ -105,13 +105,13 @@ local function create_entity(self, prototype)
     end
 end
 
-local function emit_event(event_name, target)
+local function emit_event(event_name, target, later)
     local event_info = core.event_types_by_name[event_name]
     if event_info then
         if target == nil then
             target = NULL_ENTITY
         end
-        return ffi.cast(event_info.type, C.allocate_event(event_name, target, event_info.size))
+        return ffi.cast(event_info.type, C.allocate_event(event_name, target, event_info.size, later))
     else
         C.output_log(LOG_LEVELS.WARNING, 'Event "'..event_name..'" not found')
     end
@@ -139,7 +139,8 @@ return {
         end
     },
     ref = C.get_ref,
-    emit = emit_event,
+    emit = function (name, target) return emit_event(name, target, false) end,
+    emit_later = function (name, target) return emit_event(name, target, true) end,
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
         info    = function(...) log_output(LOG_LEVELS.INFO,    ...) end,

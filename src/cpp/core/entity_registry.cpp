@@ -1,19 +1,19 @@
 
 #include "engine.hpp"
 
-entt::organizer& core::Engine::organizer(monkeys::SystemStage type)
+entt::organizer& core::Engine::organizer(million::SystemStage type)
 {
     return m_organizers[type];
 }
 
-entt::registry& core::Engine::registry(monkeys::Registry which)
+entt::registry& core::Engine::registry(million::Registry which)
 {
     switch (which) {
-    case monkeys::Registry::Runtime:
+    case million::Registry::Runtime:
         return m_runtime_registry;
-    case monkeys::Registry::Background:
+    case million::Registry::Background:
         return m_background_registry;
-    case monkeys::Registry::Prototype:
+    case million::Registry::Prototype:
         return m_prototype_registry;
     };
 }

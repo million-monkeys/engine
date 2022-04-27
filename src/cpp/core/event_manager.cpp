@@ -7,24 +7,20 @@
 
 std::mutex g_pool_mutex;
 
-using EventPool = core::Engine::EventPool;
-
-thread_local EventPool* g_event_pool = nullptr;
+thread_local core::EventPool* g_event_pool = nullptr;
 
 std::byte* core::Engine::allocateEvent (entt::hashed_string::hash_type type, entt::entity target, std::uint8_t payload_size)
 {
     if (g_event_pool == nullptr) {
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
         const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
-        g_event_pool = new EventPool(event_pool_size);
 
         // Only one thread can access event pools list at once
         std::lock_guard<std::mutex> guard(g_pool_mutex);
-        m_event_pools.push_back(g_event_pool); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
+        m_event_pools.emplace_back(event_pool_size); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
+        g_event_pool = &m_event_pools.back();
     }
-    monkeys::events::Envelope* envelope = g_event_pool->emplace<monkeys::events::Envelope>(type, target, payload_size);
-    g_event_pool->unaligned_allocate(payload_size);
-    return reinterpret_cast<std::byte*>(envelope) + sizeof(monkeys::events::Envelope);
+    return g_event_pool->push(type, target, payload_size);
 }
 
 // Move events from the thread local pools into the global event pool
@@ -33,25 +29,38 @@ void core::Engine::pumpEvents ()
     EASY_FUNCTION(profiler::colors::Amber200);
     m_event_pool.reset();
     // Copy thread local events into global pool and reset thread local pools
-    for (auto* pool : m_event_pools) {
-        m_event_pool.copy<EventPool>(*pool);
-        pool->reset();
+    for (auto& pool : m_event_pools) {
+        pool.copyInto(m_event_pool);
+        pool.reset();
     }
-    refreshEventsIterable();
+    // Swap all event streams internal pools
+    for (auto& [_, stream] : m_named_streams) {
+        stream.pool->swap();
+    }
 }
 
-// Make the global event pool visible to consumers
-void core::Engine::refreshEventsIterable ()
+const million::events::Iterable core::Engine::events () const
 {
-    m_events_iterable = monkeys::events::Iterable{
-        m_event_pool.begin(),
-        m_event_pool.end()
-    };
+    return EventPoolBase::iter(m_event_pool);
 }
 
-const monkeys::events::Iterable& core::Engine::events ()
+million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name)
 {
-    return m_events_iterable;
+    const std::uint32_t event_stream_size = entt::monostate<"memory/events/stream-size"_hs>();
+    auto pool = new core::StreamPool(event_stream_size);
+    auto& inserted = *m_named_streams.emplace(stream_name, StreamInfo{pool, {*pool}}).first;
+    return inserted.second.stream;
+}
+
+const million::events::Iterable core::Engine::events (entt::hashed_string stream_name) const
+{
+    auto it = m_named_streams.find(stream_name);
+    if (it != m_named_streams.end()) {
+        return it->second.pool->iter();
+    } else {
+        spdlog::error("[events] Named stream does not exist: {}", stream_name.data());
+        return {nullptr, nullptr};
+    }
 }
 
 // namespace events {
@@ -80,3 +89,4 @@ const monkeys::events::Iterable& core::Engine::events ()
 //         }
 //     }
 // }
+

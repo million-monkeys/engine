@@ -8,12 +8,12 @@
 #include <blockingconcurrentqueue.h>
 #include <concurrentqueue.h>
 
-phmap::flat_hash_map<entt::hashed_string::hash_type, monkeys::api::resources::Loader*, helpers::Identity> g_resource_loaders;
+phmap::flat_hash_map<entt::hashed_string::hash_type, million::api::resources::Loader*, helpers::Identity> g_resource_loaders;
 
 struct WorkItem {
-    monkeys::api::resources::Loader* loader;
+    million::api::resources::Loader* loader;
     std::string filename;
-    monkeys::resources::Handle handle;
+    million::resources::Handle handle;
     entt::hashed_string::hash_type name;
 
     bool operator==(const WorkItem& other) const {
@@ -22,10 +22,10 @@ struct WorkItem {
 
     static const WorkItem POISON_PILL;
 };
-const WorkItem WorkItem::POISON_PILL = WorkItem{nullptr, "", monkeys::resources::Handle::invalid()};
+const WorkItem WorkItem::POISON_PILL = WorkItem{nullptr, "", million::resources::Handle::invalid()};
 
 struct DoneItem {
-    monkeys::resources::Handle handle;
+    million::resources::Handle handle;
     entt::hashed_string::hash_type name;
 };
 
@@ -83,7 +83,7 @@ void resources::poll (core::Engine* engine)
 
 }
 
-void resources::install (entt::id_type id, monkeys::api::resources::Loader* loader)
+void resources::install (entt::id_type id, million::api::resources::Loader* loader)
 {
     const auto type = loader->name();
     spdlog::debug("[resources] Installing {}", type.data());
@@ -92,16 +92,16 @@ void resources::install (entt::id_type id, monkeys::api::resources::Loader* load
 
 std::uint32_t g_idx = 0;
 
-monkeys::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
+million::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
     auto it = g_resource_loaders.find(type.value());
     if (it != g_resource_loaders.end()) {
-        monkeys::resources::Handle handle = monkeys::resources::Handle::make(1, g_idx++);
+        million::resources::Handle handle = million::resources::Handle::make(1, g_idx++);
         g_work_queue.enqueue({it->second, filename, handle, name});
         return handle;
     } else {
         spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
-        return monkeys::resources::Handle::invalid();
+        return million::resources::Handle::invalid();
     }
 }
 

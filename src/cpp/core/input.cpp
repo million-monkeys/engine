@@ -104,7 +104,4 @@ void core::Engine::handleInput ()
         // Store events for render thread to access (used by Dear ImGui)
         // m_input_events.push_back(event);
     }
-
-    // Make sure that any events that were dispatched are visible to the engine
-    refreshEventsIterable();
 }

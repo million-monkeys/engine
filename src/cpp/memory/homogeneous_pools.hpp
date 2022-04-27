@@ -39,8 +39,17 @@ namespace homogeneous {
                 size(size) {
 
             }
+            BaseStackPool (BaseStackPool&& other) :
+                memory(other.memory),
+                pool(other.pool),
+                size(other.size)
+            {
+                other.memory = nullptr;
+            }
             virtual ~BaseStackPool() {
-                delete [] memory;
+                if (memory) {
+                    delete [] memory;
+                }
             }
                 
             // Allocate and construct
@@ -97,7 +106,7 @@ namespace homogeneous {
             }
 
             // Copy buffer into StackPool
-            void copy (T* buffer, uint32_t count) {
+            void pushAll (T* buffer, uint32_t count) {
                 if (remaining() < count) {
                     OutOfSpacePolicy::template apply<void>("homogeneous::BaseStackPool");
                 }
@@ -109,8 +118,8 @@ namespace homogeneous {
 
             // Copy items from other into StackPool
             template <typename PT>
-            void copy (BaseStackPool<typename PT::Type, typename PT::AlignType, typename PT::OutOfSpacePolicyType>& other) {
-                copy(other.pool, other.count());
+            void pushAll (BaseStackPool<typename PT::Type, typename PT::AlignType, typename PT::OutOfSpacePolicyType>& other) {
+                pushAll(other.pool, other.count());
             }
 
         private:
@@ -132,6 +141,7 @@ namespace homogeneous {
         std::uint32_t next;
     public:
         StackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
+        StackPool (StackPool&& other) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(std::move(other)), next(other.next) {}
         virtual ~StackPool() {}
     };
 
@@ -146,6 +156,7 @@ namespace homogeneous {
         std::atomic_uint32_t next;
     public:
         AtomicStackPool (std::uint32_t size) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(size), next(0) {}
+        AtomicStackPool (AtomicStackPool&& other) : impl::BaseStackPool<T, Align, OutOfSpacePolicy>(std::move(other)), next(other.next) {}
         virtual ~AtomicStackPool() {}
     };
 
@@ -174,9 +185,20 @@ namespace homogeneous {
             size(size) {
             reset();
         }
+        Pool (Pool&& other) :
+            memory(other.memory),
+            pool(other.pool),
+            next(other.next),
+            free(other.free),
+            size(other.size)
+        {
+            other.memory = nullptr;
+        }
 
         ~Pool() {
-            delete [] memory;
+            if (memory) {
+                delete [] memory;
+            }
         }
 
         template <typename... Args>
@@ -222,7 +244,7 @@ namespace homogeneous {
         }
 
     private:
-        std::byte* const memory;
+        std::byte* memory;
         union Item {
             T object;
             Item* next;

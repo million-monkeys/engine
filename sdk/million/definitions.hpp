@@ -5,13 +5,13 @@
 #include "types.hpp"
 #include <entt/core/any.hpp>
 
-namespace monkeys::api {
+namespace million::api {
     class Engine;
 
     namespace definitions {
         struct Attribute {
             std::string name;
-            monkeys::types::Type type;
+            million::types::Type type;
             std::size_t offset;
             struct Option {
                 std::string label;
