@@ -34,7 +34,7 @@ std::shared_ptr<spdlog::logger> setupLogging ()
         {"error", spdlog::level::err},
         {"off", spdlog::level::off},
     };
-    const std::string& raw_log_level = entt::monostate<"tools/log-level"_hs>{};
+    const std::string& raw_log_level = entt::monostate<"telemetry/log-level"_hs>{};
     std::string log_level = raw_log_level;
 #ifndef DEBUG_BUILD
     // Only debug builds have debug or trace log levels
@@ -81,7 +81,7 @@ int game_main (int argc, char** argv)
 
 #ifdef BUILD_WITH_EASY_PROFILER
     {
-        const bool& profiling_enabled = entt::monostate<"tools/profiling"_hs>{};
+        const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
         if (profiling_enabled) {
             spdlog::info("Starting easy_profiler");
             profiler::startListen();

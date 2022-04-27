@@ -30,7 +30,7 @@ bool core::readUserConfig (int argc, char* argv[])
         ("m,modules", "Modules list file", cxxopts::value<std::string>())
         ("modulepath", "Path to Module files", cxxopts::value<std::string>())
         ("i,init", "Initialisation file", cxxopts::value<std::string>()->default_value("config.toml"));
-    auto result = options.parse(argc, argv);
+    auto cli = options.parse(argc, argv);
 
     //******************************************************//
     //                                                      //
@@ -40,7 +40,7 @@ bool core::readUserConfig (int argc, char* argv[])
     //                                                      //
     //******************************************************//
     try {
-        std::string config_file = result["init"].as<std::string>();
+        std::string config_file = cli["init"].as<std::string>();
         const auto config = parser::parse_toml(config_file, parser::FileLocation::FileSystem);
 
          std::filesystem::path base_path = std::filesystem::path{config_file}.parent_path();
@@ -48,16 +48,18 @@ bool core::readUserConfig (int argc, char* argv[])
         //******************************************************//
         // TELEMETRY
         //******************************************************//
-        if (result["loglevel"].count() == 0 ) {
-            if (config.contains("telemetry")) {
-                const auto& telemetry = config.at("telemetry");
-                maybe_set<"tools/log-level"_hs, std::string>(telemetry, "logging");
-                maybe_set<"tools/profiling"_hs, bool>(telemetry, "profiling");
-            } else {
-                entt::monostate<"tools/log-level"_hs>{} = "info";
-            }
+        if (config.contains("telemetry")) {
+            const auto& telemetry = config.at("telemetry");
+            maybe_set<"telemetry/log-level"_hs, std::string>(telemetry, "logging");
+            maybe_set<"telemetry/profiling"_hs, bool>(telemetry, "profiling");
         } else {
-            entt::monostate<"tools/log-level"_hs>{} = result["loglevel"].as<std::string>();
+            entt::monostate<"telemetry/log-level"_hs>{} = "info";
+        }
+        if (cli["loglevel"].count() != 0 ) {
+            entt::monostate<"telemetry/log-level"_hs>{} = cli["loglevel"].as<std::string>();
+        }
+        if (cli["profiling"].count() != 0) {
+            entt::monostate<"telemetry/profiling"_hs>{} = true;
         }
 
         //******************************************************//
@@ -66,8 +68,8 @@ bool core::readUserConfig (int argc, char* argv[])
         // Set default settings for [game] section
         std::vector<std::string> source_files{};
         // Add overrides without removing the configured paths
-        if (result["gamefiles"].count() > 0) {
-            source_files = result["gamefiles"].as<std::vector<std::string>>();
+        if (cli["gamefiles"].count() > 0) {
+            source_files = cli["gamefiles"].as<std::vector<std::string>>();
         }
 
         // Overwrite with settings
@@ -82,15 +84,15 @@ bool core::readUserConfig (int argc, char* argv[])
         }
         
         // Override game sources, if specified on commandline
-        if (result["overridefiles"].count() > 0) {
-            source_files = result["overridefiles"].as<std::vector<std::string>>();
+        if (cli["overridefiles"].count() > 0) {
+            source_files = cli["overridefiles"].as<std::vector<std::string>>();
         }
         entt::monostate<"game/sources"_hs>{} = source_files;
 
         entt::monostate<"game/config-file"_hs>{} = std::string{"game.toml"};
         // Set module path, if specified on commandline (modules loaded relative to this path)
-        if (result["modulepath"].count() > 0) {
-            entt::monostate<"game/modules-path"_hs>{} = result["modulepath"].as<std::string>();;
+        if (cli["modulepath"].count() > 0) {
+            entt::monostate<"game/modules-path"_hs>{} = cli["modulepath"].as<std::string>();;
         } else {
             entt::monostate<"game/modules-path"_hs>{} = "";
         }
@@ -146,7 +148,7 @@ bool core::readUserConfig (int argc, char* argv[])
             entt::monostate<"graphics/debug-rendering"_hs>{} = false;
         }
 #ifdef DEBUG_BUILD
-        entt::monostate<"graphics/debug-rendering"_hs>{} = bool{result["debug"].count() > 0};
+        entt::monostate<"graphics/debug-rendering"_hs>{} = bool{cli["debug"].count() > 0};
 #endif
 
         //******************************************************//
@@ -206,7 +208,7 @@ bool core::readGameConfig () {
         // GRAPHICS
         //******************************************************//
         // Default settings for [graphics] section
-        entt::monostate<"graphics/window/title"_hs>{} = std::string{"The GOU Engine"};
+        entt::monostate<"graphics/window/title"_hs>{} = std::string{"Million Monkeys"};
         entt::monostate<"graphics/opengl/minimum-red-bits"_hs>{} = int{8};
         entt::monostate<"graphics/opengl/minimum-green-bits"_hs>{} = int{8};
         entt::monostate<"graphics/opengl/minimum-blue-bits"_hs>{} = int{8};
