@@ -98,10 +98,11 @@ namespace core {
         const Base::PoolType& back () const { return m_pools[1 - m_current]; }
     };
 
+    template <typename Pool>
     class EventStream : public million::events::Stream
     {
     public:
-        EventStream (StreamPool& pool) : m_pool{pool} {}
+        EventStream (Pool& pool) : m_pool{pool} {}
         EventStream (EventStream&& other) : m_pool(other.m_pool) {}
         virtual ~EventStream () {}
 
@@ -111,6 +112,6 @@ namespace core {
             return m_pool.push(event_id, source, payload_size);
         }
         
-        StreamPool& m_pool;
+        Pool& m_pool;
     };
 }

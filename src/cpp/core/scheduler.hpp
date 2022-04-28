@@ -8,16 +8,20 @@ namespace physics {
     struct Context;
 }
 
+namespace core {
+    class Engine;
+}
+
 namespace scheduler {
 
     class Scheduler {
     public:
-        void createTaskGraph ();
+        void createTaskGraph (core::Engine& engine);
+        void execute ();
+
+        entt::organizer& organizer(million::SystemStage type) { return m_organizers[type]; }
 
     private:
-        // Entity System
-        entt::registry m_registry;
-
         // Task System
         phmap::flat_hash_map<million::SystemStage, entt::organizer> m_organizers;
         tf::Taskflow m_coordinator;

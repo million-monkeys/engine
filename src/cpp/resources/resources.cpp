@@ -70,11 +70,12 @@ void resources::init ()
 
 void resources::poll (core::Engine* engine)
 {
+    auto& stream = engine->stream();
     std::size_t count;
     do {
         count = g_done_queue.try_dequeue_bulk(g_done_items, MAX_DONE_ITEMS);
         for (std::size_t i = 0; i != count; ++i) {
-            auto& loaded = engine->emit<events::engine::ResourceLoaded>();
+            auto& loaded = stream.emit<events::engine::ResourceLoaded>();
             auto& item = g_done_items[i];
             loaded.name = item.name;
             loaded.handle = item.handle;

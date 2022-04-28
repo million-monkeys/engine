@@ -99,7 +99,7 @@ int game_main (int argc, char** argv)
         if (false) {
             spdlog::critical("Could not load some required modules. Terminating.");
         } else {
-            // engine.setupGame();
+            engine.setupGame();
 
             // Initialise timekeeping
             timekeeping::FrameTimer frame_timer;
@@ -121,7 +121,7 @@ int game_main (int argc, char** argv)
                 frame_timer.update();
 
                 // WIP: For now just die after a short time
-                if (frame_timer.sinceStart() > 5.0f) {
+                if (frame_timer.sinceStart() > 0.005f) {
                     spdlog::warn("Terminating because of WIP");
                     break;
                 }
@@ -137,7 +137,7 @@ int game_main (int argc, char** argv)
             frame_timer.reportAverage();
 
             // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
-            engine.reset();
+            engine.shutdown();
             // moduleManager.unload();
             logger->flush();
         }

@@ -21,7 +21,7 @@ namespace million {
     enum class SystemStage {
         GameLogic,
         AIExecute,
-        AIActions,
+        Actions,
         Update,
     };
 }
@@ -74,9 +74,6 @@ namespace million::api {
             installComponent(component);
         }
 
-        // Allocate space for an event in the event stream, returning a raw pointer to its payload
-        virtual std::byte* allocateEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) = 0;
-
         /* User API (Note that users should use the API wrapper classes in gou.hpp) */
         /* ------------------------------------------------------------------------ */
 
@@ -114,12 +111,8 @@ namespace million::api {
             return loadResource(type, filename, 0);
         }
 
-        /** Emit an event to the event stream */
-        template <typename T>
-        [[maybe_unused]] T& emit (entt::entity target=entt::null)
-        {
-            return *(new (allocateEvent(T::EventID, target, sizeof(T))) T{});
-        }
+        /** Get the global stream. This stream should not be passed to another thread, instead each thread should get its own reference using this function */
+        virtual million::events::Stream& stream() = 0;
 
         /** Create a new named event stream */
         virtual million::events::Stream& createStream (entt::hashed_string) = 0;

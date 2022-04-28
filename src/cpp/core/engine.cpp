@@ -54,6 +54,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
         EASY_BLOCK("Handling event", profiler::colors::Amber100);
         switch (ev.type) {
             case "engine/exit"_hs:
+                // No longer running, return false.
                 return false;
             case "engine/set-system-status/running"_hs:
                 m_system_status = SystemStatus::Running;
@@ -78,11 +79,20 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                 m_runtime_registry.clear();
                 break;
             case "scene/load"_hs:
-                {
-                    auto& new_scene = eventData<events::engine::LoadScene>(ev);
-                    m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id);
-                    break;
+            {
+                auto& new_scene = eventData<events::engine::LoadScene>(ev);
+                m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id);
+                break;
+            }
+            // For WIP
+            case "resource/loaded"_hs:
+            {
+                auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
+                if (loaded.name == "script2"_hs) {
+                    scripting::load("test.lua");
                 }
+                break;
+            }
             default:
                 break;
         };
@@ -91,26 +101,13 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     // Run the before-frame hook for each module, updating the current time
     callModuleHook<CM::BEFORE_FRAME>(current_time, delta, frame_count);
 
-    // if (m_system_status == SystemStatus::Running) {
-    //     // Execute the taskflow graph if systems are running
-    //     EASY_BLOCK("Executing tasks", profiler::colors::Indigo200);
-    //     m_executor.run(m_coordinator);
-    // } else {
-    //     // If systems are stopped, only pump events
-    //     pumpEvents();
-    // }
-
-    for (const auto& ev : events()) {
-        if (ev.type == "resource/loaded"_hs) {
-            auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
-            if (loaded.name == "script2"_hs) {
-                scripting::load("test.lua");
-            }
-        }
+    if (m_system_status == SystemStatus::Running) {
+        // Execute the taskflow graph if systems are running
+        m_scheduler.execute();
+    } else {
+        // If systems are stopped, only pump events
+        pumpEvents();
     }
-
-    scripting::processEvents(*this);
-    pumpEvents();
 
     // Run the after-frame hook for each module
     callModuleHook<CM::AFTER_FRAME>();
@@ -142,4 +139,3 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     // Still running, return true.
     return true;
 }
-

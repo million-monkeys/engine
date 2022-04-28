@@ -8,20 +8,7 @@
 std::mutex g_pool_mutex;
 
 thread_local core::EventPool* g_event_pool = nullptr;
-
-std::byte* core::Engine::allocateEvent (entt::hashed_string::hash_type type, entt::entity target, std::uint8_t payload_size)
-{
-    if (g_event_pool == nullptr) {
-        // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
-        const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
-
-        // Only one thread can access event pools list at once
-        std::lock_guard<std::mutex> guard(g_pool_mutex);
-        m_event_pools.emplace_back(event_pool_size); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
-        g_event_pool = &m_event_pools.back();
-    }
-    return g_event_pool->push(type, target, payload_size);
-}
+thread_local core::EventStream<core::EventPool>* g_event_stream = nullptr;
 
 // Move events from the thread local pools into the global event pool
 void core::Engine::pumpEvents ()
@@ -37,6 +24,10 @@ void core::Engine::pumpEvents ()
     for (auto& [name, stream] : m_named_streams) {
         stream.pool->swap();
     }
+}
+
+void core::Engine::pumpScriptEvents ()
+{
     // Copy script event pool into global pool
     m_scripts_event_pool.copyInto(m_event_pool);
     // Clear the script event pool
@@ -46,6 +37,21 @@ void core::Engine::pumpEvents ()
 const million::events::Iterable core::Engine::events () const
 {
     return EventPoolBase::iter(m_event_pool);
+}
+
+million::events::Stream& core::Engine::stream()
+{
+    if (g_event_pool == nullptr) {
+        // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
+        const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
+
+        // Only one thread can access event pools list at once
+        std::lock_guard<std::mutex> guard(g_pool_mutex);
+        m_event_pools.emplace_back(event_pool_size); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
+        g_event_pool = &m_event_pools.back();
+        g_event_stream = new core::EventStream<core::EventPool>(*g_event_pool);
+    }
+    return *g_event_stream;
 }
 
 million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name)

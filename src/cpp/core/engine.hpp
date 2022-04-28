@@ -5,6 +5,7 @@
 #include <million/definitions.hpp>
 #include <entt/entity/organizer.hpp>
 #include <world/scenes.hpp>
+#include "scheduler.hpp"
 
 #include "event_pools.hpp"
 
@@ -13,7 +14,7 @@ namespace core {
 
     struct StreamInfo {
         StreamPool* pool;
-        EventStream stream;
+        EventStream<StreamPool> stream;
     };
 
     // Component used by the prototypes registry to identify the prototype entity
@@ -37,6 +38,7 @@ namespace core {
         void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) final;
         million::resources::Handle findResource (entt::hashed_string::hash_type) final;
         million::resources::Handle loadResource (entt::hashed_string, const std::string&, entt::hashed_string::hash_type) final;
+        million::events::Stream& stream() final;
         million::events::Stream& createStream (entt::hashed_string) final;
         const million::events::Iterable events () const final;
         const million::events::Iterable events (entt::hashed_string) const final;
@@ -48,10 +50,12 @@ namespace core {
         DeltaTime deltaTime () { return m_current_time_delta; }
 
         bool init ();
-        void reset ();
+        void shutdown ();
+
+        void setupGame ();
 
         // Execute the Taskflow graph of tasks, returns true if still running
-        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);
+        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);        
 
         // Register module hooks
         void registerModule (std::uint32_t, million::api::Module*);
@@ -101,9 +105,6 @@ namespace core {
             }
         }
 
-        // Allocate space for an event in the event stream, returning a raw pointer to its payload
-        std::byte* allocateEvent (entt::hashed_string::hash_type, entt::entity, std::uint8_t) final;
-
         // std::byte* allocateEventInternal (entt::hashed_string id, entt::entity target, std::uint8_t size)
         // {
         //     auto envelope = m_event_pool.emplace<million::events::Envelope>(T::EventID, target, size);
@@ -134,6 +135,8 @@ namespace core {
         // Process input events
         void handleInput ();
 
+        // Make previously emitted script events visible to consumers
+        void pumpScriptEvents ();
         // Make previously emitted events visible to consumers
         void pumpEvents ();
 
@@ -167,9 +170,7 @@ namespace core {
         const std::string m_empty_string = {};
 
         // System and task scheduling
-        phmap::flat_hash_map<million::SystemStage, entt::organizer> m_organizers;
-        tf::Taskflow m_coordinator;
-        tf::Executor m_executor;
+        scheduler::Scheduler m_scheduler;
 
         enum class SystemStatus {
             Running,
@@ -181,7 +182,6 @@ namespace core {
         DeltaTime m_current_time_delta = 0;
 
         // Event system
-        million::events::Iterable m_events_iterable;
         std::vector<EventPool> m_event_pools;
         EventPoolBase::PoolType m_event_pool;
         phmap::flat_hash_map<entt::hashed_string::hash_type, StreamInfo, helpers::Identity> m_named_streams;
@@ -201,6 +201,8 @@ namespace core {
 
         // Resource name bindings
         phmap::flat_hash_map<entt::hashed_string::hash_type, million::resources::Handle, helpers::Identity> m_named_resources;
+
+        friend class scheduler::Scheduler;
     };
 
 }

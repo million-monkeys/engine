@@ -70,10 +70,10 @@ namespace million {
         {
         public:
             virtual ~Stream () {}
-            template <typename Event, typename Function>
-            void emit (entt::entity source, Function fn) {
-                fn(*(new (push(Event::EventID, source, sizeof(Event))) Event{}));
-            }
+            template <typename Event> Event& post (entt::entity source) { return *(new (push(Event::EventID, source, sizeof(Event))) Event{}); }
+            template <typename Event, typename Function> void post (entt::entity source, Function fn) { fn(emit<Event>(source)); }
+            template <typename Event> Event& emit () { return post<Event>(entt::null); }
+            template <typename Event, typename Function> void emit (Function fn) { fn(post<Event>(entt::null)); }
         protected:
             virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, uint32_t) = 0;
         };

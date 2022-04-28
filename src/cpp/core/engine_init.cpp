@@ -3,6 +3,9 @@
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
 
+#include <entt/entity/organizer.hpp>
+#include <entt/entity/view.hpp>
+
 struct core::InputData* createInputData (); // Just to avoid having to include SDL.h from engine.hpp
 
 namespace init_core {
@@ -28,7 +31,6 @@ int get_scripts_event_pool_size () {
 core::Engine::Engine() :
     m_scripts_event_pool(get_scripts_event_pool_size()),
     m_scene_manager(*this),
-    m_events_iterable(nullptr, nullptr),
     m_event_pool(get_global_event_pool_size()),
     m_input_data(createInputData())
 {
@@ -103,27 +105,61 @@ bool core::Engine::init ()
         spdlog::critical("Could not initialize scripting subsystem");
         return false;
     }
-
-    loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
-    loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
+    m_system_status = SystemStatus::Running;
         
     return true;
 }
 
-void core::Engine::reset ()
+struct Test {
+    int a;
+};
+
+class TestSystem
+{
+public:
+    void foo (entt::view<entt::get_t<Test>> view)
+    {
+        view.each([](auto& test){
+            spdlog::debug("Test.a: {}", test.a);
+            test.a += 1;
+        });
+    }
+};
+
+TestSystem g_test;
+
+void core::Engine::setupGame ()
+{
+    auto& o = organizer(million::SystemStage::GameLogic);
+    o.emplace<&TestSystem::foo>(g_test, "test");
+
+    m_scheduler.createTaskGraph(*this);
+
+    // Make events emitted during load visible on first frame
+    pumpEvents();
+
+    loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
+    loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
+
+    m_runtime_registry.emplace<Test>(m_runtime_registry.create(), 10);
+    m_runtime_registry.emplace<Test>(m_runtime_registry.create(), 1000);
+}
+
+void core::Engine::shutdown ()
 {
     // // Unload the current scene
     // callModuleHook<CM::UNLOAD_SCENE>();
     // // Shut down graphics thread
     // graphics::term(m_renderer);
-    // // Delete event pools
-    // for (auto pool : m_event_pools) {
-    //     delete pool;
-    // }
+    
     // Halt the scripting system
     scripting::term();
     // Uninstall resources managers
     resources::term();
+    // Delete event pools
+    m_event_pool.reset();
+    m_scripts_event_pool.reset();
+    m_event_pools.clear();
     // Clear the runtime registry
     m_runtime_registry = {};
     // Clear background registry

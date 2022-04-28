@@ -3,7 +3,7 @@
 
 entt::organizer& core::Engine::organizer(million::SystemStage type)
 {
-    return m_organizers[type];
+    return m_scheduler.organizer(type);
 }
 
 entt::registry& core::Engine::registry(million::Registry which)
