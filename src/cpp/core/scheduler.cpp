@@ -39,7 +39,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
                 tasks.push_back({
                     node,
                     taskflow->emplace([&registry, userdata, callback, name](){
-                        SPDLOG_TRACE("Running System: {}", name);
+                        (void)name; SPDLOG_TRACE("Running System: {}", name);
                         callback(userdata, registry);
                     }).name(node.name())
                 });

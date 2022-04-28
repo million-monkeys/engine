@@ -100,7 +100,7 @@ void core::Engine::installComponent (const million::api::definitions::Component&
 bool core::Engine::init ()
 {
     init_core::register_components(this);
-    resources::init();
+    resources::init(this);
     if (! scripting::init(this)) {
         spdlog::critical("Could not initialize scripting subsystem");
         return false;

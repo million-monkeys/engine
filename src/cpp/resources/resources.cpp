@@ -61,21 +61,23 @@ void loaderThread ()
 }
 
 std::thread g_loader_thread;
+million::events::Stream* g_stream = nullptr;
 
-void resources::init ()
+void resources::init (core::Engine* engine)
 {
+    g_stream = &engine->createStream("resources"_hs);
     resources::install<resources::types::ScriptedEvents>();
     g_loader_thread = std::thread(loaderThread);
+    
 }
 
-void resources::poll (core::Engine* engine)
+void resources::poll ()
 {
-    auto& stream = engine->stream();
     std::size_t count;
     do {
         count = g_done_queue.try_dequeue_bulk(g_done_items, MAX_DONE_ITEMS);
         for (std::size_t i = 0; i != count; ++i) {
-            auto& loaded = stream.emit<events::engine::ResourceLoaded>();
+            auto& loaded = g_stream->emit<events::engine::ResourceLoaded>();
             auto& item = g_done_items[i];
             loaded.name = item.name;
             loaded.handle = item.handle;
@@ -92,6 +94,20 @@ void resources::install (entt::id_type id, million::api::resources::Loader* load
 }
 
 std::uint32_t g_idx = 0;
+
+class ResourceStorage {
+public:
+    ResourceStorage (std::uint32_t id) : m_type_id(id) {}
+
+    million::resources::Handle allocate ()
+    {
+        return million::resources::Handle::make(m_type_id, m_idx++);
+    }
+    
+private:
+    const std::uint32_t m_type_id;
+    std::uint32_t m_idx = 0;
+};
 
 million::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {

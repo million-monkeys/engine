@@ -8,8 +8,8 @@ namespace core {
 
 namespace resources {
 
-    void init ();
-    void poll (core::Engine*);
+    void init (core::Engine*);
+    void poll ();
 
     void install (entt::id_type id, million::api::resources::Loader* loader);
     template <typename T> void install () { install(entt::type_index<T>::value(), new T()); }

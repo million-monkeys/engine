@@ -58,9 +58,11 @@ bool core::readUserConfig (int argc, char* argv[])
         if (cli["loglevel"].count() != 0 ) {
             entt::monostate<"telemetry/log-level"_hs>{} = cli["loglevel"].as<std::string>();
         }
+#ifdef DEBUG_BUILD
         if (cli["profiling"].count() != 0) {
             entt::monostate<"telemetry/profiling"_hs>{} = true;
         }
+#endif
 
         //******************************************************//
         // GAME

@@ -4,13 +4,14 @@
 void mergeEntityInternal (entt::registry& source_registry, entt::registry& destination_registry, entt::entity source_entity, entt::entity destination_entity, bool overwrite_components)
 {
     for(auto [id, source_storage]: source_registry.storage()) {
-        auto destination_storage = destination_registry.storage(id);
-        if (destination_storage != nullptr && source_storage.contains(source_entity)) {
-            if (! destination_storage->contains(destination_entity)) {
-                destination_storage->emplace(destination_entity, source_storage.get(source_entity));
+        auto it = destination_registry.storage(id);
+        if (it != destination_registry.storage().end() && source_storage.contains(source_entity)) {
+            auto& destination_storage = it->second;
+            if (! destination_storage.contains(destination_entity)) {
+                destination_storage.emplace(destination_entity, source_storage.get(source_entity));
             } else if (overwrite_components) {
-                destination_storage->erase(destination_entity);
-                destination_storage->emplace(destination_entity, source_storage.get(source_entity));
+                destination_storage.erase(destination_entity);
+                destination_storage.emplace(destination_entity, source_storage.get(source_entity));
             }
         }
     }

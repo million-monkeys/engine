@@ -75,10 +75,10 @@ extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::ui
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
         if (it != g_component_types.end()) {
-            auto storage = registry.storage(it->second);
+            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
             entt::entity e = static_cast<entt::entity>(entity);
-            if (storage->contains(e)) {
-                return storage->get(e);
+            if (storage.contains(e)) {
+                return storage.get(e);
             }
             // Entity does not have component
             spdlog::warn("[script] entity {} does not have component: {}", entity, component_name);
@@ -101,16 +101,16 @@ extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uin
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
         if (it != g_component_types.end()) {
-            auto storage = registry.storage(it->second);
+            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
             entt::entity e = static_cast<entt::entity>(entity);
-            if (!storage->contains(e)) {
-                if (storage->emplace(e) == storage->end()) {
+            if (!storage.contains(e)) {
+                if (storage.emplace(e) == storage.end()) {
                     // Could not insert component
                     spdlog::warn("[script] component_add_to_entity with entity {} was unable to add component: {}", entity, component_name);
                     return nullptr;
                 }
             }
-            return storage->get(e);
+            return storage.get(e);
         }
         // Invalid component name
         spdlog::error("[script] component_add_to_entity invalid component name: {}", component_name);
@@ -129,10 +129,10 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
         entt::registry& registry = g_engine->registry(selected_registry.value());
         auto it = g_component_types.find(entt::hashed_string::value(component_name));
         if (it != g_component_types.end()) {
-            auto storage = registry.storage(it->second);
+            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
             entt::entity e = static_cast<entt::entity>(entity);
-            if (!storage->contains(e)) {
-                storage->remove(e);
+            if (!storage.contains(e)) {
+                storage.remove(e);
             } else {
                 // Entity does not have component
                 spdlog::warn("[script] component_remove_from_entity entity {} does not have component: {}", entity, component_name);
@@ -164,8 +164,8 @@ extern "C" std::uint32_t get_stream (const char** buffer)
 
 struct BehaviorIterator {
     using const_iterable = typename entt::storage_traits<entt::entity, components::core::ScriptedBehavior>::storage_type::const_iterable;
-    const_iterable::const_iterator next;
-    const_iterable::const_iterator end;
+    const_iterable::iterator next;
+    const_iterable::iterator end;
     static BehaviorIterator* start (const_iterable);
     void cleanup ();
 };

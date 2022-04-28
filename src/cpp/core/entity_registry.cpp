@@ -56,9 +56,11 @@ void core::Engine::copyRegistry (const entt::registry& from, entt::registry& to)
     from.each([&from,&to](const auto source_entity) {
         auto destination_entity = to.create();
         for(auto [id, source_storage]: from.storage()) {
-            auto destination_storage = to.storage(id);
-            if(destination_storage != nullptr && source_storage.contains(source_entity)) {
-                destination_storage->emplace(destination_entity, source_storage.get(source_entity));
+            if(source_storage.contains(source_entity)) {
+                auto it = to.storage(id);
+                if (it != to.storage().end()) {
+                    it->second.emplace(destination_entity, source_storage.get(source_entity));
+                }
             }
         }
     });
