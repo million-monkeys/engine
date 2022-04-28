@@ -102,16 +102,21 @@ namespace core {
     class EventStream : public million::events::Stream
     {
     public:
-        EventStream (Pool& pool) : m_pool{pool} {}
-        EventStream (EventStream&& other) : m_pool(other.m_pool) {}
+        EventStream () : m_pool{nullptr} {}
+        EventStream (Pool& pool) : m_pool{&pool} {}
+        EventStream (EventStream<Pool>&& other) : m_pool(other.m_pool) { other.m_pool = nullptr; }
         virtual ~EventStream () {}
 
+        void operator= (EventStream<Pool>&& other) { m_pool = other.m_pool; other.m_pool = nullptr; }
+
+        bool valid () const { return m_pool != nullptr; }
+
     private:
-        std::byte* push (entt::hashed_string::hash_type event_id, entt::entity source, uint32_t payload_size) final
+        std::byte* push (entt::hashed_string::hash_type event_id, entt::entity source, std::uint32_t payload_size)
         {
-            return m_pool.push(event_id, source, payload_size);
+            return m_pool->push(event_id, source, payload_size);
         }
         
-        Pool& m_pool;
+        Pool* m_pool;
     };
 }

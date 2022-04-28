@@ -75,7 +75,7 @@ namespace million {
             template <typename Event> Event& emit () { return post<Event>(entt::null); }
             template <typename Event, typename Function> void emit (Function fn) { fn(post<Event>(entt::null)); }
         protected:
-            virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, uint32_t) = 0;
+            virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, std::uint32_t) = 0;
         };
 
         struct Iterator {

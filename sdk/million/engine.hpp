@@ -77,53 +77,65 @@ namespace million::api {
         /* User API (Note that users should use the API wrapper classes in gou.hpp) */
         /* ------------------------------------------------------------------------ */
 
+        // NOT Thread Safe
         virtual void readBinaryFile (const std::string& filename, std::string& buffer) const = 0;
 
-        /** Access events emitted last frame */
-        // virtual const detail::EventsIterator& events() = 0;
-
         /** Access an ECS registry */
+        // NOT Thread Safe
         virtual entt::registry& registry (million::Registry) = 0;
 
         /** Access ECS organizers through which to register systems */
+        // NOT Thread Safe
         virtual entt::organizer& organizer (million::SystemStage) = 0;
 
         /** Find a named entity. Returns entt::null if no such entity exists */
+        // Thread Safe
         virtual entt::entity findEntity (entt::hashed_string) const = 0;
 
         /** Get the string name of a named entity */
+        // Thread Safe
         virtual const std::string& findEntityName (const components::core::Named& named) const = 0;
 
         /** Load an entity into specified registry from a prototype */
+        // NOT Thread Safe
         virtual entt::entity loadEntity (million::Registry, entt::hashed_string) = 0;
 
         /** Merge a prototype into an entity in the specified registry which */
+        // NOT Thread Safe
         virtual void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) = 0;
 
         // Retrieve a resource handle by name
+        // Thread Safe
         virtual million::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
 
         // Load a new resource
+        // Thread Safe
         virtual million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
 
+        // Thread Safe
         million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename)
         {
             return loadResource(type, filename, 0);
         }
 
         /** Get the global stream. This stream should not be passed to another thread, instead each thread should get its own reference using this function */
+        // Thread Safe
         virtual million::events::Stream& stream() = 0;
 
         /** Create a new named event stream */
+        // NOT Thread Safe
         virtual million::events::Stream& createStream (entt::hashed_string) = 0;
 
         /** Access an iterable collection of all emitted events */
+        // Thread Safe
         virtual const million::events::Iterable events () const = 0;
 
         /** Retrieve events from a named event stream  */
+        // Thread Safe
         virtual const million::events::Iterable events (entt::hashed_string) const = 0;
 
         /** Retrieve the payload from an individual event */
+        // Thread Safe
         template <typename EventT>
         const EventT& eventData (const million::events::Envelope& envelope) {
             if (EventT::EventID == envelope.type && sizeof(EventT) == envelope.size) {
