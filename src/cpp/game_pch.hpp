@@ -46,4 +46,13 @@ using namespace entt::literals;
 #include "utils/helpers.hpp"
 #include "memory/pools.hpp"
 
+// Convenience types
+namespace helpers {
+    template <typename ValueT>
+    using hashed_string_flat_map = phmap::flat_hash_map<entt::hashed_string::hash_type, ValueT, helpers::Identity>;
+
+    template <typename ValueT>
+    using hashed_string_node_map = phmap::node_hash_map<entt::hashed_string::hash_type, ValueT, helpers::Identity>;
+}
+
 #endif

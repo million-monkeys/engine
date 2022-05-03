@@ -30,7 +30,7 @@ namespace core {
     class Engine : public million::api::internal::ModuleManager, public million::api::EngineSetup, public million::api::EngineRuntime
     {
     public:
-        Engine();
+        Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes);
         virtual ~Engine();
 
         /////////////////////////////////////////
@@ -46,7 +46,7 @@ namespace core {
         entt::organizer& organizer (million::SystemStage) final;
         million::events::Publisher& publisher() final;
         million::events::Stream& commandStream() final;
-        million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single) final;
+        million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single, std::uint32_t=0) final;
 
         // Runtime API
         entt::entity findEntity (entt::hashed_string) const final;
@@ -177,9 +177,9 @@ namespace core {
         entt::registry m_background_registry;
         entt::registry m_prototype_registry;
 
-        phmap::flat_hash_map<entt::hashed_string::hash_type, million::api::definitions::LoaderFn, helpers::Identity> m_component_loaders;
-        phmap::flat_hash_map<entt::hashed_string::hash_type, NamedEntityInfo, helpers::Identity> m_named_entities;
-        phmap::flat_hash_map<entt::hashed_string::hash_type, entt::entity, helpers::Identity> m_prototype_entities;
+        helpers::hashed_string_flat_map<million::api::definitions::LoaderFn> m_component_loaders;
+        helpers::hashed_string_flat_map<NamedEntityInfo> m_named_entities;
+        helpers::hashed_string_flat_map<entt::entity> m_prototype_entities;
         world::SceneManager m_scene_manager;
         const std::string m_empty_string = {};
 
@@ -193,16 +193,17 @@ namespace core {
         SystemStatus m_system_status;                           // Track whether systems should be run or not
         entt::hashed_string::hash_type m_current_game_state;    // Track whether on menu, loading screen, etc
 
-        phmap::flat_hash_map<entt::hashed_string::hash_type, std::vector<million::GameHandler>, helpers::Identity> m_game_handlers;
-        phmap::flat_hash_map<entt::hashed_string::hash_type, std::vector<million::SceneHandler>, helpers::Identity> m_scene_handlers;
+        helpers::hashed_string_flat_map<std::vector<million::GameHandler>> m_game_handlers;
+        helpers::hashed_string_flat_map<std::vector<million::SceneHandler>> m_scene_handlers;
 
         // Timing
         DeltaTime m_current_time_delta = 0;
 
         // Event system
+        helpers::hashed_string_flat_map<std::uint32_t>& m_stream_sizes;
         std::vector<EventPool> m_event_pools;
         EventPoolBase::PoolType m_event_pool;
-        phmap::node_hash_map<entt::hashed_string::hash_type, StreamInfo, helpers::Identity> m_named_streams;
+        helpers::hashed_string_node_map<StreamInfo> m_named_streams;
         million::events::Stream& m_commands;
 
         // Module Hooks
@@ -219,7 +220,7 @@ namespace core {
         struct InputData* m_input_data;
 
         // Resource name bindings
-        phmap::flat_hash_map<entt::hashed_string::hash_type, million::resources::Handle, helpers::Identity> m_named_resources;
+        helpers::hashed_string_flat_map<million::resources::Handle> m_named_resources;
 
         friend class scheduler::Scheduler;
     };

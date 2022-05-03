@@ -73,8 +73,10 @@ int game_main (int argc, char** argv)
     // Initialise logger and filesystem
     auto logger = setupLogging();
     setupPhysFS(argv[0]);
+
     // Now that both the filesystem and logger are set up, load the game-specific settings
-    if (! core::readGameConfig()) {
+    helpers::hashed_string_flat_map<std::uint32_t> stream_sizes;
+    if (! core::readGameConfig(stream_sizes)) {
         spdlog::critical("Could not initialize scripting subsystem");
         return -1;
     }
@@ -92,7 +94,7 @@ int game_main (int argc, char** argv)
 
     bool clean_exit = true;
     try {
-        core::Engine engine;
+        core::Engine engine(stream_sizes);
         // core::ModuleManager moduleManager(engine);
         engine.init();
         // if (! moduleManager.load(logger, imgui_ctx)) {

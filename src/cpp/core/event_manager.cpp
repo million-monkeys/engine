@@ -60,27 +60,33 @@ million::events::Stream& core::Engine::commandStream()
 }
 
 template <typename StreamBaseType, typename NamedStream>
-million::events::Stream& createStreamInternal (entt::hashed_string stream_name, NamedStream* named_streams)
+million::events::Stream& createStreamInternal (entt::hashed_string stream_name, std::uint32_t buffer_size, NamedStream* named_streams)
 {
     const std::uint32_t event_stream_size = entt::monostate<"memory/events/stream-size"_hs>();
-    auto iterable = new core::StreamPool<StreamBaseType>(event_stream_size);
+    buffer_size = buffer_size > 0 ? buffer_size : event_stream_size;
+    spdlog::debug("[events] Creating stream '{}' with buffor size of {} bytes", stream_name.data(), buffer_size);
+    auto iterable = new core::StreamPool<StreamBaseType>(buffer_size);
     million::events::Stream* streamable = new core::EventStream<core::StreamPool<StreamBaseType>>(iterable);
     named_streams->emplace(stream_name, core::StreamInfo{iterable, streamable});
     return *streamable;
 }
 
-million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name, million::StreamWriters writers)
+million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size)
 {
+    auto it = m_stream_sizes.find(stream_name);
+    if (it != m_stream_sizes.end()) {
+        buffer_size = it->second;
+    }
     switch (writers) {
         case million::StreamWriters::Single:
         {
             // Single Writer stream can be iterated concurrently with writing, but writing must be serialized
-            return createStreamInternal<core::SingleWriterBase>(stream_name, &m_named_streams);
+            return createStreamInternal<core::SingleWriterBase>(stream_name, buffer_size, &m_named_streams);
         }
         case million::StreamWriters::Multi:
         {
             // Multi Writer stream can be both iterated concurrently with writing and written to concurrently from multiple writer threads, at the cost of updating an atomic integer per write
-            return createStreamInternal<core::MultiWriterBase>(stream_name, &m_named_streams);
+            return createStreamInternal<core::MultiWriterBase>(stream_name, buffer_size, &m_named_streams);
         }
     };
 }

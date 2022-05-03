@@ -192,7 +192,8 @@ bool core::readUserConfig (int argc, char* argv[])
     return true;
 }
 
-bool core::readGameConfig () {
+bool core::readGameConfig (helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes)
+{
     //******************************************************//
     //                                                      //
     // Settings loaded from game config                     //
@@ -280,8 +281,11 @@ bool core::readGameConfig () {
                 maybe_set<"memory/events/scripts-pool-size"_hs, std::uint32_t>(memory.at("events"), "scripts-pool-size");
                 maybe_set<"memory/events/stream-size"_hs, std::uint32_t>(memory.at("events"), "per-stream-pool-size");
             }
-        } else {
-            
+            if (memory.contains("streams")) {
+                for (const auto& [key, value] : memory.at("streams").as_table()) {
+                    stream_sizes[entt::hashed_string::value(key.c_str())] = value.as_integer();
+                }
+            }
         }
 
         //******************************************************//

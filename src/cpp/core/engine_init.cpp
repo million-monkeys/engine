@@ -30,8 +30,9 @@ int get_scripts_event_pool_size () {
     return pool_size;
 }
 
-core::Engine::Engine() :
+core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes) :
     m_scene_manager(*this),
+    m_stream_sizes(stream_sizes),
     m_event_pool(get_global_event_pool_size()),
     m_commands(createStream("commands"_hs, million::StreamWriters::Multi)),
     m_input_data(createInputData())

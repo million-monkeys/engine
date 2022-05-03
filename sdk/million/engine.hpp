@@ -130,7 +130,7 @@ namespace million::api {
         virtual million::events::Stream& commandStream() = 0;
 
         /** Create a new named event stream */
-        virtual million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single) = 0;
+        virtual million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single, std::uint32_t=0) = 0;
     };
 
     // Engine API to be used at runtime (ie in systems or handler each frame).
