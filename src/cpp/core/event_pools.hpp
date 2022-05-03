@@ -98,6 +98,13 @@ namespace core {
             return Base::iter(back());
         }
 
+        template <typename OtherPool>
+        void copyInto (OtherPool& destination) const
+        {
+            using Pool = typename Base::PoolType;
+            destination.template pushAll<Pool>(back());
+        }
+
         void swap () final
         {
             m_current = 1 - m_current;

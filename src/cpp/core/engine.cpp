@@ -4,7 +4,7 @@
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
 
-extern core::EventPool* g_scripts_event_pool;
+extern core::StreamPool<core::SingleWriterBase>* g_scripts_event_pool[2];
 
 void destroyInputData (struct core::InputData*);
 
@@ -197,8 +197,8 @@ void core::Engine::shutdown ()
     // Delete event pools
     m_event_pool.reset();
     m_event_pools.clear();
-    g_scripts_event_pool->reset();
-    delete g_scripts_event_pool;
+    delete g_scripts_event_pool[0];
+    delete g_scripts_event_pool[1];
     // Clear the runtime registry
     m_runtime_registry = {};
     // Clear background registry

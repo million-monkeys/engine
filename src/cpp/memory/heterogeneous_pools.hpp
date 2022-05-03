@@ -89,7 +89,9 @@ namespace heterogeneous {
                 auto other_next = other.fetch();
                 auto next = fetch_add(other_next);
                 if (next <= size) {
-                    std::memcpy(reinterpret_cast<void*>(base + next), reinterpret_cast<const void*>(other.base), other_next);
+                    if (other_next > 0) { // Only copy if there is data to copy
+                        std::memcpy(reinterpret_cast<void*>(base + next), reinterpret_cast<const void*>(other.base), other_next);
+                    }
                 } else {
                     OutOfSpacePolicy::template apply<void>("heterogeneous::StackPool");
                 }

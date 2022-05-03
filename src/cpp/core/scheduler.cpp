@@ -97,21 +97,18 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     Task scripts_game = m_coordinator.emplace([&engine](){
         EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
         // scripting::processEvents(engine);
-        // engine.pumpScriptEvents();
         (void)engine;
     }).name("scripts/game");
 
     Task scripts_scene = m_coordinator.emplace([&engine](){
         EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
         // scripting::processEvents(engine);
-        // engine.pumpScriptEvents();
         (void)engine;
     }).name("scripts/scene");
 
     Task scripts_behavior = m_coordinator.emplace([&engine](){
         EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
         scripting::processEvents(engine);
-        engine.pumpScriptEvents();
     }).name("scripts/behavior");
     
     Task scripts_ai = m_coordinator.emplace([](){

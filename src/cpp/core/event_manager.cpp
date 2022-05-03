@@ -9,7 +9,8 @@ std::mutex g_pool_mutex;
 
 thread_local core::EventPublisher<core::EventPool> g_event_publisher;
 
-core::EventPool* g_scripts_event_pool;
+core::EventPool* g_scripts_event_pool[2];
+int g_current_script_pool = 0;
 
 // Move events from the thread local pools into the global event pool
 void core::Engine::pumpEvents ()
@@ -25,14 +26,16 @@ void core::Engine::pumpEvents ()
     for (auto& [name, stream] : m_named_streams) {
         stream.iterable->swap();
     }
+    // TODO: Add debug telemetry to track the buffer sizes
 }
 
 void core::Engine::pumpScriptEvents ()
 {
     // Copy script event pool into global pool
-    g_scripts_event_pool->copyInto(m_event_pool);
+    g_scripts_event_pool[g_current_script_pool]->copyInto(m_event_pool);
+    g_current_script_pool = 1 - g_current_script_pool;
     // Clear the script event pool
-    g_scripts_event_pool->reset();
+    g_scripts_event_pool[g_current_script_pool]->reset();
 }
 
 const million::events::MessageIterable core::Engine::messages () const

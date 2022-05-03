@@ -10,6 +10,7 @@ namespace events::engine {
     };
 
     DECLARE_EVENT(ResourceLoaded, "resource/loaded") {
+        entt::hashed_string::hash_type type;
         entt::hashed_string::hash_type name;
         million::resources::Handle handle;
     };

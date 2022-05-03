@@ -25,6 +25,7 @@ struct WorkItem {
 const WorkItem WorkItem::POISON_PILL = WorkItem{nullptr, "", million::resources::Handle::invalid()};
 
 struct DoneItem {
+    entt::hashed_string::hash_type type;
     million::resources::Handle handle;
     entt::hashed_string::hash_type name;
 };
@@ -54,7 +55,7 @@ void loaderThread ()
             continue;
         }
         SPDLOG_DEBUG("[resources] Loaded {}/{:#x}", item.loader->name().data(), item.handle.handle);
-        g_done_queue.enqueue({item.handle, item.name});
+        g_done_queue.enqueue({item.loader->name(), item.handle, item.name});
 
     } while (true);
     spdlog::debug("[resources] Terminating resource loader thread");
@@ -67,8 +68,9 @@ void resources::init (core::Engine* engine)
 {
     g_stream = &engine->createStream("resources"_hs);
     resources::install<resources::types::ScriptedEvents>();
+    resources::install<resources::types::SceneScripts>();
+    resources::install<resources::types::SceneEntities>();
     g_loader_thread = std::thread(loaderThread);
-    
 }
 
 void resources::poll ()

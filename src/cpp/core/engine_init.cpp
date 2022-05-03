@@ -8,7 +8,7 @@
 #include <entt/entity/view.hpp>
 
 struct core::InputData* createInputData (); // Just to avoid having to include SDL.h from engine.hpp
-extern core::EventPool* g_scripts_event_pool;
+extern core::EventPool* g_scripts_event_pool[2];
 
 namespace init_core {
     void register_components (million::api::internal::ModuleManager*);
@@ -37,7 +37,8 @@ core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_size
     m_commands(createStream("commands"_hs, million::StreamWriters::Multi)),
     m_input_data(createInputData())
 {
-    g_scripts_event_pool = new core::EventPool(get_scripts_event_pool_size());
+    g_scripts_event_pool[0] = new core::EventPool(get_scripts_event_pool_size());
+    g_scripts_event_pool[1] = new core::EventPool(get_scripts_event_pool_size());
     // Make sure that the pool addresses are stable by reserving enough space that they never have to be relocated
     m_event_pools.reserve(std::thread::hardware_concurrency() * 2); // Twice number of cores = maximum assumed threads (Total number of threads = taskflow workers + async resource loader + render thread + async background worker thread; No other threads should be created that use event pools)
     // Manage Named entities

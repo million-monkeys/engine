@@ -44,69 +44,74 @@ void world::SceneManager::loadScene (million::Registry which, entt::hashed_strin
     if (it != m_scenes.end()) {        
         const auto scene_name = it->second;
         const auto filename = (m_path / scene_name).replace_extension("toml").string();
-        auto& scene_registry = m_engine.registry(which);
-        auto& prototype_registry = m_engine.registry(million::Registry::Prototype);
+        // auto& scene_registry = m_engine.registry(which);
+        // auto& prototype_registry = m_engine.registry(million::Registry::Prototype);
 
-        // Unload previous scene, if there is one
-        if (m_current_scene != entt::hashed_string{}) {
-            spdlog::info("[scenes] Unloading scene: {}", m_scenes[m_current_scene]);
-            // m_engine.callModuleHook<CM::UNLOAD_SCENE>();
-            // Destroy all entities that aren't marked as global
-            scene_registry.each([&scene_registry](auto entity){
-                if (! scene_registry.all_of<components::core::Global>(entity)) {
-                    scene_registry.destroy(entity);
-                }
-            });
-            // Destroy all prototype entities that aren't marked as global
-            prototype_registry.each([&prototype_registry](auto entity){
-                if (! prototype_registry.all_of<components::core::Global>(entity)) {
-                    prototype_registry.destroy(entity);
-                }
-            });
-        }
+        // // Unload previous scene, if there is one
+        // if (m_current_scene != entt::hashed_string{}) {
+        //     spdlog::info("[scenes] Unloading scene: {}", m_scenes[m_current_scene]);
+        //     // m_engine.callModuleHook<CM::UNLOAD_SCENE>();
+        //     // Destroy all entities that aren't marked as global
+        //     scene_registry.each([&scene_registry](auto entity){
+        //         if (! scene_registry.all_of<components::core::Global>(entity)) {
+        //             scene_registry.destroy(entity);
+        //         }
+        //     });
+        //     // Destroy all prototype entities that aren't marked as global
+        //     prototype_registry.each([&prototype_registry](auto entity){
+        //         if (! prototype_registry.all_of<components::core::Global>(entity)) {
+        //             prototype_registry.destroy(entity);
+        //         }
+        //     });
+        // }
         spdlog::info("[scenes] Loading scene: {}", scene_name);
         const auto config = parser::parse_toml(filename);
 
-        // Load prototype entities
-        if (config.contains("prototypes")) {
-            for (const auto& entity : config.at("prototypes").as_array()) {
-                if (entity.contains("_name_")) {
-                    const auto& name = entity.at("_name_").as_string().str;
-                    SPDLOG_TRACE("[scenes] Creating new prototype entity: {}", name);
-                    auto entity_id = prototype_registry.create();
-                    prototype_registry.emplace<core::EntityPrototypeID>(entity_id, entt::hashed_string::value(name.c_str()));
-                    for (const auto& [name_str, component]  : entity.as_table()) {
-                        SPDLOG_TRACE("[scenes] Adding component to prototype entity {}: {}", name, name_str);
-                        toml::value value = component;
-                        m_engine.loadComponent(prototype_registry, entt::hashed_string{name_str.c_str()}, entity_id, reinterpret_cast<const void*>(&value));
-                    }
-                } else {
-                    spdlog::warn("[scenes] Entity prototype without _name_!");
-                }
-            }
-        }
-
-        // Load entities to scene
         if (config.contains("entity")) {
-            for (const auto& entity : config.at("entity").as_array()) {
-                auto entity_id = scene_registry.create();
-                SPDLOG_TRACE("[scenes] Creating new entity: {}", entt::to_integral(entity_id));
-                for (const auto& [name_str, component]  : entity.as_table()) {
-                    SPDLOG_TRACE("[scenes] Adding component to entity {}: {}", entt::to_integral(entity_id), name_str);
-                    toml::value value = component;
-                    m_engine.loadComponent(scene_registry, entt::hashed_string{name_str.c_str()}, entity_id, reinterpret_cast<const void*>(&value));
-                }
-            }
+            auto handle = resources::load("scene-entities"_hs, filename, scene);
+            m_pending_scenes[scene].insert(handle.handle);
         }
 
         // Load scripts
         if (config.contains("script-file") && config.contains("event-map")) {
-            [[maybe_unused]] auto handle = resources::load("scripted-events"_hs, filename, "scene-script"_hs);
+            auto handle = resources::load("scene-script"_hs, filename, scene);
+            m_pending_scenes[scene].insert(handle.handle);
         }
 
         m_current_scene = scene;
         // m_engine.callModuleHook<CM::LOAD_SCENE>(scene);
     } else {
         spdlog::error("[scenes] Could not load scene because it does not exist: {}", scene);
+    }
+}
+
+void world::SceneManager::update ()
+{
+    if (! m_pending_scenes.empty()) {
+        auto iter = m_engine.events("resources"_hs);
+        if (iter.size() > 0) {
+            EASY_BLOCK("SceneManager handling resource events", profiler::colors::Amber200);
+            for (const auto& ev : iter) {   
+                switch (ev.type) {
+                    case "loaded"_hs:
+                    {
+                        auto& loaded = m_engine.eventData<events::engine::ResourceLoaded>(ev);
+                        if (loaded.type == "scene-entities"_hs || loaded.type == "scene-script"_hs) {
+                            auto it = m_pending_scenes.find(loaded.name);
+                            if (it != m_pending_scenes.end()) {
+                                it->second.erase(loaded.handle.handle);
+                                if (it->second.empty()) {
+                                    // Scene fully loaded
+                                    spdlog::error("Scene fully loaded (name:{}, handle:{}", loaded.name, loaded.handle.id());
+                                }
+                            }
+                        }
+                        break;
+                    }
+                    default:
+                        break;
+                };
+            }
+        }
     }
 }

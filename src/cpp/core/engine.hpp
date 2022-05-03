@@ -80,6 +80,9 @@ namespace core {
         // Register module hooks
         void registerModule (std::uint32_t, million::api::Module*);
 
+        // Make previously emitted script events visible to consumers
+        void pumpScriptEvents ();
+
         // Call all modules that are added as a specific engine hook
         template <million::api::Module::CallbackMasks Hook, typename... T> void callModuleHook (T... args) {
             if constexpr (Hook == CM::BEFORE_FRAME) {
@@ -147,8 +150,6 @@ namespace core {
         // Process input events
         void handleInput ();
 
-        // Make previously emitted script events visible to consumers
-        void pumpScriptEvents ();
         // Make previously emitted events visible to consumers
         void pumpEvents ();
 

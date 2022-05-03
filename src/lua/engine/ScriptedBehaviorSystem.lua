@@ -86,6 +86,8 @@ function handle_messages (message_buffer, buffer_size)
     repeat
         count = count + 1
         prev_buffer_size = buffer_size
+        print("ITERATION", count)
         buffer_size = process_internal_messages(scripted_behavior, prev_buffer_size)
     until buffer_size == prev_buffer_size or count >= MAX_ITERATIONS
+    print("END")
 end

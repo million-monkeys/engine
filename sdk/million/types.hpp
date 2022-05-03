@@ -45,7 +45,8 @@ namespace million {
     namespace resources {
 
         struct Handle {
-            std::uint32_t handle;
+            using Type = std::uint32_t;
+            Type handle;
             // 12 bits = type, 20 bits = id
             const std::uint32_t type () const { return handle >> 20; }
             const std::uint32_t id () const { return handle & 0xfffff; }
