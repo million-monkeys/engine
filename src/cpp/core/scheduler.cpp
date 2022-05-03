@@ -17,8 +17,20 @@ namespace physics {
     }
 }
 
+class Task {
+public:
+    Task (tf::Task t) : task(t) {}
+    ~Task() {}
+
+    template <typename... Args> void after (Args... args) {task.succeed((args.task)...);}
+    template <typename... Args> void before (Args... args) {task.precede((args.task)...);}
+
+    tf::Task task;
+};
+
 void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
 {
+    SPDLOG_DEBUG("Generating task graph from systems");
     // Setup Systems by creating a Taskflow graph for each stage
     auto& registry = engine.registry(million::Registry::Runtime);
     phmap::flat_hash_map<million::SystemStage, tf::Taskflow*> taskflows;
@@ -43,9 +55,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
                         callback(userdata, registry);
                     }).name(node.name())
                 });
-                SPDLOG_DEBUG("System setup: {}", node.name());
             }
-            SPDLOG_DEBUG("Setting up task relationships");
             // Second pass, set parent-child relationship of tasks
             for (auto&& [node, task] : tasks) {
                 for (auto index : node.children()) {
@@ -53,10 +63,8 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
                 }
             }
             it->second.clear();
-            SPDLOG_DEBUG("Tasks setup");
         }
     }
-    SPDLOG_DEBUG("Clearing organizers");
     // Any new additions will never be added to the Taskflow graph, so no point in keeping the organizers around
     m_organizers.clear();
 
@@ -76,48 +84,75 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
      * // Copy current frames events for processing next frame
      * [*] = modules of subtasks
      **/
+    SPDLOG_DEBUG("Creating task graph");
 
-    tf::Task scripts_behavior = m_coordinator.emplace([&engine](){
+    Task events_game = m_coordinator.emplace([&engine](){
+        engine.executeHandlers(core::HandlerType::Game);
+    }).name("events/game");
+
+    Task events_scene = m_coordinator.emplace([&engine](){
+        engine.executeHandlers(core::HandlerType::Scene);
+    }).name("events/scene");
+
+    Task scripts_game = m_coordinator.emplace([&engine](){
+        EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
+        // scripting::processEvents(engine);
+        // engine.pumpScriptEvents();
+        (void)engine;
+    }).name("scripts/game");
+
+    Task scripts_scene = m_coordinator.emplace([&engine](){
+        EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+        // scripting::processEvents(engine);
+        // engine.pumpScriptEvents();
+        (void)engine;
+    }).name("scripts/scene");
+
+    Task scripts_behavior = m_coordinator.emplace([&engine](){
         EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
         scripting::processEvents(engine);
         engine.pumpScriptEvents();
     }).name("scripts/behavior");
     
-    tf::Task scripts_ai = m_coordinator.emplace([](){
+    Task scripts_ai = m_coordinator.emplace([](){
         EASY_BLOCK("Scripts/AI", profiler::colors::Purple100);
         // execute lua scripts here
     }).name("scripts/ai");
 
-    tf::Task physics_prepare = m_coordinator.emplace([&registry, this](){
+    Task physics_prepare = m_coordinator.emplace([&registry, this](){
         EASY_BLOCK("Physics/prepare", profiler::colors::Purple100);
         physics::prepare(m_physics_context, registry);
     }).name("phycis/prepare");
 
-    tf::Task physics_simulate = m_coordinator.emplace([this](){
+    Task physics_simulate = m_coordinator.emplace([this](){
         EASY_BLOCK("Physics/simulate", profiler::colors::Purple200);
         physics::simulate(m_physics_context);
     }).name("physics/simulate");
 
-    tf::Task pump_events = m_coordinator.emplace([&engine](){
+    Task pump_events = m_coordinator.emplace([&engine](){
         // Copy current frames events for processing next frame
         engine.pumpEvents();
     }).name("events/pump");
 
-    tf::Task before_update = m_coordinator.emplace([&engine](){
+    Task before_update = m_coordinator.emplace([&engine](){
         // call before_update hooks here
         engine.callModuleHook<core::CM::BEFORE_UPDATE>();
     }).name("hooks/before-update");
 
-    pump_events.precede(before_update);
+    // Game and scene event handlers
+    scripts_scene.after(events_game, scripts_game);
+    events_scene.after(events_game, scripts_game);
+    scripts_behavior.after(scripts_scene, events_scene);
+
+    before_update.after(pump_events);
     
     // Add engine-internal tasks to graph and coordinate flow into one graph
     if (tf::Taskflow* game_logic_flow = helpers::find_or(taskflows, million::SystemStage::GameLogic, nullptr)) {
-        SPDLOG_DEBUG("Adding gamelogic to taskflow");
         game_logic_flow->name("Game Logic");
-        tf::Task game_logic = m_coordinator.composed_of(*game_logic_flow).name("systems/game-logic");
+        Task game_logic = m_coordinator.composed_of(*game_logic_flow).name("systems/game-logic");
 
-        scripts_behavior.precede(game_logic);
-        game_logic.precede(pump_events);
+        game_logic.after(scripts_behavior);
+        pump_events.after(game_logic);
 
 // #ifdef BUILD_WITH_EASY_PROFILER
 //         tasks["profiler/before-game-logic"] = m_coordinator.emplace([](){
@@ -136,7 +171,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     } else {
 //         connect("BEFORE", "AFTER");
             SPDLOG_DEBUG("No gamelogic to add");
-            scripts_behavior.precede(pump_events);
+            scripts_behavior.after(pump_events);
     }
 
 //     if (tf::Taskflow* updater_flow = helpers::find_or(taskflows, million::SystemStage::Update, nullptr)) {
@@ -206,16 +241,13 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
 //     } else {
 //         connect("BEFORE", "AFTER");
 //     }
-
-
-
-// #ifdef DEBUG_BUILD
-//     const bool dev_mode = entt::monostate<"game/dev-mode"_hs>();
-//     if (dev_mode) {
-        std::ofstream file("task_graph.dot", std::ios_base::out);
+#ifdef DEBUG_BUILD
+    const std::string& task_graph = entt::monostate<"dev/export-task-graph"_hs>();
+    if (! task_graph.empty()) {
+        std::ofstream file(task_graph, std::ios_base::out);
         m_coordinator.dump(file);
-//     }
-// #endif
+    }
+#endif
 }
 
 void scheduler::Scheduler::execute ()

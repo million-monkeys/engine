@@ -23,6 +23,7 @@ bool core::readUserConfig (int argc, char* argv[])
 #ifdef DEBUG_BUILD
         ("d,debug", "Enable debug rendering")
         ("p,profiling", "Enable profiling")
+        ("export-tasks", "Export task graph", cxxopts::value<std::string>())
 #endif
         ("l,loglevel", "Log level", cxxopts::value<std::string>())
         ("x,overridefiles", "Set override path(s) to game files", cxxopts::value<std::vector<std::string>>())
@@ -44,6 +45,14 @@ bool core::readUserConfig (int argc, char* argv[])
         const auto config = parser::parse_toml(config_file, parser::FileLocation::FileSystem);
 
          std::filesystem::path base_path = std::filesystem::path{config_file}.parent_path();
+
+#ifdef DEBUG_BUILD
+         if (cli["export-tasks"].count() != 0) {
+             entt::monostate<"dev/export-task-graph"_hs>{} = cli["export-tasks"].as<std::string>();
+         } else {
+             entt::monostate<"dev/export-task-graph"_hs>{} = std::string{};
+         }
+#endif
 
         //******************************************************//
         // TELEMETRY
@@ -203,8 +212,19 @@ bool core::readGameConfig () {
         }
         const auto& game = config.at("game");
         entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
-        entt::monostate<"game/start-scene"_hs>{} = toml::find<std::string>(game, "start-scene");
+        entt::monostate<"game/initial-state"_hs>{} = toml::find<std::string>(game, "initial-state");
         entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
+
+        //******************************************************//
+        // SCENES
+        //******************************************************//
+        if (! config.contains("scenes")) {
+            spdlog::error("Game config file did not contain a [scenes] section.");
+            return false;
+        }
+        const auto& scenes = config.at("scenes");
+        entt::monostate<"scenes/path"_hs>{} = toml::find<std::string>(scenes, "path");
+        entt::monostate<"scenes/initial"_hs>{} = toml::find<std::string>(scenes, "initial");
 
         //******************************************************//
         // GRAPHICS

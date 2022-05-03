@@ -4,6 +4,8 @@
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
 
+extern core::EventPool* g_scripts_event_pool;
+
 void destroyInputData (struct core::InputData*);
 
 core::Engine::~Engine ()
@@ -37,6 +39,12 @@ million::resources::Handle core::Engine::loadResource (entt::hashed_string type,
     return handle;
 }
 
+void core::Engine::setGameState (entt::hashed_string new_state)
+{
+    spdlog::info("Setting game state to: {}", new_state.data());
+    m_current_game_state = new_state;
+}
+
 bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
 {
     EASY_FUNCTION(profiler::colors::Blue100);
@@ -52,7 +60,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
         EASY_BLOCK("Handling System Events", profiler::colors::Amber100);
         // Process previous frames events, looking for ones the core engine cares about
         // Yes, its a bit wasteful to loop them all like this, but they should be hot in cache so ¯\_(ツ)_/¯
-        for (const auto& ev : events()) {
+        for (const auto& ev : events("commands"_hs)) {
             EASY_BLOCK("Handling event", profiler::colors::Amber200);
             switch (ev.type) {
                 case "engine/exit"_hs:
@@ -93,11 +101,14 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
         for (const auto& ev : events("resources"_hs)) {
             EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
             switch (ev.type) {
-                case "resource/loaded"_hs:
+                case "loaded"_hs:
                 {
                     auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
-                    if (loaded.name == "script2"_hs) {
-                        scripting::load("test.lua");
+                    // if (loaded.name == "script2"_hs) {
+                    //     scripting::load("test.lua");
+                    // }
+                    if (loaded.name == "scene-script"_hs) {
+                        spdlog::warn("Scene scripts loaded");
                     }
                     break;
                 }
@@ -147,4 +158,51 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
 
     // Still running, return true.
     return true;
+}
+
+void core::Engine::executeHandlers (HandlerType type)
+{
+    auto& message_publisher = publisher();
+    switch (type) {
+    case HandlerType::Game:
+        {
+            EASY_BLOCK("Events/game", profiler::colors::Purple100);
+            for (const auto& handler : m_game_handlers[m_current_game_state]) {
+                handler(events("core"_hs), message_publisher);
+            }
+            break;
+        }
+    case HandlerType::Scene:
+        {
+            EASY_BLOCK("Events/scene", profiler::colors::Purple100);
+            for (const auto& handler : m_scene_handlers[m_scene_manager.current()]) {
+                handler(events("core"_hs), message_publisher);
+            }
+            break;
+        }
+    };
+}
+
+void core::Engine::shutdown ()
+{
+    // // Unload the current scene
+    // callModuleHook<CM::UNLOAD_SCENE>();
+    // // Shut down graphics thread
+    // graphics::term(m_renderer);
+    
+    // Uninstall resources managers
+    resources::term();
+    // Halt the scripting system
+    scripting::term();    
+    // Delete event pools
+    m_event_pool.reset();
+    m_event_pools.clear();
+    g_scripts_event_pool->reset();
+    delete g_scripts_event_pool;
+    // Clear the runtime registry
+    m_runtime_registry = {};
+    // Clear background registry
+    m_background_registry = {};
+    // Clear the prototype registry
+    m_prototype_registry = {};
 }

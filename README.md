@@ -82,6 +82,8 @@ The development setup of running entangled to keep markdown and source files in 
 * [tweeny](https://github.com/mobius3/tweeny) - Inbetweening library (MIT License)
 * [vecmath](https://github.com/GaijinEntertainment/vecmath) - SIMD vector math HAL (BSD 3-Clause License)
 
+ * Considering using https://github.com/foonathan/memory
+
 Optional:
 
 * [tup](http://gittup.org/tup/) - Tup is a file-based build system for Linux, OSX, and Windows ([Dual License](http://gittup.org/tup/license.html) GPL-v2 or Commercial) - Build from source or generate/update shell build script

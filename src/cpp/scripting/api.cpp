@@ -5,6 +5,8 @@
 // Script functions need access to an engine instance
 core::Engine* g_engine = nullptr;
 
+extern core::EventPool* g_scripts_event_pool;
+
 void init_scripting_api (core::Engine* engine)
 {
     g_engine = engine;
@@ -122,6 +124,23 @@ extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uin
     }
 }
 
+extern "C" void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name)
+{
+    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
+    if (selected_registry.has_value()) {
+        entt::registry& registry = g_engine->registry(selected_registry.value());
+        auto& storage = registry.storage<void>(entt::hashed_string{tag_name});
+        entt::entity e = static_cast<entt::entity>(entity);
+        if (!storage.contains(e)) {
+            spdlog::warn("Adding tag {} to {}", tag_name, entity);
+            storage.emplace(e);
+        }
+    } else {
+        // Invalid registry
+        spdlog::error("[script] component_add_to_entity called with invalid registry: {}", which_registry);
+    }
+}
+
 extern "C" void component_remove_from_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
@@ -151,12 +170,12 @@ extern "C" void* allocate_event (const char* event_name, std::uint32_t target_en
 {
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     entt::entity target = static_cast<entt::entity>(target_entity);
-    return g_engine->m_scripts_event_pool.push(event_type, target, size);
+    return g_scripts_event_pool->push(event_type, target, size);
 }
 
-extern "C" std::uint32_t get_stream (const char** buffer)
+extern "C" std::uint32_t get_messages (const char** buffer)
 {
-    auto stream = g_engine->m_scripts_event_pool.iter();
+    auto stream = g_scripts_event_pool->iter();
     auto& first = *stream.begin();
     *buffer = reinterpret_cast<const char*>(&first);
     return stream.size();

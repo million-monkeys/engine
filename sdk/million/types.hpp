@@ -59,9 +59,15 @@ namespace million {
 
     namespace events {
         /// Internal type: not expected to be used directly.
-        struct Envelope {
+        struct MessageEnvelope { // Message envelope is targetted at a specific entity
             entt::hashed_string::hash_type type;
             entt::entity target;
+            std::uint32_t size;
+        };
+
+        /// Internal type: not expected to be used directly.
+        struct EventEnvelope { // Event envelope is not targetted
+            entt::hashed_string::hash_type type;
             std::uint32_t size;
         };
 
@@ -70,18 +76,30 @@ namespace million {
         {
         public:
             virtual ~Stream () {}
-            template <typename Event> Event& post (entt::entity source) { return *(new (push(Event::EventID, source, sizeof(Event))) Event{}); }
-            template <typename Event, typename Function> void post (entt::entity source, Function fn) { fn(emit<Event>(source)); }
-            template <typename Event> Event& emit () { return post<Event>(entt::null); }
-            template <typename Event, typename Function> void emit (Function fn) { fn(post<Event>(entt::null)); }
+            template <typename Event> Event& emit () { return *(new (push(Event::ID, sizeof(Event))) Event{}); }    
+            template <typename Event, typename Function> void emit (Function fn) { fn(emit<Event>()); }
+            void emit (entt::hashed_string event_id) { push(event_id, 0); }
+        protected:
+            virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t) = 0;
+        };
+
+        /// Internal type: not expected to be used directly.
+        class Publisher
+        {
+        public:
+            virtual ~Publisher () {}
+            template <typename Message> Message& post (entt::entity target) { return *(new (push(Message::ID, target, sizeof(Message))) Message{}); }
+            template <typename Message, typename Function> void post (entt::entity target, Function fn) { fn(post<Message>(target)); }
         protected:
             virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, std::uint32_t) = 0;
         };
 
+        /// Internal type: not expected to be used directly.
+        template <typename EnvelopeType>
         struct Iterator {
             using iterator_category = std::forward_iterator_tag;
             using difference_type   = std::ptrdiff_t;
-            using value_type        = Envelope;
+            using value_type        = EnvelopeType;
             using pointer           = const value_type*;
             using reference         = const value_type&;
 
@@ -115,14 +133,18 @@ namespace million {
             const std::byte* m_ptr;
         };
         
+        template <typename EnvelopeType>
         struct Iterable {
             Iterable (std::byte* b, std::byte* e) : m_begin_ptr(b), m_end_ptr(e) {}
-            Iterator begin() const { return Iterator(m_begin_ptr);}
-            Iterator end() const { return Iterator(m_end_ptr);}
+            Iterator<EnvelopeType> begin() const { return Iterator<EnvelopeType>(m_begin_ptr);}
+            Iterator<EnvelopeType> end() const { return Iterator<EnvelopeType>(m_end_ptr);}
             std::size_t size () const { return m_end_ptr - m_begin_ptr; }
         private:
             const std::byte* m_begin_ptr;
             const std::byte* m_end_ptr;
         };
+
+        using MessageIterable = Iterable<MessageEnvelope>;
+        using EventIterable = Iterable<EventEnvelope>;
     }
 }

@@ -139,16 +139,17 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
     return true;
 }
 
-void scripting::processEvents (million::api::Engine& engine)
+void scripting::processEvents (million::api::EngineRuntime& engine)
 {
-    auto& events = engine.events();
+    auto& messages = engine.messages();
 
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
-    lua_getglobal(g_lua_state, "handle_events");
-    lua_pushlightuserdata(g_lua_state, const_cast<void*>(reinterpret_cast<const void*>(&*events.begin()))); // We promise not to modify it...
-    lua_pushnumber(g_lua_state, events.size());
+    lua_getglobal(g_lua_state, "handle_messages");
+    const auto& first = *messages.begin();
+    lua_pushlightuserdata(g_lua_state, const_cast<void*>(reinterpret_cast<const void*>(&first))); // We promise not to modify it...
+    lua_pushnumber(g_lua_state, messages.size());
     int ret = lua_pcall(g_lua_state, 2, 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));

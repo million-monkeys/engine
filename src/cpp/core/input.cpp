@@ -19,6 +19,17 @@ void destroyInputData (struct core::InputData* data)
     delete data;
 }
 
+
+
+// void core::Engine::loadInputMap (const phmap::flat_hash_map<std::pair<InputType, InputKey>, )
+// {
+
+// }
+
+struct ActionEvent {
+
+};
+
 void core::Engine::handleInput ()
 {
     EASY_FUNCTION(profiler::colors::LightBlue100);

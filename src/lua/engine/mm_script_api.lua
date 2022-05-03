@@ -8,6 +8,7 @@ ffi.cdef [[
     uint32_t entity_lookup_by_name (uint32_t which_registry, const char* name);
     void* component_get_for_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void* component_add_to_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
+    void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name);
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
     void* allocate_event (const char* event_name, uint32_t target, uint8_t size, bool emit_later);
@@ -55,6 +56,12 @@ local function get_component(self, component_name)
     end
 end
 
+local function get_component_and_cache (self, component_name)
+    local component = get_component(self, component_name)
+    self[component_name] = component -- Cache component for quick multiple lookups
+    return component
+end
+
 local function add_component(self, component_name)
     local ptr = C.component_add_to_entity(self._registry, self.id, component_name)
     if ptr ~= 0 then
@@ -62,6 +69,10 @@ local function add_component(self, component_name)
     else
         return nil
     end
+end
+
+local function add_tag_component(self, tag_name)
+    C.component_tag_entity(self._registry, self.id, tag_name)
 end
 
 local function remove_component(self, component_name)
@@ -79,10 +90,11 @@ local function get_entity_by_id(self, entity_id)
             id = entity_id,
             get = get_component,
             add = add_component,
+            tag = add_tag_component,
             remove = remove_component,
             destroy = destroy_entity
         }
-        return setmetatable(entity, {__index = get_component})
+        return setmetatable(entity, {__index = get_component_and_cache})
     end
 end
 
@@ -100,9 +112,7 @@ local function create_entity(self, prototype)
     else
         id = C.entity_create(self._registry)
     end
-    if id ~= NULL_ENTITY then
-        return get_entity_by_id(self, id)
-    end
+    return get_entity_by_id(self, id)
 end
 
 local function emit_event(event_name, target, later)
@@ -115,6 +125,15 @@ local function emit_event(event_name, target, later)
     else
         C.output_log(LOG_LEVELS.WARNING, 'Event "'..event_name..'" not found')
     end
+end
+
+local function get_signal (signal_id)
+    return {
+        id=signal_id,
+        send=function (self, event_name, event_data)
+            log_output(LOG_LEVELS.DEBUG, "Sending %s to signal %s", event_name, self.id)
+        end
+    }
 end
 
 return {
@@ -139,6 +158,7 @@ return {
         end
     },
     ref = C.get_ref,
+    signal = get_signal,
     emit = function (name, target) return emit_event(name, target, false) end,
     emit_later = function (name, target) return emit_event(name, target, true) end,
     log = {

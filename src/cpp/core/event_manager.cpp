@@ -7,7 +7,9 @@
 
 std::mutex g_pool_mutex;
 
-thread_local core::EventStream<core::EventPool> g_event_stream;
+thread_local core::EventPublisher<core::EventPool> g_event_publisher;
+
+core::EventPool* g_scripts_event_pool;
 
 // Move events from the thread local pools into the global event pool
 void core::Engine::pumpEvents ()
@@ -21,50 +23,73 @@ void core::Engine::pumpEvents ()
     }
     // Swap all event streams internal pools
     for (auto& [name, stream] : m_named_streams) {
-        stream.pool->swap();
+        stream.iterable->swap();
     }
 }
 
 void core::Engine::pumpScriptEvents ()
 {
     // Copy script event pool into global pool
-    m_scripts_event_pool.copyInto(m_event_pool);
+    g_scripts_event_pool->copyInto(m_event_pool);
     // Clear the script event pool
-    m_scripts_event_pool.reset();
+    g_scripts_event_pool->reset();
 }
 
-const million::events::Iterable core::Engine::events () const
+const million::events::MessageIterable core::Engine::messages () const
 {
     return EventPoolBase::iter(m_event_pool);
 }
 
-million::events::Stream& core::Engine::stream()
+million::events::Publisher& core::Engine::publisher()
 {
-    if (! g_event_stream.valid()) {
+    if (! g_event_publisher.valid()) {
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
         const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
 
         // Only one thread can access event pools list at once
         std::lock_guard<std::mutex> guard(g_pool_mutex);
         m_event_pools.emplace_back(event_pool_size); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
-        g_event_stream = core::EventStream<core::EventPool>(m_event_pools.back());
+        g_event_publisher = core::EventPublisher<core::EventPool>(&m_event_pools.back());
     }
-    return g_event_stream;
+    return g_event_publisher;
 }
 
-million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name)
+million::events::Stream& core::Engine::commandStream()
+{
+    return m_commands;
+}
+
+template <typename StreamBaseType, typename NamedStream>
+million::events::Stream& createStreamInternal (entt::hashed_string stream_name, NamedStream* named_streams)
 {
     const std::uint32_t event_stream_size = entt::monostate<"memory/events/stream-size"_hs>();
-    auto pool = new core::StreamPool(event_stream_size);
-    auto& inserted = *m_named_streams.emplace(stream_name, StreamInfo{pool, {*pool}}).first;
-    return inserted.second.stream;
+    auto iterable = new core::StreamPool<StreamBaseType>(event_stream_size);
+    million::events::Stream* streamable = new core::EventStream<core::StreamPool<StreamBaseType>>(iterable);
+    named_streams->emplace(stream_name, core::StreamInfo{iterable, streamable});
+    return *streamable;
 }
 
-const million::events::Iterable core::Engine::events (entt::hashed_string stream_name) const
+million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name, million::StreamWriters writers)
+{
+    switch (writers) {
+        case million::StreamWriters::Single:
+        {
+            // Single Writer stream can be iterated concurrently with writing, but writing must be serialized
+            return createStreamInternal<core::SingleWriterBase>(stream_name, &m_named_streams);
+        }
+        case million::StreamWriters::Multi:
+        {
+            // Multi Writer stream can be both iterated concurrently with writing and written to concurrently from multiple writer threads, at the cost of updating an atomic integer per write
+            return createStreamInternal<core::MultiWriterBase>(stream_name, &m_named_streams);
+        }
+    };
+}
+
+const million::events::EventIterable core::Engine::events (entt::hashed_string stream_name) const
 {
     auto it = m_named_streams.find(stream_name);
     if (it != m_named_streams.end()) {
-        return it->second.pool->iter();
+        return it->second.iterable->iter();
     } else {
         spdlog::error("[events] Named stream does not exist: {}", stream_name.data());
         return {nullptr, nullptr};

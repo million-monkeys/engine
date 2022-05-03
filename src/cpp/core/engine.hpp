@@ -13,8 +13,8 @@ namespace core {
     using CM = million::api::Module::CallbackMasks;
 
     struct StreamInfo {
-        StreamPool* pool;
-        EventStream<StreamPool> stream;
+        IterableStream* iterable;
+        million::events::Stream* streamable;
     };
 
     // Component used by the prototypes registry to identify the prototype entity
@@ -22,26 +22,44 @@ namespace core {
         entt::hashed_string::hash_type id;
     };
 
-    class Engine : public million::api::Engine
+    enum class HandlerType {
+        Game,
+        Scene,
+    };
+
+    class Engine : public million::api::internal::ModuleManager, public million::api::EngineSetup, public million::api::EngineRuntime
     {
     public:
         Engine();
         virtual ~Engine();
 
+        /////////////////////////////////////////
         // Public API
+        /////////////////////////////////////////
+
+        // Setup API
+        void registerGameHandler (entt::hashed_string state, million::GameHandler handler) final;
+        void registerSceneHandler (entt::hashed_string scene, million::SceneHandler handler) final;
         void readBinaryFile (const std::string& filename, std::string& buffer) const final;
+        million::resources::Handle loadResource (entt::hashed_string, const std::string&, entt::hashed_string::hash_type) final;
         entt::registry& registry (million::Registry) final;
         entt::organizer& organizer (million::SystemStage) final;
+        million::events::Publisher& publisher() final;
+        million::events::Stream& commandStream() final;
+        million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single) final;
+
+        // Runtime API
         entt::entity findEntity (entt::hashed_string) const final;
         const std::string& findEntityName (const components::core::Named&) const final;
         entt::entity loadEntity (million::Registry, entt::hashed_string) final;
         void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) final;
         million::resources::Handle findResource (entt::hashed_string::hash_type) final;
-        million::resources::Handle loadResource (entt::hashed_string, const std::string&, entt::hashed_string::hash_type) final;
-        million::events::Stream& stream() final;
-        million::events::Stream& createStream (entt::hashed_string) final;
-        const million::events::Iterable events () const final;
-        const million::events::Iterable events (entt::hashed_string) const final;
+        const million::events::MessageIterable messages () const final;
+        const million::events::EventIterable events (entt::hashed_string) const final;
+
+        /////////////////////////////////////////
+        // Internal API
+        /////////////////////////////////////////
 
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);
@@ -55,7 +73,9 @@ namespace core {
         void setupGame ();
 
         // Execute the Taskflow graph of tasks, returns true if still running
-        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);        
+        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);
+
+        void executeHandlers (HandlerType type);
 
         // Register module hooks
         void registerModule (std::uint32_t, million::api::Module*);
@@ -105,14 +125,6 @@ namespace core {
             }
         }
 
-        // std::byte* allocateEventInternal (entt::hashed_string id, entt::entity target, std::uint8_t size)
-        // {
-        //     auto envelope = m_event_pool.emplace<million::events::Envelope>(T::EventID, target, size);
-        //     return m_event_pool.unaligned_allocate(size);
-        // }
-
-        EventPool m_scripts_event_pool;
-
     private:
         void* allocModule(std::size_t) final;
         void deallocModule(void *) final;
@@ -139,6 +151,8 @@ namespace core {
         void pumpScriptEvents ();
         // Make previously emitted events visible to consumers
         void pumpEvents ();
+
+        void setGameState (entt::hashed_string new_state);
 
         // Emit an event directly to the global pool (warning: unsynchronised)
         template <typename T>
@@ -176,7 +190,11 @@ namespace core {
             Running,
             Stopped,
         };
-        SystemStatus m_system_status;
+        SystemStatus m_system_status;                           // Track whether systems should be run or not
+        entt::hashed_string::hash_type m_current_game_state;    // Track whether on menu, loading screen, etc
+
+        phmap::flat_hash_map<entt::hashed_string::hash_type, std::vector<million::GameHandler>, helpers::Identity> m_game_handlers;
+        phmap::flat_hash_map<entt::hashed_string::hash_type, std::vector<million::SceneHandler>, helpers::Identity> m_scene_handlers;
 
         // Timing
         DeltaTime m_current_time_delta = 0;
@@ -184,7 +202,8 @@ namespace core {
         // Event system
         std::vector<EventPool> m_event_pools;
         EventPoolBase::PoolType m_event_pool;
-        phmap::flat_hash_map<entt::hashed_string::hash_type, StreamInfo, helpers::Identity> m_named_streams;
+        phmap::node_hash_map<entt::hashed_string::hash_type, StreamInfo, helpers::Identity> m_named_streams;
+        million::events::Stream& m_commands;
 
         // Module Hooks
         std::vector<million::api::Module*> m_hooks_beforeFrame;

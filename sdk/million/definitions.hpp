@@ -6,7 +6,7 @@
 #include <entt/core/any.hpp>
 
 namespace million::api {
-    class Engine;
+    class EngineSetup;
 
     namespace definitions {
         struct Attribute {
@@ -23,7 +23,7 @@ namespace million::api {
             Add,
             Remove,
         };
-        using LoaderFn = void(*)(Engine* engine, entt::registry& registry, const void* table, entt::entity entity);
+        using LoaderFn = void(*)(EngineSetup* engine, entt::registry& registry, const void* table, entt::entity entity);
         using CheckerFn = bool(*)(entt::registry& registry, entt::entity entity);
         using GetterFn = char*(*)(entt::registry& registry, entt::entity entity);
         using ManageFn = void(*)(entt::registry& registry, entt::entity entity, ManageOperation);

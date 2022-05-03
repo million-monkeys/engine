@@ -2,40 +2,42 @@
 local bit = require("bit")
 local ffi = require("ffi")
 ffi.cdef[[
-struct EventEnvelope {
+struct MessageEnvelope {
     uint32_t type;
     uint32_t target;
     uint32_t size;
 };
 struct BehaviorIterator* setup_scripted_behavior_iterator ();
 uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
-uint32_t get_stream (const char** buffer);
+uint32_t get_messages (const char** buffer);
 ]]
 local C = ffi.C
 local core = require('mm_core')
 local registry = require('mm_script_api').registry
 local mm = require('mm_script_api')
 
-local function make_event_obj (ptr)
-    local envelope = ffi.cast("struct EventEnvelope*", ptr)
+local MAX_ITERATIONS = 15
+
+local function make_message_obj (ptr)
+    local envelope = ffi.cast("struct MessageEnvelope*", ptr)
     local ctype = core.event_types_by_id[envelope.type]
     if ctype then
-        local event_obj = ffi.cast(ctype, ptr + ffi.sizeof("struct EventEnvelope"))
+        local event_obj = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
         return {
             type=envelope.type,
             target=envelope.target,
-            size=envelope.size + ffi.sizeof("struct EventEnvelope"),
+            size=envelope.size + ffi.sizeof("struct MessageEnvelope"),
             event=event_obj
         }
     else -- Events that were not registered with the script system should be skipped
         return {
-            size=envelope.size + ffi.sizeof("struct EventEnvelope"),
+            size=envelope.size + ffi.sizeof("struct MessageEnvelope"),
             event=nil,
         }
     end
 end
 
-local function process_events (scripted_behavior, events_buffer, buffer_size)
+local function process_messages (scripted_behavior, messages_buffer, buffer_size)
     -- Reset iterator
     local iterator = C.setup_scripted_behavior_iterator()
     while true do
@@ -49,7 +51,7 @@ local function process_events (scripted_behavior, events_buffer, buffer_size)
         if event_map then
             local event_ptr = 0
             while event_ptr < buffer_size do
-                local event_obj = make_event_obj(events_buffer + event_ptr);
+                local event_obj = make_message_obj(messages_buffer + event_ptr);
                 event_ptr = event_ptr + event_obj.size
                 if event_obj.event and not registry.valid(event_obj.target) or event_obj.target == entity.id then
                     local handler = event_map[event_obj.type]
@@ -62,28 +64,28 @@ local function process_events (scripted_behavior, events_buffer, buffer_size)
     end
 end
 
-local function process_stream (scripted_behavior, last_buffer_size)
+local function process_internal_messages (scripted_behavior, last_buffer_size)
     local events_buffer = ffi.new('const char*[1]')
-    local buffer_size = C.get_stream(events_buffer)
+    local buffer_size = C.get_messages(events_buffer)
     if buffer_size > last_buffer_size then
-        process_events(scripted_behavior, events_buffer[0] + last_buffer_size, buffer_size - last_buffer_size)
+        process_messages(scripted_behavior, events_buffer[0] + last_buffer_size, buffer_size - last_buffer_size)
     end
     return buffer_size
 end
 
-function handle_events (events_buffer, buffer_size)
-    local events_buffer = ffi.cast("char*", events_buffer)
+function handle_messages (message_buffer, buffer_size)
+    local events_buffer = ffi.cast("char*", message_buffer)
     local scripted_behavior = ffi.new('const struct Component_Core_ScriptedBehavior*[1]')
     -- Process global events
-    process_events(scripted_behavior, events_buffer, buffer_size)
+    process_messages(scripted_behavior, events_buffer, buffer_size)
 
-    -- Process script event stream until no new events are received, or 5 iterations, whichever happens first
+    -- Process script event stream until no new events are received, or MAX_ITERATIONS iterations, whichever happens first
     local count = 0
     local prev_buffer_size = 0
     local buffer_size = 0
     repeat
         count = count + 1
         prev_buffer_size = buffer_size
-        buffer_size = process_stream(scripted_behavior, prev_buffer_size)
-    until buffer_size == prev_buffer_size or count >= 5
+        buffer_size = process_internal_messages(scripted_behavior, prev_buffer_size)
+    until buffer_size == prev_buffer_size or count >= MAX_ITERATIONS
 end
