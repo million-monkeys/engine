@@ -103,11 +103,17 @@ void core::Engine::addModuleHook (million::api::Module::CallbackMasks hook, mill
     };
 }
 
-void core::Engine::installComponent (const million::api::definitions::Component& component)
+void core::Engine::installComponent (const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn)
 {
+    // Create storage for the component
+    prepareFn(m_registries.foreground().runtime);
+    prepareFn(m_registries.foreground().prototypes);
+    prepareFn(m_registries.background().runtime);
+    prepareFn(m_registries.background().prototypes);
+    // Make component accessible from scripting
     scripting::registerComponent(component.id.value(), component.type_id);
+    // Add component loader
     m_component_loaders[component.id] = component.loader;
-    // m_component_definitions.push_back(component_def);
 }
 
 bool core::Engine::init ()

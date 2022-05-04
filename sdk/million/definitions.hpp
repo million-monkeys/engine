@@ -27,6 +27,7 @@ namespace million::api {
         using CheckerFn = bool(*)(entt::registry& registry, entt::entity entity);
         using GetterFn = char*(*)(entt::registry& registry, entt::entity entity);
         using ManageFn = void(*)(entt::registry& registry, entt::entity entity, ManageOperation);
+        using PrepareFn = void(*)(entt::registry& registry);
         struct Component {
             entt::hashed_string id;
             entt::id_type type_id;

@@ -76,10 +76,9 @@ namespace million::api {
             template <typename T>
             void registerComponent (const million::api::definitions::Component& component)
             {
-                magic_enum::enum_for_each<million::Registry>([this] (auto which) {
-                    static_cast<void>(registry(which).template storage<T>());
+                installComponent(component, [](entt::registry& registry) {
+                    static_cast<void>(registry.template storage<T>());
                 });
-                installComponent(component);
             }
 
             virtual entt::registry& registry (million::Registry) = 0;
@@ -89,7 +88,7 @@ namespace million::api {
             virtual void* allocModule(std::size_t) = 0;
             virtual void deallocModule(void *) = 0;
             // Register components with the engine
-            virtual void installComponent (const million::api::definitions::Component& component) = 0;
+            virtual void installComponent (const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn) = 0;
         };
     }
 

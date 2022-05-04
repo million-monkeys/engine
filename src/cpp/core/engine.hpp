@@ -131,7 +131,7 @@ namespace core {
     private:
         void* allocModule(std::size_t) final;
         void deallocModule(void *) final;
-        void installComponent (const million::api::definitions::Component& component) final;
+        void installComponent (const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn) final;
 
         // Add a module to be called by a specific engine hook
         void addModuleHook (million::api::Module::CallbackMasks hook, million::api::Module* module);
