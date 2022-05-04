@@ -123,10 +123,10 @@ int game_main (int argc, char** argv)
                 frame_timer.update();
 
                 // WIP: For now just die after a short time
-                if (frame_timer.sinceStart() > 0.005f) {
-                    spdlog::warn("Terminating because of WIP");
-                    break;
-                }
+                // if (frame_timer.sinceStart() > 0.0075f) {
+                //     spdlog::warn("Terminating because of WIP");
+                //     break;
+                // }
 
     // #ifdef DEV_MODE
                 // In dev mode, update plugins every few seconds for hot code reloading

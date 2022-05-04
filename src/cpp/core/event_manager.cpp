@@ -7,21 +7,12 @@
 
 std::mutex g_pool_mutex;
 
-thread_local core::EventPublisher<core::EventPool> g_event_publisher;
-
-core::EventPool* g_scripts_event_pool[2];
-int g_current_script_pool = 0;
+thread_local core::MessagePublisher<core::MessagePool> g_message_publisher;
 
 // Move events from the thread local pools into the global event pool
 void core::Engine::pumpEvents ()
 {
     EASY_FUNCTION(profiler::colors::Amber200);
-    m_event_pool.reset();
-    // Copy thread local events into global pool and reset thread local pools
-    for (auto& pool : m_event_pools) {
-        pool.copyInto(m_event_pool);
-        pool.reset();
-    }
     // Swap all event streams internal pools
     for (auto& [name, stream] : m_named_streams) {
         stream.iterable->swap();
@@ -29,32 +20,34 @@ void core::Engine::pumpEvents ()
     // TODO: Add debug telemetry to track the buffer sizes
 }
 
-void core::Engine::pumpScriptEvents ()
+void core::Engine::pumpMessages ()
 {
-    // Copy script event pool into global pool
-    g_scripts_event_pool[g_current_script_pool]->copyInto(m_event_pool);
-    g_current_script_pool = 1 - g_current_script_pool;
-    // Clear the script event pool
-    g_scripts_event_pool[g_current_script_pool]->reset();
+    m_message_pool.reset();
+    // Copy thread local events into global pool and reset thread local pools
+    for (auto pool : m_message_pools) {
+        pool->copyInto(m_message_pool);
+        pool->reset();
+    }
 }
 
 const million::events::MessageIterable core::Engine::messages () const
 {
-    return EventPoolBase::iter(m_event_pool);
+    return {m_message_pool.begin(), m_message_pool.end()};
 }
 
 million::events::Publisher& core::Engine::publisher()
 {
-    if (! g_event_publisher.valid()) {
+    if (! g_message_publisher.valid()) {
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
-        const std::uint32_t event_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
+        const std::uint32_t message_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
 
         // Only one thread can access event pools list at once
         std::lock_guard<std::mutex> guard(g_pool_mutex);
-        m_event_pools.emplace_back(event_pool_size); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
-        g_event_publisher = core::EventPublisher<core::EventPool>(&m_event_pools.back());
+        auto message_pool = new MessagePool(message_pool_size);
+        m_message_pools.push_back(message_pool); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
+        g_message_publisher = core::MessagePublisher<core::MessagePool>(message_pool);
     }
-    return g_event_publisher;
+    return g_message_publisher;
 }
 
 million::events::Stream& core::Engine::commandStream()

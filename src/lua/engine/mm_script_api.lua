@@ -12,6 +12,7 @@ ffi.cdef [[
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
     void* allocate_event (const char* event_name, uint32_t target, uint8_t size, bool emit_later);
+    void* allocate_command (const char* event_name, uint8_t size);
     uint32_t load_resource (const char* type, const char* filename, const char* name);
     uint32_t find_resource (const char* name);
 ]]
@@ -115,15 +116,28 @@ local function create_entity(self, prototype)
     return get_entity_by_id(self, id)
 end
 
-local function emit_event(event_name, target, later)
-    local event_info = core.event_types_by_name[event_name]
-    if event_info then
+local function emit_message(message_name, target, later)
+    local message_info = core.event_types_by_name[message_name]
+    if message_info then
         if target == nil then
-            target = NULL_ENTITY
+            C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
+        else
+            if type(target) == 'table' then
+                target = target.id
+            end
+            return ffi.cast(message_info.type, C.allocate_event(message_name, target, message_info.size, later))
         end
-        return ffi.cast(event_info.type, C.allocate_event(event_name, target, event_info.size, later))
     else
-        C.output_log(LOG_LEVELS.WARNING, 'Event "'..event_name..'" not found')
+        C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')
+    end
+end
+
+local function emit_command(command_name)
+    local event_info = core.event_types_by_name[command_name]
+    if event_info then
+        return ffi.cast(event_info.type, C.allocate_command(command_name, event_info.size))
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Command "'..command_name..'" not found')
     end
 end
 
@@ -159,8 +173,9 @@ return {
     },
     ref = C.get_ref,
     signal = get_signal,
-    emit = function (name, target) return emit_event(name, target, false) end,
-    emit_later = function (name, target) return emit_event(name, target, true) end,
+    emit = function (name, target) return emit_message(name, target, false) end,
+    emit_later = function (name, target) return emit_message(name, target, true) end,
+    command=emit_command,
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
         info    = function(...) log_output(LOG_LEVELS.INFO,    ...) end,

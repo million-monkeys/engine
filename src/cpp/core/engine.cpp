@@ -4,8 +4,6 @@
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
 
-extern core::StreamPool<core::SingleWriterBase>* g_scripts_event_pool[2];
-
 void destroyInputData (struct core::InputData*);
 
 core::Engine::~Engine ()
@@ -101,12 +99,13 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
         for (const auto& ev : events("resources"_hs)) {
             EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
             switch (ev.type) {
-                case "loaded"_hs:
+                case events::engine::ResourceLoaded::ID:
                 {
                     auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
-                    // if (loaded.name == "script2"_hs) {
-                    //     scripting::load("test.lua");
-                    // }
+                    spdlog::info("Resource loaded: {} ({})", loaded.name, loaded.name == "script1"_hs);
+                    if (loaded.name == "script1"_hs) {
+                        scripting::load("test.lua");
+                    }
                     if (loaded.name == "scene-script"_hs) {
                         spdlog::warn("Scene scripts loaded");
                     }
@@ -194,11 +193,12 @@ void core::Engine::shutdown ()
     resources::term();
     // Halt the scripting system
     scripting::term();    
-    // Delete event pools
-    m_event_pool.reset();
-    m_event_pools.clear();
-    delete g_scripts_event_pool[0];
-    delete g_scripts_event_pool[1];
+    // Delete message pools
+    m_message_pool.reset();
+    for (auto pool : m_message_pools) {
+        delete pool;
+    }
+    m_message_pools.clear();
     // Clear the registries
     m_registries.background().clear();
     m_registries.foreground().clear();

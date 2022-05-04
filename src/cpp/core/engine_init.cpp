@@ -8,7 +8,6 @@
 #include <entt/entity/view.hpp>
 
 struct core::InputData* createInputData (); // Just to avoid having to include SDL.h from engine.hpp
-extern core::EventPool* g_scripts_event_pool[2];
 
 namespace init_core {
     void register_components (million::api::internal::ModuleManager*);
@@ -33,14 +32,10 @@ int get_scripts_event_pool_size () {
 core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes) :
     m_scene_manager(*this),
     m_stream_sizes(stream_sizes),
-    m_event_pool(get_global_event_pool_size()),
+    m_message_pool(get_global_event_pool_size()),
     m_commands(createStream("commands"_hs, million::StreamWriters::Multi)),
     m_input_data(createInputData())
 {
-    g_scripts_event_pool[0] = new core::EventPool(get_scripts_event_pool_size());
-    g_scripts_event_pool[1] = new core::EventPool(get_scripts_event_pool_size());
-    // Make sure that the pool addresses are stable by reserving enough space that they never have to be relocated
-    m_event_pools.reserve(std::thread::hardware_concurrency() * 2); // Twice number of cores = maximum assumed threads (Total number of threads = taskflow workers + async resource loader + render thread + async background worker thread; No other threads should be created that use event pools)
 }
 
 void* core::Engine::allocModule (std::size_t bytes) {
@@ -148,25 +143,26 @@ public:
     {
         const auto& my_tags = registry.storage<Tag>("my-tag"_hs);
         view.each([&my_tags, this](entt::entity e, auto& test){
-            spdlog::debug("TestA.a: {} (tagged? {}), entity: {}", test.a, my_tags.contains(e) ? "yes" : "no", magic_enum::enum_integer(e));
+            // spdlog::debug("TestA.a: {} (tagged? {}), entity: {}", test.a, my_tags.contains(e) ? "yes" : "no", magic_enum::enum_integer(e));
+            (void)my_tags;
             test.a += 1;
             if (a++ > 10) {
-                spdlog::error("Quitting");
-                m_commands->emit("engine/exit"_hs);
+                // spdlog::error("Quitting");
+                // m_commands->emit("engine/exit"_hs);
             }
         });
     }
     void bar (entt::view<entt::get_t<TestB>> view)
     {
         view.each([](auto& test){
-            spdlog::debug("TestB.a: {}", test.a);
+            // spdlog::debug("TestB.a: {}", test.a);
             test.a += 1;
         });
     }
     void baz (entt::view<entt::get_t<TestC>> view)
     {
         view.each([](auto& test){
-            spdlog::debug("TestC.a: {}", test.a);
+            // spdlog::debug("TestC.a: {}", test.a);
             test.a += 1;
         });
     }

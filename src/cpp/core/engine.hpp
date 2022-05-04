@@ -80,8 +80,8 @@ namespace core {
         // Register module hooks
         void registerModule (std::uint32_t, million::api::Module*);
 
-        // Make previously emitted script events visible to consumers
-        void pumpScriptEvents ();
+        // Make previously emitted events visible to consumers
+        void pumpMessages ();
 
         // Call all modules that are added as a specific engine hook
         template <million::api::Module::CallbackMasks Hook, typename... T> void callModuleHook (T... args) {
@@ -219,11 +219,11 @@ namespace core {
         // Timing
         DeltaTime m_current_time_delta = 0;
 
-        // Event system
+        // Event & messaging system
         helpers::hashed_string_flat_map<std::uint32_t>& m_stream_sizes;
-        std::vector<EventPool> m_event_pools;
-        EventPoolBase::PoolType m_event_pool;
-        helpers::hashed_string_node_map<StreamInfo> m_named_streams;
+        std::vector<MessagePool*> m_message_pools;
+        MessagePool::PoolType m_message_pool;
+        helpers::hashed_string_node_map<StreamInfo> m_named_streams; // TODO: delete
         million::events::Stream& m_commands;
 
         // Module Hooks

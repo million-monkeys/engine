@@ -87,10 +87,12 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     SPDLOG_DEBUG("Creating task graph");
 
     Task events_game = m_coordinator.emplace([&engine](){
+        SPDLOG_TRACE("Running Game event handlers");
         engine.executeHandlers(core::HandlerType::Game);
     }).name("events/game");
 
     Task events_scene = m_coordinator.emplace([&engine](){
+        SPDLOG_TRACE("Running Scene event handlers");
         engine.executeHandlers(core::HandlerType::Scene);
     }).name("events/scene");
 
@@ -107,6 +109,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     }).name("scripts/scene");
 
     Task scripts_behavior = m_coordinator.emplace([&engine](){
+        SPDLOG_TRACE("Running ScriptedBehaviors");
         EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
         scripting::processEvents(engine);
     }).name("scripts/behavior");
@@ -128,6 +131,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
 
     Task pump_events = m_coordinator.emplace([&engine](){
         // Copy current frames events for processing next frame
+        SPDLOG_TRACE("Pumping events");
         engine.pumpEvents();
     }).name("events/pump");
 

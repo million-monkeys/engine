@@ -4,7 +4,7 @@
 
 namespace core {
     template <typename PoolT, typename Envelope>
-    class BaseEventPool {
+    class BasePool {
     public:
         using PoolType = PoolT;
         static million::events::Iterable<Envelope> iter (const PoolT& pool)
@@ -12,14 +12,6 @@ namespace core {
             return {pool.begin(), pool.end()};
         }
     protected:
-        static std::byte* push (PoolT& pool, entt::hashed_string::hash_type event_id, entt::entity target, uint32_t payload_size)
-        {
-            using EnvelopeT = million::events::MessageEnvelope;
-            std::byte* ptr = pool.allocate(sizeof(EnvelopeT) + payload_size);
-            new (ptr) EnvelopeT{event_id, target, payload_size};
-            return ptr + sizeof(EnvelopeT);
-        }
-
         static std::byte* push (PoolT& pool, entt::hashed_string::hash_type event_id, uint32_t payload_size)
         {
             using EnvelopeT = million::events::EventEnvelope;
@@ -30,23 +22,18 @@ namespace core {
     };
 
     // A simple event pool used for the global event system
-    using EventPoolBase = BaseEventPool<memory::heterogeneous::StackPool<memory::alignment::AlignCacheLine>, million::events::MessageEnvelope>;
-    class EventPool : public EventPoolBase
+    class MessagePool
     {
-        using Base = EventPoolBase;
     public:
-        EventPool (uint32_t size) :
+        using PoolType = memory::heterogeneous::StackPool<memory::alignment::AlignCacheLine>;
+
+        MessagePool (uint32_t size) :
             m_pool{size}
         {}
-        EventPool (EventPool&& other)
+        MessagePool (MessagePool&& other)
             : m_pool(std::move(other.m_pool))
         {}
-        ~EventPool () {}
-
-        million::events::MessageIterable iter () const
-        {
-            return Base::iter(m_pool);
-        }
+        ~MessagePool () {}
 
         void reset ()
         {
@@ -56,16 +43,19 @@ namespace core {
         template <typename OtherPool>
         void copyInto (OtherPool& destination) const
         {
-            destination.template pushAll<Base::PoolType>(m_pool);
+            destination.template pushAll<PoolType>(m_pool);
         }
 
-        std::byte* push (entt::hashed_string::hash_type event_id, entt::entity source, uint32_t payload_size)
+        std::byte* push (entt::hashed_string::hash_type message_id, entt::entity target, uint32_t payload_size)
         {
-            return Base::push(m_pool, event_id, source, payload_size);
+            using EnvelopeT = million::events::MessageEnvelope;
+            std::byte* ptr = m_pool.allocate(sizeof(EnvelopeT) + payload_size);
+            new (ptr) EnvelopeT{message_id, target, payload_size};
+            return ptr + sizeof(EnvelopeT);
         }
 
     private:
-        Base::PoolType m_pool;
+        PoolType m_pool;
     };
 
     class IterableStream {
@@ -76,8 +66,8 @@ namespace core {
     };
 
     // A double buffered pool.
-    using SingleWriterBase = BaseEventPool<memory::heterogeneous::StackPool<memory::alignment::AlignCacheLine>, million::events::EventEnvelope>;
-    using MultiWriterBase = BaseEventPool<memory::heterogeneous::AtomicStackPool<memory::alignment::AlignCacheLine>, million::events::EventEnvelope>;
+    using SingleWriterBase = BasePool<memory::heterogeneous::StackPool<memory::alignment::AlignCacheLine>, million::events::EventEnvelope>;
+    using MultiWriterBase = BasePool<memory::heterogeneous::AtomicStackPool<memory::alignment::AlignCacheLine>, million::events::EventEnvelope>;
 
     template <typename StreamPoolBase>
     class StreamPool : public StreamPoolBase, public IterableStream
@@ -144,22 +134,37 @@ namespace core {
         }
         
         Pool* m_pool;
+
+        friend class RawAccessWrapper;
+    };
+
+    // Wrapper to provide access to push raw (type erased) events
+    class RawAccessWrapper {
+    public:
+        using StreamType = core::EventStream<core::StreamPool<core::MultiWriterBase>>;
+        RawAccessWrapper(million::events::Stream& stream) : ptr(static_cast<StreamType*>(&stream)) {}
+        ~RawAccessWrapper() = default;
+        std::byte* push (entt::hashed_string::hash_type event_id, std::uint32_t payload_size)
+        {
+            return ptr->push(event_id, payload_size);
+        }
+    private:
+        StreamType* ptr;
     };
 
     template <typename Pool>
-    class EventPublisher : public million::events::Publisher
+    class MessagePublisher : public million::events::Publisher
     {
     public:
-        EventPublisher () : m_pool{nullptr} {}
-        EventPublisher (Pool* pool) : m_pool{pool} {}
-        EventPublisher(EventPublisher<Pool>&& other) : m_pool(other.m_pool) { other.m_pool = nullptr; }
-        virtual ~EventPublisher () {}
+        MessagePublisher () : m_pool{nullptr} {}
+        MessagePublisher (Pool* pool) : m_pool{pool} {}
+        MessagePublisher(MessagePublisher<Pool>&& other) : m_pool(other.m_pool) { other.m_pool = nullptr; }
+        virtual ~MessagePublisher () {}
 
-        void operator= (EventPublisher<Pool>&& other) { m_pool = other.m_pool; other.m_pool = nullptr; }
+        void operator= (MessagePublisher<Pool>&& other) { m_pool = other.m_pool; other.m_pool = nullptr; }
 
         bool valid () const { return m_pool != nullptr; }
 
-    private:
         std::byte* push (entt::hashed_string::hash_type event_id, entt::entity source, std::uint32_t payload_size)
         {
             return m_pool->push(event_id, source, payload_size);

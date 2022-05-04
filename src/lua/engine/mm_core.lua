@@ -48,7 +48,7 @@ local function register_events(self, events_list)
 end
 
 local function register_script(self, script)
-    self.event_maps[script.resource_id] = script.event_map
+    self.message_maps[script.resource_id] = script.event_map
 end
 
 local function register_scene_script(self, script)
@@ -56,7 +56,7 @@ local function register_scene_script(self, script)
 end
 
 local function unregister_script(self, resource_id)
-    table.remove(self.event_maps, resource_id)
+    table.remove(self.message_maps, resource_id)
 end
 
 local obj = {
@@ -66,7 +66,7 @@ local obj = {
     event_types_by_name = {},
     event_types_by_id = {},
     -- ScriptedBehavior events
-    event_maps = {},
+    message_maps = {},
     -- Scene events
     scene_event_maps = {},
     -- API

@@ -91,7 +91,8 @@ namespace million {
             virtual ~Publisher () {}
             template <typename Message> Message& post (entt::entity target) { return *(new (push(Message::ID, target, sizeof(Message))) Message{}); }
             template <typename Message, typename Function> void post (entt::entity target, Function fn) { fn(post<Message>(target)); }
-        protected:
+
+            // Internal! Even though this is public, it should not be used directly.
             virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, std::uint32_t) = 0;
         };
 
