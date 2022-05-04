@@ -136,17 +136,6 @@ namespace core {
         // Add a module to be called by a specific engine hook
         void addModuleHook (million::api::Module::CallbackMasks hook, million::api::Module* module);
 
-        // Copy all entities from one registry to another
-        void copyRegistry (const entt::registry& from, entt::registry& to);
-
-        // Callbacks to manage Named entities
-        void onAddNamedEntity (entt::registry&, entt::entity);
-        void onRemoveNamedEntity (entt::registry&, entt::entity);
-
-        // Callbacks to manage prototype entities
-        void onAddPrototypeEntity (entt::registry&, entt::entity);
-        void onRemovePrototypeEntity (entt::registry&, entt::entity);
-
         // Process input events
         void handleInput ();
 
@@ -174,13 +163,43 @@ namespace core {
         };
 
         // ECS registries to manage all entities
-        entt::registry m_runtime_registry;
-        entt::registry m_background_registry;
-        entt::registry m_prototype_registry;
+        struct Registries {
+        public:
+            struct RegistryPair {
+            public:
+                RegistryPair();
+                ~RegistryPair();
+                entt::registry runtime;
+                entt::registry prototypes;
+                helpers::hashed_string_flat_map<NamedEntityInfo> entity_names;
+                helpers::hashed_string_flat_map<entt::entity> prototype_names;
+
+                void clear ();
+            private:
+                // Callbacks to manage Named entities
+                void onAddNamedEntity (entt::registry&, entt::entity);
+                void onRemoveNamedEntity (entt::registry&, entt::entity);
+
+                // Callbacks to manage prototype entities
+                void onAddPrototypeEntity (entt::registry&, entt::entity);
+                void onRemovePrototypeEntity (entt::registry&, entt::entity);
+            };
+            RegistryPair& foreground() { return m_registries[m_foreground_registry]; }
+            const RegistryPair& foreground() const { return m_registries[m_foreground_registry]; }
+            RegistryPair& background() { return m_registries[1 - m_foreground_registry]; }
+            const RegistryPair& background() const { return m_registries[1 - m_foreground_registry]; }
+            void swap () { m_foreground_registry = 1 - m_foreground_registry; }            
+
+            // Copy all entities from one registry to another
+            void copyRegistry (const entt::registry& from, entt::registry& to);
+            // Copy "global" entities from background to foreground
+            void copyGlobals ();
+        private:
+            RegistryPair m_registries[2];
+            std::uint32_t m_foreground_registry = 0;
+        } m_registries;
 
         helpers::hashed_string_flat_map<million::api::definitions::LoaderFn> m_component_loaders;
-        helpers::hashed_string_flat_map<NamedEntityInfo> m_named_entities;
-        helpers::hashed_string_flat_map<entt::entity> m_prototype_entities;
         world::SceneManager m_scene_manager;
         const std::string m_empty_string = {};
 
@@ -224,6 +243,7 @@ namespace core {
         helpers::hashed_string_flat_map<million::resources::Handle> m_named_resources;
 
         friend class scheduler::Scheduler;
+        friend class world::SceneManager;
     };
 
 }

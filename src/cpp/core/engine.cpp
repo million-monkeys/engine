@@ -72,26 +72,26 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                 case "engine/set-system-status/stopped"_hs:
                     m_system_status = SystemStatus::Stopped;
                     break;
-                case "scene/registry/runtime->background"_hs:
-                    copyRegistry(m_runtime_registry, m_background_registry);
-                    break;
-                case "scene/registry/background->runtime"_hs:
-                    {
-                        auto names = m_named_entities;
-                        copyRegistry(m_background_registry, m_runtime_registry);
-                        m_named_entities = names;
-                    }
-                    break;
-                case "scene/registry/clear-background"_hs:
-                    m_background_registry.clear();
-                    break;
-                case "scene/registry/clear-runtime"_hs:
-                    m_runtime_registry.clear();
-                    break;
+                // case "scene/registry/runtime->background"_hs:
+                //     copyRegistry(m_runtime_registry, m_background_registry);
+                //     break;
+                // case "scene/registry/background->runtime"_hs:
+                //     {
+                //         auto names = m_named_entities;
+                //         copyRegistry(m_background_registry, m_runtime_registry);
+                //         m_named_entities = names;
+                //     }
+                //     break;
+                // case "scene/registry/clear-background"_hs:
+                //     m_background_registry.clear();
+                //     break;
+                // case "scene/registry/clear-runtime"_hs:
+                //     m_runtime_registry.clear();
+                //     break;
                 case "scene/load"_hs:
                 {
                     auto& new_scene = eventData<events::engine::LoadScene>(ev);
-                    m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id);
+                    m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id, new_scene.auto_swap);
                     break;
                 }
                 default:
@@ -199,10 +199,7 @@ void core::Engine::shutdown ()
     m_event_pools.clear();
     delete g_scripts_event_pool[0];
     delete g_scripts_event_pool[1];
-    // Clear the runtime registry
-    m_runtime_registry = {};
-    // Clear background registry
-    m_background_registry = {};
-    // Clear the prototype registry
-    m_prototype_registry = {};
+    // Clear the registries
+    m_registries.background().clear();
+    m_registries.foreground().clear();
 }

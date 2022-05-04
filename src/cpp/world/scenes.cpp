@@ -35,7 +35,7 @@ void world::SceneManager::loadSceneList (const std::string& path)
     }
 }
 
-void world::SceneManager::loadScene (million::Registry which, entt::hashed_string::hash_type scene)
+void world::SceneManager::loadScene (million::Registry which, entt::hashed_string::hash_type scene, bool auto_swap)
 {
     EASY_FUNCTION(profiler::colors::RichYellow);
     // using CM = gou::api::Module::CallbackMasks;
@@ -66,16 +66,18 @@ void world::SceneManager::loadScene (million::Registry which, entt::hashed_strin
         // }
         spdlog::info("[scenes] Loading scene: {}", scene_name);
         const auto config = parser::parse_toml(filename);
+        PendingScene& pending = m_pending_scenes[scene];
+        pending.auto_swap = auto_swap;
 
         if (config.contains("entity")) {
             auto handle = resources::load("scene-entities"_hs, filename, scene);
-            m_pending_scenes[scene].insert(handle.handle);
+            pending.resources.insert(handle.handle);
         }
 
         // Load scripts
         if (config.contains("script-file") && config.contains("event-map")) {
             auto handle = resources::load("scene-script"_hs, filename, scene);
-            m_pending_scenes[scene].insert(handle.handle);
+            pending.resources.insert(handle.handle);
         }
 
         m_current_scene = scene;
@@ -99,10 +101,15 @@ void world::SceneManager::update ()
                         if (loaded.type == "scene-entities"_hs || loaded.type == "scene-script"_hs) {
                             auto it = m_pending_scenes.find(loaded.name);
                             if (it != m_pending_scenes.end()) {
-                                it->second.erase(loaded.handle.handle);
-                                if (it->second.empty()) {
+                                PendingScene& pending = it->second;
+                                pending.resources.erase(loaded.handle.handle);
+                                if (pending.resources.empty()) {
                                     // Scene fully loaded
                                     spdlog::error("Scene fully loaded (name:{}, handle:{}", loaded.name, loaded.handle.id());
+                                    if (pending.auto_swap) {
+                                        swapScenes();
+                                    }
+                                    m_pending_scenes.erase(it);
                                 }
                             }
                         }
@@ -114,4 +121,15 @@ void world::SceneManager::update ()
             }
         }
     }
+}
+
+// Swap foreground and background scenes, and clear the (new) background scene
+void world::SceneManager::swapScenes ()
+{
+    // Swap newly loaded scene into foreground
+    m_engine.m_registries.swap();
+    // Copy entities marked as "global" from background to foreground
+    m_engine.m_registries.copyGlobals();
+    // Clear the background registry
+    m_engine.m_registries.background().clear();
 }

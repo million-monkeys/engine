@@ -1,6 +1,41 @@
 
 #include "engine.hpp"
 
+core::Engine::Registries::RegistryPair::RegistryPair()
+{
+    // Manage Named entities
+    runtime.on_construct<components::core::Named>().connect<&core::Engine::Registries::RegistryPair::onAddNamedEntity>(this);
+    runtime.on_destroy<components::core::Named>().connect<&core::Engine::Registries::RegistryPair::onRemoveNamedEntity>(this);
+    // Manage prototype entities
+    prototypes.on_construct<core::EntityPrototypeID>().connect<&core::Engine::Registries::RegistryPair::onAddPrototypeEntity>(this);
+    prototypes.on_destroy<core::EntityPrototypeID>().connect<&core::Engine::Registries::RegistryPair::onRemovePrototypeEntity>(this);
+}
+
+core::Engine::Registries::RegistryPair::~RegistryPair()
+{
+
+}
+
+void core::Engine::Registries::RegistryPair::onAddNamedEntity (entt::registry& registry, entt::entity entity)
+{
+    const auto& named = registry.get<components::core::Named>(entity);
+    entity_names[named.name] = {entity, named.name.data()};
+}
+
+void core::Engine::Registries::RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::entity entity)
+{
+    const auto& named = registry.get<components::core::Named>(entity);
+    entity_names.erase(named.name);
+}
+
+void core::Engine::Registries::RegistryPair::clear ()
+{
+    runtime = {};
+    prototypes = {};
+    entity_names.clear();
+    prototype_names.clear();
+}
+
 entt::organizer& core::Engine::organizer(million::SystemStage type)
 {
     return m_scheduler.organizer(type);
@@ -10,18 +45,19 @@ entt::registry& core::Engine::registry(million::Registry which)
 {
     switch (which) {
     case million::Registry::Runtime:
-        return m_runtime_registry;
+        return m_registries.foreground().runtime;
     case million::Registry::Background:
-        return m_background_registry;
+        return m_registries.background().runtime;
     case million::Registry::Prototype:
-        return m_prototype_registry;
+        return m_registries.foreground().prototypes;
     };
 }
 
 entt::entity core::Engine::findEntity (entt::hashed_string name) const
 {
-    auto it = m_named_entities.find(name);
-    if (it != m_named_entities.end()) {
+    const auto& entities = m_registries.foreground().entity_names;
+    auto it = entities.find(name);
+    if (it != entities.end()) {
         return it->second.entity;
     }
     return entt::null;
@@ -29,8 +65,9 @@ entt::entity core::Engine::findEntity (entt::hashed_string name) const
 
 const std::string& core::Engine::findEntityName (const components::core::Named& named) const
 {
-    auto it = m_named_entities.find(named.name);
-    if (it != m_named_entities.end()) {
+    const auto& entities = m_registries.foreground().entity_names;
+    auto it = entities.find(named.name);
+    if (it != entities.end()) {
         return it->second.name;
     } else {
         spdlog::warn("No name for {}", named.name.data());
@@ -50,7 +87,7 @@ void core::Engine::loadComponent (entt::registry& registry, entt::hashed_string 
     }
 }
 
-void core::Engine::copyRegistry (const entt::registry& from, entt::registry& to)
+void core::Engine::Registries::copyRegistry (const entt::registry& from, entt::registry& to)
 {
     EASY_FUNCTION(profiler::colors::RichYellow);
     from.each([&from,&to](const auto source_entity) {
@@ -64,17 +101,23 @@ void core::Engine::copyRegistry (const entt::registry& from, entt::registry& to)
             }
         }
     });
-
 }
 
-void core::Engine::onAddNamedEntity (entt::registry& registry, entt::entity entity)
+void core::Engine::Registries::copyGlobals ()
 {
-    const auto& named = registry.get<components::core::Named>(entity);
-    m_named_entities[named.name] = {entity, named.name.data()};
-}
-
-void core::Engine::onRemoveNamedEntity (entt::registry& registry, entt::entity entity)
-{
-    const auto& named = registry.get<components::core::Named>(entity);
-    m_named_entities.erase(named.name);
+    // Entity names will be automatically copied by on_construct
+    EASY_FUNCTION(profiler::colors::RichYellow);
+    auto& from = background().runtime;
+    auto& to = foreground().runtime;
+    for (const auto&& [source_entity] : from.storage<components::core::Global>().each()) {
+        auto destination_entity = to.create();
+        for(auto [id, source_storage]: from.storage()) {
+            if(source_storage.contains(source_entity)) {
+                auto it = to.storage(id);
+                if (it != to.storage().end()) {
+                    it->second.emplace(destination_entity, source_storage.get(source_entity));
+                }
+            }
+        }
+    }
 }

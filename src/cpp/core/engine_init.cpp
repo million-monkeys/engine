@@ -41,12 +41,6 @@ core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_size
     g_scripts_event_pool[1] = new core::EventPool(get_scripts_event_pool_size());
     // Make sure that the pool addresses are stable by reserving enough space that they never have to be relocated
     m_event_pools.reserve(std::thread::hardware_concurrency() * 2); // Twice number of cores = maximum assumed threads (Total number of threads = taskflow workers + async resource loader + render thread + async background worker thread; No other threads should be created that use event pools)
-    // Manage Named entities
-    m_runtime_registry.on_construct<components::core::Named>().connect<&core::Engine::onAddNamedEntity>(this);
-    m_runtime_registry.on_destroy<components::core::Named>().connect<&core::Engine::onRemoveNamedEntity>(this);
-    // Manage prototype entities
-    m_prototype_registry.on_construct<core::EntityPrototypeID>().connect<&core::Engine::onAddPrototypeEntity>(this);
-    m_prototype_registry.on_destroy<core::EntityPrototypeID>().connect<&core::Engine::onRemovePrototypeEntity>(this);
 }
 
 void* core::Engine::allocModule (std::size_t bytes) {
@@ -209,12 +203,13 @@ void core::Engine::setupGame ()
     loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
     loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
 
-    auto e = m_runtime_registry.create();
-    m_runtime_registry.emplace<TestA>(e, 10);
-    m_runtime_registry.emplace<TestB>(e, 10);
-    m_runtime_registry.emplace<TestC>(e, 10);
-    auto x = m_runtime_registry.create();
-    m_runtime_registry.emplace<components::core::Named>(x, "test"_hs);
-    m_runtime_registry.emplace<TestA>(x, 1000);
+    auto& registry = m_registries.foreground().runtime;
+    auto e = registry.create();
+    registry.emplace<TestA>(e, 10);
+    registry.emplace<TestB>(e, 10);
+    registry.emplace<TestC>(e, 10);
+    auto x = registry.create();
+    registry.emplace<components::core::Named>(x, "test"_hs);
+    registry.emplace<TestA>(x, 1000);
 
 }

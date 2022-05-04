@@ -1,6 +1,23 @@
 
 #include "engine.hpp"
 
+void core::Engine::Registries::RegistryPair::onAddPrototypeEntity (entt::registry& registry, entt::entity entity)
+{
+    const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
+    auto it = prototype_names.find(prototype_id.id);
+    if (it != prototype_names.end()) {
+        // Already exists, destroy the old one before replacing it with the new one.
+        registry.destroy(it->second);
+    }
+    prototype_names[prototype_id.id] = entity;
+}
+
+void core::Engine::Registries::RegistryPair::onRemovePrototypeEntity (entt::registry& registry, entt::entity entity)
+{
+    const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
+    prototype_names.erase(prototype_id.id);
+}
+
 void mergeEntityInternal (entt::registry& source_registry, entt::registry& destination_registry, entt::entity source_entity, entt::entity destination_entity, bool overwrite_components)
 {
     for(auto [id, source_storage]: source_registry.storage()) {
@@ -20,10 +37,12 @@ void mergeEntityInternal (entt::registry& source_registry, entt::registry& desti
 entt::entity core::Engine::loadEntity (million::Registry which, entt::hashed_string prototype_id)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
-    auto it = m_prototype_entities.find(prototype_id);
-    if (it != m_prototype_entities.end()) {
-        auto new_entity = m_runtime_registry.create();
-        mergeEntityInternal(m_prototype_registry, registry(which), it->second, new_entity, true);
+    const auto& prototype_names = m_registries.foreground().prototype_names;
+    auto it = prototype_names.find(prototype_id);
+    if (it != prototype_names.end()) {
+        auto& prototypes = m_registries.foreground().prototypes;
+        auto new_entity = prototypes.create();
+        mergeEntityInternal(prototypes, registry(which), it->second, new_entity, true);
         return new_entity;
     } else {
         spdlog::warn("Could not create entity. Prototype does not exist: \"{}\"", prototype_id.data());
@@ -34,25 +53,10 @@ entt::entity core::Engine::loadEntity (million::Registry which, entt::hashed_str
 void core::Engine::mergeEntity (million::Registry which, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
-    auto it = m_prototype_entities.find(prototype_id);
-    if (it != m_prototype_entities.end()) {
-        mergeEntityInternal(m_prototype_registry, registry(which), it->second, entity, overwrite_components);
+    const auto& prototype_names = m_registries.foreground().prototype_names;
+    auto it = prototype_names.find(prototype_id);
+    if (it != prototype_names.end()) {
+        auto& prototypes = m_registries.foreground().prototypes;
+        mergeEntityInternal(prototypes, registry(which), it->second, entity, overwrite_components);
     }
-}
-
-void core::Engine::onAddPrototypeEntity (entt::registry& registry, entt::entity entity)
-{
-    const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
-    auto it = m_prototype_entities.find(prototype_id.id);
-    if (it != m_prototype_entities.end()) {
-        // Already exists, destroy the old one before replacing it with the new one.
-        m_prototype_registry.destroy(it->second);
-    }
-    m_prototype_entities[prototype_id.id] = entity;
-}
-
-void core::Engine::onRemovePrototypeEntity (entt::registry& registry, entt::entity entity)
-{
-    const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
-    m_prototype_entities.erase(prototype_id.id);
 }
