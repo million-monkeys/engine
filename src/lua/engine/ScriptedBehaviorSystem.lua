@@ -63,7 +63,7 @@ local function process_messages (entities, message_buffer, buffer_size)
                 -- If the message type is registered, then extract the message data and call the handler
                 if ctype then
                     local msg = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
-                    handler(entity, msg)
+                    handler(entity, msg, mm)
                 else
                     mm.log.warning("Entity %d registered for unknown event type: %d", entity.id, envelope.type)
                 end
@@ -78,7 +78,6 @@ function handle_messages ()
     local entity_message_maps = gather_entities()
     -- Process messages until no new messages are received, or MAX_ITERATIONS iterations, whichever happens first
     local iteration = 0
-    mm.log.warning('BEGIN')
     repeat
         local buffer_size = C.get_messages(message_buffer)
         -- If there are no more messages, then abort
@@ -89,7 +88,5 @@ function handle_messages ()
         process_messages(entity_message_maps, message_buffer[0], buffer_size)
         -- Increment iteration count and stop if MAX_ITERATIONS has been reached
         iteration = iteration + 1
-        mm.log.warning("ITERATION %d", iteration)
     until iteration >= MAX_ITERATIONS
-    mm.log.warning("END")
 end

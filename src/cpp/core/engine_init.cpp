@@ -175,14 +175,6 @@ TestSystem g_test;
 
 void core::Engine::setupGame ()
 {
-    g_test.m_commands = &commandStream();
-
-    auto& o = organizer(million::SystemStage::GameLogic);
-    o.emplace<&TestSystem::foo, Tag>(g_test, "A");
-    o.emplace<&TestSystem::bar, Tag>(g_test, "B");
-    o.emplace<&TestSystem::baz>(g_test, "C");
-    // A and B in serial, in parallel with C
-
     // Create game task graph
     m_scheduler.createTaskGraph(*this);
 
@@ -202,6 +194,15 @@ void core::Engine::setupGame ()
     // Make events emitted during load visible on first frame
     pumpEvents();
 
+    // Testing
+    g_test.m_commands = &commandStream();
+
+    auto& o = organizer(million::SystemStage::GameLogic);
+    o.emplace<&TestSystem::foo, Tag>(g_test, "A");
+    o.emplace<&TestSystem::bar, Tag>(g_test, "B");
+    o.emplace<&TestSystem::baz>(g_test, "C");
+    // A and B in serial, in parallel with C
+
     loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
     loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
 
@@ -213,5 +214,4 @@ void core::Engine::setupGame ()
     auto x = registry.create();
     registry.emplace<components::core::Named>(x, "test"_hs);
     registry.emplace<TestA>(x, 1000);
-
 }

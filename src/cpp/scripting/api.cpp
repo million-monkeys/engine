@@ -164,7 +164,7 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
     }
 }
 
-extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size, bool emit_later)
+extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size)
 {
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     entt::entity target = static_cast<entt::entity>(target_entity);

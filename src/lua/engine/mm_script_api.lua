@@ -11,7 +11,7 @@ ffi.cdef [[
     void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name);
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
-    void* allocate_event (const char* event_name, uint32_t target, uint8_t size, bool emit_later);
+    void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
     void* allocate_command (const char* event_name, uint8_t size);
     uint32_t load_resource (const char* type, const char* filename, const char* name);
     uint32_t find_resource (const char* name);
@@ -84,6 +84,28 @@ local function destroy_entity(self)
     C.entity_destroy(self.id)
 end
 
+local function post_message(target, message_name)
+    local message_info = core.event_types_by_name[message_name]
+    if message_info then
+        if target == nil then
+            C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
+        else
+            return ffi.cast(message_info.type, C.allocate_event(message_name, target, message_info.size))
+        end
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')
+    end
+end
+
+local function emit_command(command_name)
+    local event_info = core.event_types_by_name[command_name]
+    if event_info then
+        return ffi.cast(event_info.type, C.allocate_command(command_name, event_info.size))
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Command "'..command_name..'" not found')
+    end
+end
+
 local function get_entity_by_id(self, entity_id)
     if entity_id ~= NULL_ENTITY then
         local entity = {
@@ -92,6 +114,7 @@ local function get_entity_by_id(self, entity_id)
             get = get_component,
             add = add_component,
             tag = add_tag_component,
+            post = function(entity, message_name) return post_message(entity.id, message_name) end,
             remove = remove_component,
             destroy = destroy_entity
         }
@@ -116,40 +139,6 @@ local function create_entity(self, prototype)
     return get_entity_by_id(self, id)
 end
 
-local function emit_message(message_name, target, later)
-    local message_info = core.event_types_by_name[message_name]
-    if message_info then
-        if target == nil then
-            C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
-        else
-            if type(target) == 'table' then
-                target = target.id
-            end
-            return ffi.cast(message_info.type, C.allocate_event(message_name, target, message_info.size, later))
-        end
-    else
-        C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')
-    end
-end
-
-local function emit_command(command_name)
-    local event_info = core.event_types_by_name[command_name]
-    if event_info then
-        return ffi.cast(event_info.type, C.allocate_command(command_name, event_info.size))
-    else
-        C.output_log(LOG_LEVELS.WARNING, 'Command "'..command_name..'" not found')
-    end
-end
-
-local function get_signal (signal_id)
-    return {
-        id=signal_id,
-        send=function (self, event_name, event_data)
-            log_output(LOG_LEVELS.DEBUG, "Sending %s to signal %s", event_name, self.id)
-        end
-    }
-end
-
 return {
     time = {
         delta = 0
@@ -172,9 +161,7 @@ return {
         end
     },
     ref = C.get_ref,
-    signal = get_signal,
-    emit = function (name, target) return emit_message(name, target, false) end,
-    emit_later = function (name, target) return emit_message(name, target, true) end,
+    post=post_message,
     command=emit_command,
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
