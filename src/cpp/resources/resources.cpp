@@ -67,7 +67,7 @@ million::events::Stream* g_stream = nullptr;
 void resources::init (core::Engine* engine)
 {
     g_stream = &engine->createStream("resources"_hs);
-    resources::install<resources::types::ScriptedEvents>();
+    resources::install<resources::types::EntityScripts>();
     resources::install<resources::types::SceneScripts>();
     resources::install<resources::types::SceneEntities>();
     g_loader_thread = std::thread(loaderThread);
@@ -129,7 +129,9 @@ void resources::term ()
     g_work_queue.enqueue(WorkItem::POISON_PILL);
     g_loader_thread.join();
 
-    delete g_resource_loaders[resources::types::ScriptedEvents::Name];
+    delete g_resource_loaders[resources::types::EntityScripts::Name];
+    delete g_resource_loaders[resources::types::SceneScripts::Name];
+    delete g_resource_loaders[resources::types::SceneEntities::Name];
 
     g_resource_loaders.clear();
 }

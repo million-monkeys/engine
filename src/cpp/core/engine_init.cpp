@@ -203,8 +203,8 @@ void core::Engine::setupGame ()
     o.emplace<&TestSystem::baz>(g_test, "C");
     // A and B in serial, in parallel with C
 
-    loadResource("scripted-events"_hs, "resources/script1.toml", "script1"_hs);
-    loadResource("scripted-events"_hs, "resources/script2.toml", "script2"_hs);
+    loadResource("entity-script"_hs, "resources/script1.toml", "script1"_hs);
+    loadResource("entity-script"_hs, "resources/script2.toml", "script2"_hs);
 
     auto& registry = m_registries.foreground().runtime;
     auto e = registry.create();

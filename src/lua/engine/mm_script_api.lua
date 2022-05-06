@@ -85,7 +85,7 @@ local function destroy_entity(self)
 end
 
 local function post_message(target, message_name)
-    local message_info = core.event_types_by_name[message_name]
+    local message_info = core.types_by_name[message_name]
     if message_info then
         if target == nil then
             C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
@@ -98,9 +98,9 @@ local function post_message(target, message_name)
 end
 
 local function emit_command(command_name)
-    local event_info = core.event_types_by_name[command_name]
-    if event_info then
-        return ffi.cast(event_info.type, C.allocate_command(command_name, event_info.size))
+    local type_info = core.types_by_name[command_name]
+    if type_info then
+        return ffi.cast(type_info.type, C.allocate_command(command_name, type_info.size))
     else
         C.output_log(LOG_LEVELS.WARNING, 'Command "'..command_name..'" not found')
     end

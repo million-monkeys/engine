@@ -59,13 +59,13 @@ local function process_messages (entities, message_buffer, buffer_size)
             -- If the entity has a handler for this type of message, get the message data type
             if handler then
                 local entity = entity_info.entity
-                local ctype = core.event_types_by_id[envelope.type]
+                local ctype = core.types_by_id[envelope.type]
                 -- If the message type is registered, then extract the message data and call the handler
                 if ctype then
                     local msg = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
                     handler(entity, msg, mm)
                 else
-                    mm.log.warning("Entity %d registered for unknown event type: %d", entity.id, envelope.type)
+                    mm.log.warning("Entity %d registered for unknown message type: %d", entity.id, envelope.type)
                 end
             end
         end

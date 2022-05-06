@@ -10,6 +10,7 @@ ffi.cdef[[
     struct NameOnlyEvent {};
 ]]
 local C = ffi.C
+require('jit').opt.start('hotloop=28', 'maxmcode=2048', 'sizemcode=64', 'maxtrace=2000', 'maxrecord=8000')
 
 local function table_merge(...)
     local tables_to_merge = { ... }
@@ -35,36 +36,36 @@ local function register_components(self, components_table)
     self.component_types = table_merge(self.component_types, components_table)
 end
 
-local function register_events(self, events_list)
-    for _, event in ipairs(events_list) do
-        local event_type = 'struct ' .. event.type
-        local ctype = event_type .. '*'
-        self.event_types_by_name[event.name] = {
+local function register_events(self, type_list)
+    for _, info in ipairs(type_list) do
+        local type_struct = 'struct ' .. info.type
+        local ctype = type_struct .. '*'
+        self.types_by_name[info.name] = {
             type = ctype,
-            size = ffi.sizeof(event_type),
+            size = ffi.sizeof(type_struct),
         }
-        self.event_types_by_id[C.get_ref(event.name)] = ctype
+        self.types_by_id[C.get_ref(info.name)] = ctype
     end
 end
 
-local function register_script(self, script)
-    self.message_maps[script.resource_id] = script.event_map
+local function register_entity_script(self, script)
+    self.message_maps[script.resource_id] = script.message_map
 end
 
 local function register_scene_script(self, script)
     self.scene_event_maps[script.resource_id] = script.event_map
 end
 
-local function unregister_script(self, resource_id)
+local function unregister_entity_script(self, resource_id)
     table.remove(self.message_maps, resource_id)
 end
 
 local obj = {
     -- Components
     component_types = {},
-    -- Event types
-    event_types_by_name = {},
-    event_types_by_id = {},
+    -- Event/message types
+    types_by_name = {},
+    types_by_id = {},
     -- ScriptedBehavior events
     message_maps = {},
     -- Scene events
@@ -72,9 +73,9 @@ local obj = {
     -- API
     register_components = register_components,
     register_events = register_events,
-    register_script = register_script,
+    register_entity_script = register_entity_script,
     register_scene_script = register_scene_script,
-    unregister_script = unregister_script,
+    unregister_entity_script = unregister_entity_script,
     table_merge = table_merge
 }
 
