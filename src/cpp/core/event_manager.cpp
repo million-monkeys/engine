@@ -97,3 +97,14 @@ const million::events::EventIterable core::Engine::events (entt::hashed_string s
         return {nullptr, nullptr};
     }
 }
+
+const million::events::EventIterable core::Engine::events (entt::hashed_string::hash_type stream_hash) const
+{
+    auto it = m_named_streams.find(stream_hash);
+    if (it != m_named_streams.end()) {
+        return it->second.iterable->iter();
+    } else {
+        spdlog::error("[events] Event stream does not exist: {}", stream_hash);
+        return {nullptr, nullptr};
+    }
+}

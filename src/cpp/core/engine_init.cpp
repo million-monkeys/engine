@@ -133,11 +133,11 @@ void core::Engine::setupGame ()
     const std::string& scene_path = entt::monostate<"scenes/path"_hs>();
     m_scene_manager.loadSceneList(scene_path);
 
-    // m_commands.emit<commands::scenes::Load>([](auto& load){
-    //     const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
-    //     load.scene_id = entt::hashed_string::value(initial_scene.c_str());
-    //     load.auto_swap = true;
-    // });
+    m_commands.emit<commands::scenes::Load>([](auto& load){
+        const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
+        load.scene_id = entt::hashed_string::value(initial_scene.c_str());
+        load.auto_swap = true;
+    });
 
     // Set up game state
     const std::string& start_state = entt::monostate<"game/initial-state"_hs>();

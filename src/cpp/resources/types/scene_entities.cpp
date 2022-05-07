@@ -27,9 +27,11 @@ bool resources::types::SceneEntities::load (million::resources::Handle handle, c
                     auto entity_id = prototype_registry.create();
                     prototype_registry.emplace<core::EntityPrototypeID>(entity_id, entt::hashed_string::value(name.c_str()));
                     for (const auto& [name_str, component]  : entity.as_table()) {
-                        SPDLOG_TRACE("[scenes] Adding component to prototype entity {}: {}", name, name_str);
-                        toml::value value = component;
-                        m_engine->loadComponent(prototype_registry, entt::hashed_string{name_str.c_str()}, entity_id, reinterpret_cast<const void*>(&value));
+                        if (name_str != "_name_") {
+                            SPDLOG_TRACE("[scenes] Adding component to prototype entity {}: {}", name, name_str);
+                            toml::value value = component;
+                            m_engine->loadComponent(prototype_registry, entt::hashed_string{name_str.c_str()}, entity_id, reinterpret_cast<const void*>(&value));
+                        }
                     }
                 } else {
                     spdlog::warn("[scenes] Entity prototype without _name_!");

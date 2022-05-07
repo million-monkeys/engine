@@ -188,6 +188,14 @@ extern "C" std::uint32_t get_messages (const char** buffer)
     return iterable.size();
 }
 
+extern "C" std::uint32_t get_stream_events (std::uint32_t stream_name, const char** buffer)
+{
+    auto iterable = g_engine->events(stream_name);
+    auto& first = *iterable.begin();
+    *buffer = reinterpret_cast<const char*>(&first);
+    return iterable.size();
+}
+
 struct BehaviorIterator {
     using const_iterable = typename entt::storage_traits<entt::entity, components::core::ScriptedBehavior>::storage_type::const_iterable;
     const_iterable::iterator next;

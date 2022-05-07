@@ -3,18 +3,18 @@ local ffi = require('ffi')
 ffi.cdef [[
     uint32_t null_entity_value ();
     uint32_t entity_create (uint32_t which_registry);
-    uint32_t entity_create_from_prototype (uint32_t which_registry, const char* prototype);
-    void entity_destroy (uint32_t which_registry, uint32_t entity);
-    uint32_t entity_lookup_by_name (uint32_t which_registry, const char* name);
-    void* component_get_for_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
-    void* component_add_to_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
-    void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name);
-    void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
-    void output_log (uint32_t level, const char* message);
-    void* allocate_message (const char* message_name, uint32_t target, uint8_t size);
-    void* allocate_command (const char* event_name, uint8_t size);
-    uint32_t load_resource (const char* type, const char* filename, const char* name);
-    uint32_t find_resource (const char* name);
+    uint32_t entity_create_from_prototype (uint32_t which_registry, const char*);
+    void entity_destroy (uint32_t which_registry, uint32_t);
+    uint32_t entity_lookup_by_name (uint32_t which_registry, const char*);
+    void* component_get_for_entity (uint32_t which_registry, uint32_t, const char*);
+    void* component_add_to_entity (uint32_t which_registry, uint32_t, const char*);
+    void component_tag_entity (uint32_t which_registry, uint32_t, const char*);
+    void component_remove_from_entity (uint32_t which_registry, uint32_t, const char*);
+    void output_log (uint32_t, const char*);
+    void* allocate_message (const char*, uint32_t, uint8_t);
+    void* allocate_command (const char*, uint8_t);
+    uint32_t load_resource (const char*, const char*, const char*);
+    uint32_t find_resource (const char*);
 ]]
 local C = ffi.C
 

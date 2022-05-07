@@ -82,6 +82,8 @@ namespace core {
         const million::events::MessageIterable messages () const final;
         const million::events::EventIterable events (entt::hashed_string) const final;
 
+        const million::events::EventIterable events (entt::hashed_string::hash_type) const;
+
         /////////////////////////////////////////
         // Internal API
         /////////////////////////////////////////

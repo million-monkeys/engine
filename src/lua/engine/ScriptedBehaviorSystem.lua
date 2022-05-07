@@ -9,12 +9,12 @@ struct MessageEnvelope {
 };
 struct BehaviorIterator* setup_scripted_behavior_iterator ();
 uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
-uint32_t get_messages (const char** buffer);
+uint32_t get_messages (const char**);
 ]]
 local C = ffi.C
 local core = require('mm_core')
-local registry = require('mm_script_api').registry
 local mm = require('mm_script_api')
+local registry = mm.registry
 
 local MAX_ITERATIONS = 15
 
@@ -72,7 +72,7 @@ local function process_messages (entities, message_buffer, buffer_size)
     end
 end
 
-function handle_messages ()
+return function ()
     local message_buffer = ffi.new('const char*[1]')
     -- Collect entities that have a ScriptedBehavior component and valid message map resource
     local entity_message_maps = gather_entities()

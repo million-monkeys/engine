@@ -172,16 +172,21 @@ void core::Engine::executeHandlers (HandlerType type)
             for (const auto& handler : m_game_handlers[m_current_game_state]) {
                 handler(events("core"_hs), message_publisher);
             }
-            break;
+            
         }
+        {
+            EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
+        }
+        break;
     case HandlerType::Scene:
         {
             EASY_BLOCK("Events/scene", profiler::colors::Purple100);
             for (const auto& handler : m_scene_handlers[m_scene_manager.current()]) {
                 handler(events("core"_hs), message_publisher);
             }
-            break;
         }
+        scripting::processSceneEvents(m_scene_manager.handle());
+        break;
     };
 }
 

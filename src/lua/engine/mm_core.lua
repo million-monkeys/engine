@@ -8,6 +8,7 @@ ffi.cdef[[
     uint32_t get_ref (const char* name);
 
     struct NameOnlyEvent {};
+    struct SceneActivatedEvent {uint32_t id;};
 ]]
 local C = ffi.C
 require('jit').opt.start('hotloop=28', 'maxmcode=2048', 'sizemcode=64', 'maxtrace=2000', 'maxrecord=8000')
@@ -48,39 +49,37 @@ local function register_events(self, type_list)
     end
 end
 
-local function register_entity_script(self, script)
-    self.message_maps[script.resource_id] = script.message_map
-end
-
-local function register_scene_script(self, script)
-    self.scene_event_maps[script.resource_id] = script.event_map
-end
-
-local function unregister_entity_script(self, resource_id)
-    table.remove(self.message_maps, resource_id)
-end
-
 local obj = {
     -- Components
     component_types = {},
     -- Event/message types
     types_by_name = {},
     types_by_id = {},
-    -- ScriptedBehavior events
+    -- ScriptedBehavior messages
     message_maps = {},
     -- Scene events
     scene_event_maps = {},
     -- API
     register_components = register_components,
     register_events = register_events,
-    register_entity_script = register_entity_script,
-    register_scene_script = register_scene_script,
-    unregister_entity_script = unregister_entity_script,
+    register_scene_script = function(self, script)
+        self.scene_event_maps[script.resource_id] = script.event_map
+    end,
+    unregister_scene_script = function(self, resource_id)
+        table.remove(self.scene_event_maps, resource_id)
+    end,
+    register_entity_script = function(self, script)
+        self.message_maps[script.resource_id] = script.message_map
+    end,
+    unregister_entity_script = function(self, resource_id)
+        table.remove(self.message_maps, resource_id)
+    end,
     table_merge = table_merge
 }
 
 obj:register_events({
     {name="engine/exit", type="NameOnlyEvent"},
+    {name="scene/activated", type="SceneActivatedEvent"},
 })
 
 return obj

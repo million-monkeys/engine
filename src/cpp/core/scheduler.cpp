@@ -96,22 +96,9 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
         engine.executeHandlers(core::HandlerType::Scene);
     }).name("events/scene");
 
-    Task scripts_game = m_coordinator.emplace([&engine](){
-        EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
-        // scripting::processEvents(engine);
-        (void)engine;
-    }).name("scripts/game");
-
-    Task scripts_scene = m_coordinator.emplace([&engine](){
-        EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
-        // scripting::processEvents(engine);
-        (void)engine;
-    }).name("scripts/scene");
-
-    Task scripts_behavior = m_coordinator.emplace([&engine](){
+    Task scripts_behavior = m_coordinator.emplace([](){
         SPDLOG_TRACE("Running ScriptedBehaviors");
-        EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
-        scripting::processEvents(engine);
+        scripting::processMessages();
     }).name("scripts/behavior");
     
     Task scripts_ai = m_coordinator.emplace([](){
@@ -141,9 +128,8 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     }).name("hooks/before-update");
 
     // Game and scene event handlers
-    scripts_scene.after(events_game, scripts_game);
-    events_scene.after(events_game, scripts_game);
-    scripts_behavior.after(scripts_scene, events_scene);
+    events_scene.after(events_game);
+    scripts_behavior.after(events_scene);
 
     before_update.after(pump_events);
     

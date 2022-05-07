@@ -21,7 +21,8 @@ namespace world {
         void update ();
         void swapScenes ();
 
-        entt::hashed_string::hash_type current () const { return m_current_scene; }
+        entt::hashed_string::hash_type current () const { return m_current.scene; }
+        million::resources::Handle handle () const { return m_current.scripts; }
 
     private:
         struct PendingScene {
@@ -33,8 +34,13 @@ namespace world {
         std::filesystem::path m_path;
         helpers::hashed_string_flat_map<std::string> m_scenes;
         helpers::hashed_string_flat_map<PendingScene> m_pending_scenes;
-        entt::hashed_string::hash_type m_current_scene;
-        entt::hashed_string::hash_type m_pending_scene;
+        struct Info {
+            entt::hashed_string::hash_type scene;
+            million::resources::Handle scripts;
+        };
+        Info m_current;
+        Info m_pending;
+        
     };
 
 } // world::

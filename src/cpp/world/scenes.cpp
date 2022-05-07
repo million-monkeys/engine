@@ -8,8 +8,7 @@
 
 world::SceneManager::SceneManager (core::Engine& engine) :
     m_engine(engine),
-    m_stream(engine.createStream("scenes"_hs)),
-    m_current_scene(entt::hashed_string{})
+    m_stream(engine.createStream("scenes"_hs))
 {
 
 }
@@ -82,9 +81,12 @@ void world::SceneManager::update ()
                             if (it != m_pending_scenes.end()) {
                                 PendingScene& pending = it->second;
                                 pending.resources.erase(loaded.handle.handle);
+                                if (loaded.type == "scene-script"_hs) {
+                                    m_pending.scripts = loaded.handle;
+                                }
                                 if (pending.resources.empty()) {
                                     // Scene fully loaded
-                                    m_pending_scene = loaded.name;
+                                    m_pending.scene = loaded.name;
                                     m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
                                         scene.id = loaded.name;
                                     });
@@ -111,8 +113,13 @@ void world::SceneManager::swapScenes ()
     // Call UNLOAD_SCENE hooks on old scene
     // m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
 
-    m_current_scene = m_pending_scene;
-    m_pending_scene = 0;
+    // Set current scene and scripts
+    m_current.scene = m_pending.scene;
+    m_current.scripts = m_pending.scripts;
+
+    // Invalidate pending
+    m_pending.scene = 0;
+    m_pending.scripts = million::resources::Handle::invalid();
 
     // Swap newly loaded scene into foreground
     m_engine.m_registries.swap();
@@ -126,6 +133,6 @@ void world::SceneManager::swapScenes ()
     // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
 
     m_stream.emit<events::scenes::Activated>([this](auto& scene){
-        scene.id = m_current_scene;
+        scene.id = m_current.scene;
     });
 }

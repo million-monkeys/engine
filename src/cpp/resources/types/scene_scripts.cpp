@@ -84,7 +84,7 @@ void resources::types::SceneScripts::unload (million::resources::Handle handle)
 {
     std::ostringstream oss;
     oss << "local core = require('mm_core')\n";
-    oss << "core:unregister_script(" << handle.id() << ")";
+    oss << "core:unregister_scene_script(" << handle.id() << ")";
     if (! scripting::evaluate("resource:scene-scripts:unload", oss.str())) {
         spdlog::warn("[resource:scene-scripts] Resoruce '{}' could not be unloaded, script error", handle.id());
     }

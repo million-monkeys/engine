@@ -83,14 +83,8 @@ bool scripting::init (core::Engine* engine)
     luaL_openlibs(g_lua_state);
     setupPackageLoader(g_lua_state);
 
-    // Make sure core types are declared before anything else
-    luaL_dostring(g_lua_state, "require('mm_core')");
-
-    // Declare core components
-    luaL_dostring(g_lua_state, "require('core_components')");
-
-    // Create system for ScriptedBehavior
-    luaL_dostring(g_lua_state, "require('ScriptedBehaviorSystem')");
+    // Initialize scripting system
+    luaL_dostring(g_lua_state, "require('mm_init')");
 
     // Make sure game-specific events are declared
     load(entt::monostate<"game/script-events"_hs>());
@@ -139,8 +133,27 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
     return true;
 }
 
-void scripting::processEvents (million::api::EngineRuntime& engine)
+void scripting::processGameEvents ()
 {
+}
+
+void scripting::processSceneEvents (million::resources::Handle handle)
+{
+    EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+    // Only one thread can execute Lua code at once
+    std::lock_guard<std::mutex> guard(g_vm_mutex);
+
+    lua_getglobal(g_lua_state, "handle_scene_events");
+    lua_pushinteger(g_lua_state, handle.id());
+    int ret = lua_pcall(g_lua_state, 1, 0, 0);
+    if (ret != 0) {
+        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+    }
+}
+
+void scripting::processMessages ()
+{
+    EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
