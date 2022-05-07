@@ -21,6 +21,8 @@ namespace world {
         void update ();
         void swapScenes ();
 
+        void processEvents ();
+
         entt::hashed_string::hash_type current () const { return m_current.scene; }
         million::resources::Handle handle () const { return m_current.scripts; }
 
@@ -35,7 +37,7 @@ namespace world {
         helpers::hashed_string_flat_map<std::string> m_scenes;
         helpers::hashed_string_flat_map<PendingScene> m_pending_scenes;
         struct Info {
-            entt::hashed_string::hash_type scene;
+            entt::hashed_string::hash_type scene = 0;
             million::resources::Handle scripts;
         };
         Info m_current;

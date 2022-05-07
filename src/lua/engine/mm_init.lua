@@ -10,6 +10,9 @@ require('core_components')
 -- Declare global functions:
 -- ----------------------------------------------------------------------------------------------------
 -- Create event handler function for scene events
-handle_scene_events=require('SceneEvents')
+local event_maps = require('mm_event_handlers')
+handle_scene_events = event_maps.handle_scene_events
+handle_game_events = event_maps.handle_game_events
+
 -- Create message handler for ScriptedBehavior system
-handle_messages=require('ScriptedBehaviorSystem')
+handle_messages = require('mm_scripted_behavior_handlers')

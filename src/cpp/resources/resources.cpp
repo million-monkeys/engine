@@ -8,7 +8,33 @@
 #include <blockingconcurrentqueue.h>
 #include <concurrentqueue.h>
 
-phmap::flat_hash_map<entt::hashed_string::hash_type, std::pair<million::api::resources::Loader*,std::uint16_t>, helpers::Identity> g_resource_loaders;
+class ResourceStorage {
+public:
+    ResourceStorage (std::uint32_t id, million::api::resources::Loader* loader, bool managed) : m_resource_id(id), m_loader(loader), m_managed(managed) {}
+    ResourceStorage (ResourceStorage&& other) :
+        m_resource_id(other.m_resource_id),
+        m_loader(other.m_loader),
+        m_managed(other.m_managed)
+    {
+        other.m_loader = nullptr;
+    }
+    ~ResourceStorage()
+    {
+        if (m_managed && m_loader != nullptr) {
+            delete m_loader;
+        }
+    }
+
+    million::resources::Handle enqueue (const std::string& filename, entt::hashed_string::hash_type name);
+    
+private:
+    std::atomic_int32_t m_idx = 0;
+    const std::uint32_t m_resource_id;
+    million::api::resources::Loader* m_loader;
+    const bool m_managed;
+};
+
+phmap::flat_hash_map<entt::hashed_string::hash_type, ResourceStorage, helpers::Identity> g_resource_loaders;
 
 struct WorkItem {
     million::api::resources::Loader* loader;
@@ -68,6 +94,7 @@ void resources::init (core::Engine* engine)
 {
     g_stream = &engine->createStream("resources"_hs);
     resources::install<resources::types::EntityScripts>(engine);
+    resources::install<resources::types::GameScripts>(engine);
     resources::install<resources::types::SceneScripts>(engine);
     resources::install<resources::types::SceneEntities>(engine);
     g_loader_thread = std::thread(loaderThread);
@@ -89,42 +116,19 @@ void resources::poll ()
 
 }
 
-void resources::install (entt::id_type id, million::api::resources::Loader* loader)
+void resources::install (million::api::resources::Loader* loader, bool managed)
 {
     const auto type = loader->name();
-    auto index = g_resource_loaders.size();
+    std::uint32_t index = g_resource_loaders.size() + 1;
     spdlog::debug("[resources] Installing {} ({:x})", type.data(), index);
-    g_resource_loaders[type.value()] = std::make_pair(loader, index);
+    g_resource_loaders.emplace(type.value(), ResourceStorage{index, loader, managed});
 }
-
-std::atomic_int32_t g_idx = 0;
-
-class ResourceStorage {
-public:
-    ResourceStorage (std::uint32_t id) : m_type_id(id) {}
-
-    million::resources::Handle allocate ()
-    {
-        return million::resources::Handle::make(m_type_id, m_idx++);
-    }
-    
-private:
-    const std::uint32_t m_type_id;
-    std::uint32_t m_idx = 0;
-};
 
 million::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
     auto it = g_resource_loaders.find(type.value());
     if (it != g_resource_loaders.end()) {
-        auto [loader, resource_id] = it->second;
-        std::uint32_t id;
-        if (loader->cached(filename, &id)) {
-            return million::resources::Handle::make(resource_id, id);
-        }
-        million::resources::Handle handle = million::resources::Handle::make(resource_id, g_idx.fetch_add(1));
-        g_work_queue.enqueue({loader, filename, handle, name});
-        return handle;
+        return it->second.enqueue(filename, name);
     } else {
         spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
         return million::resources::Handle::invalid();
@@ -135,10 +139,16 @@ void resources::term ()
 {
     g_work_queue.enqueue(WorkItem::POISON_PILL);
     g_loader_thread.join();
-
-    delete g_resource_loaders[resources::types::EntityScripts::Name].first;
-    delete g_resource_loaders[resources::types::SceneScripts::Name].first;
-    delete g_resource_loaders[resources::types::SceneEntities::Name].first;
-
     g_resource_loaders.clear();
+}
+
+million::resources::Handle ResourceStorage::enqueue (const std::string& filename, entt::hashed_string::hash_type name)
+{
+    std::uint32_t id;
+    if (m_loader->cached(filename, &id)) {
+        return million::resources::Handle::make(m_resource_id, id);
+    }
+    million::resources::Handle handle = million::resources::Handle::make(m_resource_id, m_idx.fetch_add(1));
+    g_work_queue.enqueue({m_loader, filename, handle, name});
+    return handle;
 }

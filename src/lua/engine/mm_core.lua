@@ -57,11 +57,16 @@ local obj = {
     types_by_id = {},
     -- ScriptedBehavior messages
     message_maps = {},
+    -- Game events
+    game_event_map = {},
     -- Scene events
     scene_event_maps = {},
     -- API
     register_components = register_components,
     register_events = register_events,
+    register_game_script = function(self, script)
+        self.game_event_map = script
+    end,
     register_scene_script = function(self, script)
         self.scene_event_maps[script.resource_id] = script.event_map
     end,

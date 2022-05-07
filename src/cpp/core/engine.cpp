@@ -31,10 +31,15 @@ million::resources::Handle core::Engine::loadResource (entt::hashed_string type,
 {
     auto handle = resources::load(type, filename, name);
     if (name != 0) {
-        m_named_resources[name] = handle;
-        spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
+        bindResourceToName(handle, name);
     }
     return handle;
+}
+
+void core::Engine::bindResourceToName (million::resources::Handle handle, entt::hashed_string::hash_type name)
+{
+    m_named_resources[name] = handle;
+    spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
 }
 
 void core::Engine::setGameState (entt::hashed_string new_state)
@@ -99,25 +104,24 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                     break;
             };
         }
-        // for (const auto& ev : events("resources"_hs)) {
-        //     EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
-        //     switch (ev.type) {
-        //         case events::engine::ResourceLoaded::ID:
-        //         {
-        //             auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
-        //             spdlog::info("Resource loaded: {} ({})", loaded.name, loaded.name == "script1"_hs);
-        //             if (loaded.name == "script1"_hs) {
-        //                 scripting::load("test.lua");
-        //             }
-        //             if (loaded.name == "scene-script"_hs) {
-        //                 spdlog::warn("Scene scripts loaded");
-        //             }
-        //             break;
-        //         }
-        //         default:
-        //             break;
-        //     };
-        // }
+        for (const auto& ev : events("resources"_hs)) {
+            EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
+            switch (ev.type) {
+                case events::resources::Loaded::ID:
+                {
+                    auto& loaded = eventData<events::resources::Loaded>(ev);
+                    if (loaded.name == "game-script"_hs) {
+                        m_game_script = loaded.handle;
+                        if (m_system_status == SystemStatus::Loading) {
+                            m_system_status = SystemStatus::Running;
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
+            };
+        }
     }
 
     // Run the before-frame hook for each module, updating the current time
@@ -172,10 +176,12 @@ void core::Engine::executeHandlers (HandlerType type)
             for (const auto& handler : m_game_handlers[m_current_game_state]) {
                 handler(events("core"_hs), message_publisher);
             }
-            
         }
         {
             EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
+            if (m_game_script.valid()) {
+                scripting::processGameEvents();
+            }
         }
         break;
     case HandlerType::Scene:
@@ -185,7 +191,7 @@ void core::Engine::executeHandlers (HandlerType type)
                 handler(events("core"_hs), message_publisher);
             }
         }
-        scripting::processSceneEvents(m_scene_manager.handle());
+        m_scene_manager.processEvents();
         break;
     };
 }

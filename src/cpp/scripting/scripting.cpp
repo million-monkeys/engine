@@ -135,6 +135,15 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
 
 void scripting::processGameEvents ()
 {
+    EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+    // Only one thread can execute Lua code at once
+    std::lock_guard<std::mutex> guard(g_vm_mutex);
+
+    lua_getglobal(g_lua_state, "handle_game_events");
+    int ret = lua_pcall(g_lua_state, 0, 0, 0);
+    if (ret != 0) {
+        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+    }
 }
 
 void scripting::processSceneEvents (million::resources::Handle handle)

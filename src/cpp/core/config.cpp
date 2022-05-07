@@ -215,6 +215,11 @@ bool core::readGameConfig (helpers::hashed_string_flat_map<std::uint32_t>& strea
         entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
         entt::monostate<"game/initial-state"_hs>{} = toml::find<std::string>(game, "initial-state");
         entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
+        if (game.contains("game-script")) {
+            entt::monostate<"game/script-file"_hs>{} = std::string{game.at("game-script").as_string().str};
+        } else {
+            entt::monostate<"game/script-file"_hs>{} = std::string{};
+        }
 
         //******************************************************//
         // SCENES

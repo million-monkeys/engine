@@ -46,15 +46,16 @@ namespace million {
 
         struct Handle {
             using Type = std::uint32_t;
-            Type handle;
-            // 12 bits = type, 20 bits = id
-            const std::uint32_t type () const { return handle >> 20; }
-            const std::uint32_t id () const { return handle & 0xfffff; }
+            Type handle = 0xffffffff;
+            // 10 bits (1024) = type, 22 bits (4194304) = id
+            const std::uint32_t type () const { return handle >> 22; }
+            const std::uint32_t id () const { return handle & 0x3fffff; }
+            const bool valid () const { return *this != invalid(); }
+            bool operator== (const Handle other) const { return handle == other.handle; }
+            bool operator!= (const Handle other) const { return handle != other.handle; }
 
-            const bool valid () const { return handle != invalid().handle; }
+            static constexpr Handle make (std::uint32_t type, std::uint32_t id) { return Handle{type << 22 | (id & 0x3fffff)}; }
             static constexpr Handle invalid () { return Handle{0xffffffff}; }
-
-            static constexpr Handle make (std::uint32_t type, std::uint32_t id) { return Handle{type << 20 | (id & 0xfffff)}; }
         };
     }
 

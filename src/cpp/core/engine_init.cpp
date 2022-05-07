@@ -133,11 +133,19 @@ void core::Engine::setupGame ()
     const std::string& scene_path = entt::monostate<"scenes/path"_hs>();
     m_scene_manager.loadSceneList(scene_path);
 
+    // load initial scene
     m_commands.emit<commands::scenes::Load>([](auto& load){
         const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
         load.scene_id = entt::hashed_string::value(initial_scene.c_str());
         load.auto_swap = true;
     });
+
+    // Load game event handler script
+    const std::string& script_file = entt::monostate<"game/script-file"_hs>();
+    if (! script_file.empty()) {
+        m_system_status = SystemStatus::Loading;
+        loadResource("game-script"_hs, script_file, "game-script"_hs);
+    }
 
     // Set up game state
     const std::string& start_state = entt::monostate<"game/initial-state"_hs>();

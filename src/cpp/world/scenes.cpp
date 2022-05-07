@@ -5,6 +5,7 @@
 #include <physfs.hpp>
 
 #include "resources/resources.hpp"
+#include "scripting/scripting.hpp"
 
 world::SceneManager::SceneManager (core::Engine& engine) :
     m_engine(engine),
@@ -49,9 +50,34 @@ void world::SceneManager::loadScene (entt::hashed_string::hash_type scene, bool 
         PendingScene& pending = m_pending_scenes[scene];
         pending.auto_swap = auto_swap;
 
+        // Load entities and prototypes
         if (config.contains("entity")) {
             auto handle = resources::load("scene-entities"_hs, filename, scene);
             pending.resources.insert(handle.handle);
+        }
+
+        // Preload resources
+        if (config.contains("resources")) {
+            for (const auto& [name, resource] : config.at("resources").as_table()) {
+                if (resource.is_table() && resource.contains("type") && resource.contains("file")) {
+                    auto& type = resource.at("type");
+                    auto& file = resource.at("file");
+                    if (! type.is_string()) {
+                        spdlog::error("[scenes] In scene file '{}', resource '{}' has invalid type field", scene_name, name);
+                        continue;
+                    }
+                    if (! file.is_string()) {
+                        spdlog::error("[scenes] In scene file '{}', resource '{}' has invalid file field", scene_name, name);
+                        continue;
+                    }
+                    // Queue resource for loading
+                    auto handle = resources::load(entt::hashed_string{type.as_string().str.c_str()}, file.as_string(), scene);
+                    // Bind resource to name
+                    m_engine.bindResourceToName(handle, entt::hashed_string::value(name.c_str()));
+                    // Add resoruce to pending for scene
+                    pending.resources.insert(handle.handle);
+                }
+            }
         }
 
         // Load scripts
@@ -76,25 +102,23 @@ void world::SceneManager::update ()
                     case events::resources::Loaded::ID:
                     {
                         auto& loaded = m_engine.eventData<events::resources::Loaded>(ev);
-                        if (loaded.type == "scene-entities"_hs || loaded.type == "scene-script"_hs) {
-                            auto it = m_pending_scenes.find(loaded.name);
-                            if (it != m_pending_scenes.end()) {
-                                PendingScene& pending = it->second;
-                                pending.resources.erase(loaded.handle.handle);
-                                if (loaded.type == "scene-script"_hs) {
-                                    m_pending.scripts = loaded.handle;
+                        auto it = m_pending_scenes.find(loaded.name);
+                        if (it != m_pending_scenes.end()) {
+                            PendingScene& pending = it->second;
+                            pending.resources.erase(loaded.handle.handle);
+                            if (loaded.type == "scene-script"_hs) {
+                                m_pending.scripts = loaded.handle;
+                            }
+                            if (pending.resources.empty()) {
+                                // Scene fully loaded
+                                m_pending.scene = loaded.name;
+                                m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
+                                    scene.id = loaded.name;
+                                });
+                                if (pending.auto_swap) {
+                                    swapScenes();
                                 }
-                                if (pending.resources.empty()) {
-                                    // Scene fully loaded
-                                    m_pending.scene = loaded.name;
-                                    m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
-                                        scene.id = loaded.name;
-                                    });
-                                    if (pending.auto_swap) {
-                                        swapScenes();
-                                    }
-                                    m_pending_scenes.erase(it);
-                                }
+                                m_pending_scenes.erase(it);
                             }
                         }
                         break;
@@ -135,4 +159,11 @@ void world::SceneManager::swapScenes ()
     m_stream.emit<events::scenes::Activated>([this](auto& scene){
         scene.id = m_current.scene;
     });
+}
+
+void world::SceneManager::processEvents ()
+{
+    if (m_current.scripts.valid()) {
+        scripting::processSceneEvents(m_current.scripts);
+    }
 }

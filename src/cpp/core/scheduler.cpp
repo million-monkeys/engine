@@ -158,7 +158,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
     } else {
 //         connect("BEFORE", "AFTER");
             SPDLOG_DEBUG("No gamelogic to add");
-            scripts_behavior.after(pump_events);
+            pump_events.after(scripts_behavior);
     }
 
 //     if (tf::Taskflow* updater_flow = helpers::find_or(taskflows, million::SystemStage::Update, nullptr)) {

@@ -91,6 +91,9 @@ namespace core {
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);
 
+        // Attach a name to a resource handle
+        void bindResourceToName (million::resources::Handle handle, entt::hashed_string::hash_type name);
+
         // Time
         DeltaTime deltaTime () { return m_current_time_delta; }
 
@@ -223,6 +226,7 @@ namespace core {
 
         enum class SystemStatus {
             Running,
+            Loading,
             Stopped,
         };
         SystemStatus m_system_status;                           // Track whether systems should be run or not
@@ -230,6 +234,7 @@ namespace core {
 
         helpers::hashed_string_flat_map<std::vector<million::GameHandler>> m_game_handlers;
         helpers::hashed_string_flat_map<std::vector<million::SceneHandler>> m_scene_handlers;
+        million::resources::Handle m_game_script;
 
         // Timing
         DeltaTime m_current_time_delta = 0;
