@@ -3,6 +3,15 @@
 #include "scripting/scripting.hpp"
 #include "utils/parser.hpp"
 
+bool resources::types::EntityScripts::cached (const std::string& filename, std::uint32_t* id)
+{
+    return m_cached_ids.if_contains(
+        entt::hashed_string::value(filename.c_str()),
+        [&id](auto& element){
+        *id = element.second;
+    });
+}
+
 bool resources::types::EntityScripts::load (million::resources::Handle handle, const std::string& filename)
 {
     try {
@@ -69,6 +78,10 @@ bool resources::types::EntityScripts::load (million::resources::Handle handle, c
         return false;
     }
 
+    // Cache the handle
+    m_cached_ids.insert(std::make_pair(entt::hashed_string::value(filename.c_str()), handle.id()));
+
+    // Signal success
     return true;
 }
 

@@ -16,7 +16,7 @@ namespace world {
         ~SceneManager ();
 
         void loadSceneList (const std::string& path);
-        void loadScene (million::Registry which, entt::hashed_string::hash_type scene, bool auto_swap);
+        void loadScene (entt::hashed_string::hash_type scene, bool auto_swap);
 
         void update ();
         void swapScenes ();
@@ -29,10 +29,12 @@ namespace world {
             bool auto_swap;
         };
         core::Engine& m_engine;
+        million::events::Stream& m_stream;
         std::filesystem::path m_path;
         helpers::hashed_string_flat_map<std::string> m_scenes;
         helpers::hashed_string_flat_map<PendingScene> m_pending_scenes;
         entt::hashed_string::hash_type m_current_scene;
+        entt::hashed_string::hash_type m_pending_scene;
     };
 
 } // world::

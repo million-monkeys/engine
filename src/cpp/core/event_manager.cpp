@@ -69,7 +69,7 @@ million::events::Stream& createStreamInternal (entt::hashed_string stream_name, 
 
 million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size)
 {
-    auto it = m_stream_sizes.find(stream_name);
+    auto it = m_stream_sizes.find(stream_name.value());
     if (it != m_stream_sizes.end()) {
         buffer_size = it->second;
     }

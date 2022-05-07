@@ -28,12 +28,6 @@ namespace helpers {
     } // impl::
 
     ///////////////////////////////////////////////////////////////////////////
-    // Type alias for a phmap::flat_hash_map with hashed strings as keys
-    ///////////////////////////////////////////////////////////////////////////
-    template <typename T>
-    using hashed_string_map = phmap::flat_hash_map<entt::hashed_string::hash_type, T, entt::identity>;
-
-    ///////////////////////////////////////////////////////////////////////////
     // Utility to make a variant visitor out of lambdas, using the *overloaded
     // pattern* as describped in cppreference:
     //  https://en.cppreference.com/w/cpp/utility/variant/visit).

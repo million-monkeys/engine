@@ -1,34 +1,34 @@
 
 #include "engine.hpp"
 
-core::Engine::Registries::RegistryPair::RegistryPair()
+core::RegistryPair::RegistryPair()
 {
     // Manage Named entities
-    runtime.on_construct<components::core::Named>().connect<&core::Engine::Registries::RegistryPair::onAddNamedEntity>(this);
-    runtime.on_destroy<components::core::Named>().connect<&core::Engine::Registries::RegistryPair::onRemoveNamedEntity>(this);
+    runtime.on_construct<components::core::Named>().connect<&core::RegistryPair::onAddNamedEntity>(this);
+    runtime.on_destroy<components::core::Named>().connect<&core::RegistryPair::onRemoveNamedEntity>(this);
     // Manage prototype entities
-    prototypes.on_construct<core::EntityPrototypeID>().connect<&core::Engine::Registries::RegistryPair::onAddPrototypeEntity>(this);
-    prototypes.on_destroy<core::EntityPrototypeID>().connect<&core::Engine::Registries::RegistryPair::onRemovePrototypeEntity>(this);
+    prototypes.on_construct<core::EntityPrototypeID>().connect<&core::RegistryPair::onAddPrototypeEntity>(this);
+    prototypes.on_destroy<core::EntityPrototypeID>().connect<&core::RegistryPair::onRemovePrototypeEntity>(this);
 }
 
-core::Engine::Registries::RegistryPair::~RegistryPair()
+core::RegistryPair::~RegistryPair()
 {
 
 }
 
-void core::Engine::Registries::RegistryPair::onAddNamedEntity (entt::registry& registry, entt::entity entity)
+void core::RegistryPair::onAddNamedEntity (entt::registry& registry, entt::entity entity)
 {
     const auto& named = registry.get<components::core::Named>(entity);
     entity_names[named.name] = {entity, named.name.data()};
 }
 
-void core::Engine::Registries::RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::entity entity)
+void core::RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::entity entity)
 {
     const auto& named = registry.get<components::core::Named>(entity);
     entity_names.erase(named.name);
 }
 
-void core::Engine::Registries::RegistryPair::clear ()
+void core::RegistryPair::clear ()
 {
     runtime = {};
     prototypes = {};

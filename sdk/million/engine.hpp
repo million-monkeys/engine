@@ -41,6 +41,8 @@ namespace million::api {
         class Loader {
         public:
             virtual ~Loader() {}
+            virtual bool cached (const std::string& filename, std::uint32_t*) = 0; // MUST be threadsafe
+
             virtual bool load (million::resources::Handle handle, const std::string& filename) = 0;
             virtual void unload (million::resources::Handle handle) = 0;
 

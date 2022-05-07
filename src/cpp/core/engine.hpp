@@ -27,6 +27,31 @@ namespace core {
         Scene,
     };
 
+    struct RegistryPair {
+    public:
+        struct NamedEntityInfo {
+            entt::entity entity;
+            std::string name;
+        };
+
+        RegistryPair();
+        ~RegistryPair();
+        entt::registry runtime;
+        entt::registry prototypes;
+        helpers::hashed_string_flat_map<NamedEntityInfo> entity_names;
+        helpers::hashed_string_flat_map<entt::entity> prototype_names;
+
+        void clear ();
+    private:
+        // Callbacks to manage Named entities
+        void onAddNamedEntity (entt::registry&, entt::entity);
+        void onRemoveNamedEntity (entt::registry&, entt::entity);
+
+        // Callbacks to manage prototype entities
+        void onAddPrototypeEntity (entt::registry&, entt::entity);
+        void onRemovePrototypeEntity (entt::registry&, entt::entity);
+    };
+
     class Engine : public million::api::internal::ModuleManager, public million::api::EngineSetup, public million::api::EngineRuntime
     {
     public:
@@ -82,6 +107,11 @@ namespace core {
 
         // Make previously emitted events visible to consumers
         void pumpMessages ();
+
+        RegistryPair& backgroundRegistries()
+        {
+            return m_registries.background();
+        }
 
         // Call all modules that are added as a specific engine hook
         template <million::api::Module::CallbackMasks Hook, typename... T> void callModuleHook (T... args) {
@@ -157,33 +187,16 @@ namespace core {
             // m_event_pool.push(id, target, std::uint32_t(0));
         }
 
-        struct NamedEntityInfo {
-            entt::entity entity;
-            std::string name;
-        };
+        // Event & messaging system
+        helpers::hashed_string_flat_map<std::uint32_t>& m_stream_sizes; // Must be initialized first so that other memeber objects may create streams
+        std::vector<MessagePool*> m_message_pools;
+        MessagePool::PoolType m_message_pool;
+        helpers::hashed_string_node_map<StreamInfo> m_named_streams; // TODO: delete
+        million::events::Stream& m_commands;
 
         // ECS registries to manage all entities
         struct Registries {
         public:
-            struct RegistryPair {
-            public:
-                RegistryPair();
-                ~RegistryPair();
-                entt::registry runtime;
-                entt::registry prototypes;
-                helpers::hashed_string_flat_map<NamedEntityInfo> entity_names;
-                helpers::hashed_string_flat_map<entt::entity> prototype_names;
-
-                void clear ();
-            private:
-                // Callbacks to manage Named entities
-                void onAddNamedEntity (entt::registry&, entt::entity);
-                void onRemoveNamedEntity (entt::registry&, entt::entity);
-
-                // Callbacks to manage prototype entities
-                void onAddPrototypeEntity (entt::registry&, entt::entity);
-                void onRemovePrototypeEntity (entt::registry&, entt::entity);
-            };
             RegistryPair& foreground() { return m_registries[m_foreground_registry]; }
             const RegistryPair& foreground() const { return m_registries[m_foreground_registry]; }
             RegistryPair& background() { return m_registries[1 - m_foreground_registry]; }
@@ -218,13 +231,6 @@ namespace core {
 
         // Timing
         DeltaTime m_current_time_delta = 0;
-
-        // Event & messaging system
-        helpers::hashed_string_flat_map<std::uint32_t>& m_stream_sizes;
-        std::vector<MessagePool*> m_message_pools;
-        MessagePool::PoolType m_message_pool;
-        helpers::hashed_string_node_map<StreamInfo> m_named_streams; // TODO: delete
-        million::events::Stream& m_commands;
 
         // Module Hooks
         std::vector<million::api::Module*> m_hooks_beforeFrame;

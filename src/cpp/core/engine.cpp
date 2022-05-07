@@ -51,6 +51,9 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     // Check if any resources are loaded
     resources::poll();
 
+    // Check if a new scene has loaded
+    m_scene_manager.update();
+
     // Read input device states and dispatch events. Input events are emitted directly into the global pool, immediately readable "this frame" (no frame delay!)
     handleInput();
 
@@ -61,7 +64,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
         for (const auto& ev : events("commands"_hs)) {
             EASY_BLOCK("Handling event", profiler::colors::Amber200);
             switch (ev.type) {
-                case "engine/exit"_hs:
+                case commands::engine::Exit::ID:
                     // No longer running, return false.
                     return false;
                 case "engine/set-system-status/running"_hs:
@@ -86,35 +89,35 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                 // case "scene/registry/clear-runtime"_hs:
                 //     m_runtime_registry.clear();
                 //     break;
-                case "scene/load"_hs:
+                case commands::scenes::Load::ID:
                 {
-                    auto& new_scene = eventData<events::engine::LoadScene>(ev);
-                    m_scene_manager.loadScene(million::Registry::Background, new_scene.scene_id, new_scene.auto_swap);
+                    auto& new_scene = eventData<commands::scenes::Load>(ev);
+                    m_scene_manager.loadScene(new_scene.scene_id, new_scene.auto_swap);
                     break;
                 }
                 default:
                     break;
             };
         }
-        for (const auto& ev : events("resources"_hs)) {
-            EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
-            switch (ev.type) {
-                case events::engine::ResourceLoaded::ID:
-                {
-                    auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
-                    spdlog::info("Resource loaded: {} ({})", loaded.name, loaded.name == "script1"_hs);
-                    if (loaded.name == "script1"_hs) {
-                        scripting::load("test.lua");
-                    }
-                    if (loaded.name == "scene-script"_hs) {
-                        spdlog::warn("Scene scripts loaded");
-                    }
-                    break;
-                }
-                default:
-                    break;
-            };
-        }
+        // for (const auto& ev : events("resources"_hs)) {
+        //     EASY_BLOCK("Handling resource event", profiler::colors::Amber200);
+        //     switch (ev.type) {
+        //         case events::engine::ResourceLoaded::ID:
+        //         {
+        //             auto& loaded = eventData<events::engine::ResourceLoaded>(ev);
+        //             spdlog::info("Resource loaded: {} ({})", loaded.name, loaded.name == "script1"_hs);
+        //             if (loaded.name == "script1"_hs) {
+        //                 scripting::load("test.lua");
+        //             }
+        //             if (loaded.name == "scene-script"_hs) {
+        //                 spdlog::warn("Scene scripts loaded");
+        //             }
+        //             break;
+        //         }
+        //         default:
+        //             break;
+        //     };
+        // }
     }
 
     // Run the before-frame hook for each module, updating the current time

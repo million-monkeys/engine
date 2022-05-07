@@ -2,6 +2,8 @@
 #include "scripting.hpp"
 #include "core/engine.hpp"
 
+#include <stdexcept>
+
 // Script functions need access to an engine instance
 core::Engine* g_engine = nullptr;
 
@@ -164,11 +166,11 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
     }
 }
 
-extern "C" void* allocate_event (const char* event_name, std::uint32_t target_entity, std::uint8_t size)
+extern "C" void* allocate_message (const char* message_name, std::uint32_t target_entity, std::uint8_t size)
 {
-    entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
+    entt::hashed_string::hash_type message_type = entt::hashed_string::value(message_name);
     entt::entity target = static_cast<entt::entity>(target_entity);
-    return g_engine->publisher().push(event_type, target, size);
+    return g_engine->publisher().push(message_type, target, size);
 }
 
 extern "C" void* allocate_command (const char* event_name, uint8_t size)
@@ -238,8 +240,14 @@ extern "C" void output_log (std::uint32_t level, const char* message)
         spdlog::error("[script] {}", message);
         break;
     case 2:
+    {
         spdlog::warn("[script] {}", message);
+        const bool& terminate_on_error = entt::monostate<"engine/terminate-on-error"_hs>();
+        if (terminate_on_error) {
+            throw std::runtime_error("Script Error");
+        }
         break;
+    }
     case 3:
         spdlog::info("[script] {}", message);
         break;

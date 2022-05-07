@@ -8,6 +8,7 @@
 
 world::SceneManager::SceneManager (core::Engine& engine) :
     m_engine(engine),
+    m_stream(engine.createStream("scenes"_hs)),
     m_current_scene(entt::hashed_string{})
 {
 
@@ -29,41 +30,21 @@ void world::SceneManager::loadSceneList (const std::string& path)
         if (file.extension() == ".toml") {
             auto scene = file.replace_extension("").string();
             auto scene_id = entt::hashed_string::value(scene.c_str());
-            SPDLOG_DEBUG("[scenes] Adding scene: {} ({})", scene, scene_id);
+            SPDLOG_DEBUG("[scenes] Adding scene: {} ({:x})", scene, scene_id);
             m_scenes[scene_id] = scene;
         }
     }
 }
 
-void world::SceneManager::loadScene (million::Registry which, entt::hashed_string::hash_type scene, bool auto_swap)
+void world::SceneManager::loadScene (entt::hashed_string::hash_type scene, bool auto_swap)
 {
     EASY_FUNCTION(profiler::colors::RichYellow);
-    // using CM = gou::api::Module::CallbackMasks;
 
     auto it = m_scenes.find(scene);
     if (it != m_scenes.end()) {        
         const auto scene_name = it->second;
         const auto filename = (m_path / scene_name).replace_extension("toml").string();
-        // auto& scene_registry = m_engine.registry(which);
-        // auto& prototype_registry = m_engine.registry(million::Registry::Prototype);
 
-        // // Unload previous scene, if there is one
-        // if (m_current_scene != entt::hashed_string{}) {
-        //     spdlog::info("[scenes] Unloading scene: {}", m_scenes[m_current_scene]);
-        //     // m_engine.callModuleHook<CM::UNLOAD_SCENE>();
-        //     // Destroy all entities that aren't marked as global
-        //     scene_registry.each([&scene_registry](auto entity){
-        //         if (! scene_registry.all_of<components::core::Global>(entity)) {
-        //             scene_registry.destroy(entity);
-        //         }
-        //     });
-        //     // Destroy all prototype entities that aren't marked as global
-        //     prototype_registry.each([&prototype_registry](auto entity){
-        //         if (! prototype_registry.all_of<components::core::Global>(entity)) {
-        //             prototype_registry.destroy(entity);
-        //         }
-        //     });
-        // }
         spdlog::info("[scenes] Loading scene: {}", scene_name);
         const auto config = parser::parse_toml(filename);
         PendingScene& pending = m_pending_scenes[scene];
@@ -80,8 +61,6 @@ void world::SceneManager::loadScene (million::Registry which, entt::hashed_strin
             pending.resources.insert(handle.handle);
         }
 
-        m_current_scene = scene;
-        // m_engine.callModuleHook<CM::LOAD_SCENE>(scene);
     } else {
         spdlog::error("[scenes] Could not load scene because it does not exist: {}", scene);
     }
@@ -95,9 +74,9 @@ void world::SceneManager::update ()
             EASY_BLOCK("SceneManager handling resource events", profiler::colors::Amber200);
             for (const auto& ev : iter) {   
                 switch (ev.type) {
-                    case "loaded"_hs:
+                    case events::resources::Loaded::ID:
                     {
-                        auto& loaded = m_engine.eventData<events::engine::ResourceLoaded>(ev);
+                        auto& loaded = m_engine.eventData<events::resources::Loaded>(ev);
                         if (loaded.type == "scene-entities"_hs || loaded.type == "scene-script"_hs) {
                             auto it = m_pending_scenes.find(loaded.name);
                             if (it != m_pending_scenes.end()) {
@@ -105,7 +84,10 @@ void world::SceneManager::update ()
                                 pending.resources.erase(loaded.handle.handle);
                                 if (pending.resources.empty()) {
                                     // Scene fully loaded
-                                    spdlog::error("Scene fully loaded (name:{}, handle:{}", loaded.name, loaded.handle.id());
+                                    m_pending_scene = loaded.name;
+                                    m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
+                                        scene.id = loaded.name;
+                                    });
                                     if (pending.auto_swap) {
                                         swapScenes();
                                     }
@@ -126,10 +108,24 @@ void world::SceneManager::update ()
 // Swap foreground and background scenes, and clear the (new) background scene
 void world::SceneManager::swapScenes ()
 {
+    // Call UNLOAD_SCENE hooks on old scene
+    // m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
+
+    m_current_scene = m_pending_scene;
+    m_pending_scene = 0;
+
     // Swap newly loaded scene into foreground
     m_engine.m_registries.swap();
     // Copy entities marked as "global" from background to foreground
     m_engine.m_registries.copyGlobals();
     // Clear the background registry
     m_engine.m_registries.background().clear();
+
+    // Call LOAD_SCENE hooks on new scene
+    // TODO: Create a scene API object to pass in? What can it do?
+    // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
+
+    m_stream.emit<events::scenes::Activated>([this](auto& scene){
+        scene.id = m_current_scene;
+    });
 }

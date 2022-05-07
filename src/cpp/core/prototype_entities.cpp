@@ -1,7 +1,7 @@
 
 #include "engine.hpp"
 
-void core::Engine::Registries::RegistryPair::onAddPrototypeEntity (entt::registry& registry, entt::entity entity)
+void core::RegistryPair::onAddPrototypeEntity (entt::registry& registry, entt::entity entity)
 {
     const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
     auto it = prototype_names.find(prototype_id.id);
@@ -12,7 +12,7 @@ void core::Engine::Registries::RegistryPair::onAddPrototypeEntity (entt::registr
     prototype_names[prototype_id.id] = entity;
 }
 
-void core::Engine::Registries::RegistryPair::onRemovePrototypeEntity (entt::registry& registry, entt::entity entity)
+void core::RegistryPair::onRemovePrototypeEntity (entt::registry& registry, entt::entity entity)
 {
     const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
     prototype_names.erase(prototype_id.id);

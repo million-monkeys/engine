@@ -125,7 +125,7 @@ namespace state {
     using Effects = std::vector<effects::Effect>;
 
     struct World {
-        //helpers::hashed_string_map<value_types::Value> facts;
+        //helpers::hashed_string_flat_map<value_types::Value> facts;
         Facts facts;
 
         bool satisfies (const Conditions& conditions) const;
@@ -194,7 +194,7 @@ public:
     }
 };
 
-using Actions = helpers::hashed_string_map<const Action*>;
+using Actions = helpers::hashed_string_flat_map<const Action*>;
 
 namespace goap {
 
@@ -227,7 +227,7 @@ namespace htn {
     //     struct HTN {
 
     //         std::vector<Task*> tasks;
-    //         helpers::hashed_string_map<Task*> domains;
+    //         helpers::hashed_string_flat_map<Task*> domains;
     //     };
     // }
     using PrimitiveTask = entt::hashed_string;

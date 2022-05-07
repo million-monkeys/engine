@@ -11,7 +11,7 @@ ffi.cdef [[
     void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name);
     void component_remove_from_entity (uint32_t which_registry, uint32_t entity, const char* component_name);
     void output_log (uint32_t level, const char* message);
-    void* allocate_event (const char* event_name, uint32_t target, uint8_t size);
+    void* allocate_message (const char* message_name, uint32_t target, uint8_t size);
     void* allocate_command (const char* event_name, uint8_t size);
     uint32_t load_resource (const char* type, const char* filename, const char* name);
     uint32_t find_resource (const char* name);
@@ -90,7 +90,7 @@ local function post_message(target, message_name)
         if target == nil then
             C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
         else
-            return ffi.cast(message_info.type, C.allocate_event(message_name, target, message_info.size))
+            return ffi.cast(message_info.type, C.allocate_message(message_name, target, message_info.size))
         end
     else
         C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')

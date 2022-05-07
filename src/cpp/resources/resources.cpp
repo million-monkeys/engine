@@ -8,7 +8,7 @@
 #include <blockingconcurrentqueue.h>
 #include <concurrentqueue.h>
 
-phmap::flat_hash_map<entt::hashed_string::hash_type, million::api::resources::Loader*, helpers::Identity> g_resource_loaders;
+phmap::flat_hash_map<entt::hashed_string::hash_type, std::pair<million::api::resources::Loader*,std::uint16_t>, helpers::Identity> g_resource_loaders;
 
 struct WorkItem {
     million::api::resources::Loader* loader;
@@ -67,9 +67,9 @@ million::events::Stream* g_stream = nullptr;
 void resources::init (core::Engine* engine)
 {
     g_stream = &engine->createStream("resources"_hs);
-    resources::install<resources::types::EntityScripts>();
-    resources::install<resources::types::SceneScripts>();
-    resources::install<resources::types::SceneEntities>();
+    resources::install<resources::types::EntityScripts>(engine);
+    resources::install<resources::types::SceneScripts>(engine);
+    resources::install<resources::types::SceneEntities>(engine);
     g_loader_thread = std::thread(loaderThread);
 }
 
@@ -79,8 +79,9 @@ void resources::poll ()
     do {
         count = g_done_queue.try_dequeue_bulk(g_done_items, MAX_DONE_ITEMS);
         for (std::size_t i = 0; i != count; ++i) {
-            auto& loaded = g_stream->emit<events::engine::ResourceLoaded>();
+            auto& loaded = g_stream->emit<events::resources::Loaded>();
             auto& item = g_done_items[i];
+            loaded.type = item.type;
             loaded.name = item.name;
             loaded.handle = item.handle;
         }
@@ -91,11 +92,12 @@ void resources::poll ()
 void resources::install (entt::id_type id, million::api::resources::Loader* loader)
 {
     const auto type = loader->name();
-    spdlog::debug("[resources] Installing {}", type.data());
-    g_resource_loaders[type.value()] = loader;
+    auto index = g_resource_loaders.size();
+    spdlog::debug("[resources] Installing {} ({:x})", type.data(), index);
+    g_resource_loaders[type.value()] = std::make_pair(loader, index);
 }
 
-std::uint32_t g_idx = 0;
+std::atomic_int32_t g_idx = 0;
 
 class ResourceStorage {
 public:
@@ -115,8 +117,13 @@ million::resources::Handle resources::load (entt::hashed_string type, const std:
 {
     auto it = g_resource_loaders.find(type.value());
     if (it != g_resource_loaders.end()) {
-        million::resources::Handle handle = million::resources::Handle::make(1, g_idx++);
-        g_work_queue.enqueue({it->second, filename, handle, name});
+        auto [loader, resource_id] = it->second;
+        std::uint32_t id;
+        if (loader->cached(filename, &id)) {
+            return million::resources::Handle::make(resource_id, id);
+        }
+        million::resources::Handle handle = million::resources::Handle::make(resource_id, g_idx.fetch_add(1));
+        g_work_queue.enqueue({loader, filename, handle, name});
         return handle;
     } else {
         spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
@@ -129,9 +136,9 @@ void resources::term ()
     g_work_queue.enqueue(WorkItem::POISON_PILL);
     g_loader_thread.join();
 
-    delete g_resource_loaders[resources::types::EntityScripts::Name];
-    delete g_resource_loaders[resources::types::SceneScripts::Name];
-    delete g_resource_loaders[resources::types::SceneEntities::Name];
+    delete g_resource_loaders[resources::types::EntityScripts::Name].first;
+    delete g_resource_loaders[resources::types::SceneScripts::Name].first;
+    delete g_resource_loaders[resources::types::SceneEntities::Name].first;
 
     g_resource_loaders.clear();
 }

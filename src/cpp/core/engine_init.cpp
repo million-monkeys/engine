@@ -30,10 +30,10 @@ int get_scripts_event_pool_size () {
 }
 
 core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes) :
-    m_scene_manager(*this),
     m_stream_sizes(stream_sizes),
     m_message_pool(get_global_event_pool_size()),
     m_commands(createStream("commands"_hs, million::StreamWriters::Multi)),
+    m_scene_manager(*this),
     m_input_data(createInputData())
 {
 }
@@ -124,55 +124,6 @@ bool core::Engine::init ()
     return true;
 }
 
-struct TestA {
-    int a;
-};
-struct TestB {
-    int a;
-};
-struct TestC {
-    int a;
-};
-
-using Tag = void;
-
-class TestSystem
-{
-public:
-    void foo (const entt::registry& registry, entt::view<entt::get_t<TestA>> view)
-    {
-        const auto& my_tags = registry.storage<Tag>("my-tag"_hs);
-        view.each([&my_tags, this](entt::entity e, auto& test){
-            // spdlog::debug("TestA.a: {} (tagged? {}), entity: {}", test.a, my_tags.contains(e) ? "yes" : "no", magic_enum::enum_integer(e));
-            (void)my_tags;
-            test.a += 1;
-            if (a++ > 10) {
-                // spdlog::error("Quitting");
-                // m_commands->emit("engine/exit"_hs);
-            }
-        });
-    }
-    void bar (entt::view<entt::get_t<TestB>> view)
-    {
-        view.each([](auto& test){
-            // spdlog::debug("TestB.a: {}", test.a);
-            test.a += 1;
-        });
-    }
-    void baz (entt::view<entt::get_t<TestC>> view)
-    {
-        view.each([](auto& test){
-            // spdlog::debug("TestC.a: {}", test.a);
-            test.a += 1;
-        });
-    }
-
-    million::events::Stream* m_commands;
-    int a = 0;
-};
-
-TestSystem g_test;
-
 void core::Engine::setupGame ()
 {
     // Create game task graph
@@ -182,10 +133,11 @@ void core::Engine::setupGame ()
     const std::string& scene_path = entt::monostate<"scenes/path"_hs>();
     m_scene_manager.loadSceneList(scene_path);
 
-    m_commands.emit<events::engine::LoadScene>([](auto& load){
-        const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
-        load.scene_id = entt::hashed_string::value(initial_scene.c_str());
-    });
+    // m_commands.emit<commands::scenes::Load>([](auto& load){
+    //     const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
+    //     load.scene_id = entt::hashed_string::value(initial_scene.c_str());
+    //     load.auto_swap = true;
+    // });
 
     // Set up game state
     const std::string& start_state = entt::monostate<"game/initial-state"_hs>();
@@ -193,25 +145,4 @@ void core::Engine::setupGame ()
 
     // Make events emitted during load visible on first frame
     pumpEvents();
-
-    // Testing
-    g_test.m_commands = &commandStream();
-
-    auto& o = organizer(million::SystemStage::GameLogic);
-    o.emplace<&TestSystem::foo, Tag>(g_test, "A");
-    o.emplace<&TestSystem::bar, Tag>(g_test, "B");
-    o.emplace<&TestSystem::baz>(g_test, "C");
-    // A and B in serial, in parallel with C
-
-    loadResource("entity-script"_hs, "resources/script1.toml", "script1"_hs);
-    loadResource("entity-script"_hs, "resources/script2.toml", "script2"_hs);
-
-    auto& registry = m_registries.foreground().runtime;
-    auto e = registry.create();
-    registry.emplace<TestA>(e, 10);
-    registry.emplace<TestB>(e, 10);
-    registry.emplace<TestC>(e, 10);
-    auto x = registry.create();
-    registry.emplace<components::core::Named>(x, "test"_hs);
-    registry.emplace<TestA>(x, 1000);
 }
