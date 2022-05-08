@@ -29,8 +29,6 @@ local LOG_LEVELS = {
     DEBUG = 4
 }
 
--- Populated with game attributes by engine
-local ATTRS_TABLE = {}
 
 local function log_output(level, fmt, ...)
     local message = string.format(fmt, ...)
@@ -150,30 +148,46 @@ local function create_entity(self, prototype)
 end
 
 return {
+    -- Set by engine whenever game state changes
+    game_state = '',
+    -- Set by engine each frame
     time = {
-        delta = 0
+        delta = 0,
+        absolute = 0,
     },
-    attrs = ATTRS_TABLE,
+    -- Populated with game attributes by engine
+    attrs = {},
+    -- Manipulate the ECS registry
     registry = {
         _registry = 0, -- Default to runtime registry
         select_registry = select_regitsry,
+        -- Access an entity, given an entity ID
         entity = get_entity_by_id,
+        -- Find a named entity
         lookup = get_entity_by_name,
+        -- Create a new entity
         create = create_entity,
+        -- Check if an ID is valid
         valid  = function(id) return id ~= NULL_ENTITY end
     },
+    -- Load and access resources
     resource = {
+        -- Load a resource of specified type from a resource file and assign a name to it
         load = function (type, file, name)
             return C.load_resource(type, file, name)
         end,
+        -- Find a resource by name
         find = function (name)
             return C.find_resource(name)
         end
     },
+    -- Convert a string into a hashed integer reference
     ref = C.get_ref,
+    -- Communicate through messages, commands and events
     post=post_message,
     command=emit_command,
     emit=emit_event,
+    -- Debug and error logging
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
         info    = function(...) log_output(LOG_LEVELS.INFO,    ...) end,
@@ -181,6 +195,7 @@ return {
         error   = function(...) log_output(LOG_LEVELS.ERROR,   ...) end,
         critical= function(...) log_output(LOG_LEVELS.CRITICAL,...) end,
     },
+    -- Dump a Lua table, for debugging only
     dump=function (obj, label)
         if label then
             print(label..':')

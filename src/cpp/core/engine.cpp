@@ -46,12 +46,15 @@ void core::Engine::setGameState (entt::hashed_string new_state)
 {
     spdlog::info("Setting game state to: {}", new_state.data());
     m_current_game_state = new_state;
+    scripting::call("set_game_state", new_state.data());
 }
 
 bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
 {
     EASY_FUNCTION(profiler::colors::Blue100);
     m_current_time_delta = delta;
+
+    scripting::call("set_game_time", delta, current_time);
 
     // Check if any resources are loaded
     resources::poll();

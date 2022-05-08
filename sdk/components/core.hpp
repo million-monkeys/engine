@@ -16,6 +16,11 @@ namespace components::core {
 
 	};
 
+	// A category to define the purpose, type or role of this entity in a broad sense. Used for filtering events and messages.
+	struct Category {
+		std::uint16_t id;
+	};
+
 	struct Position {
 		float x;
 		float y;
@@ -28,8 +33,46 @@ namespace components::core {
 	};
 
 	struct ScriptedBehavior {
-		million::resources::Handle resource;
+		million::resources::Handle behavior;
 	};
+
+	namespace physics {
+
+		// A static (immobile) physics object
+		struct StaticBody {
+			million::resources::Handle shape;
+			btRigidBody* physics_body;
+		};
+
+		// A physics object whose motion is dictated by the physics engine
+		struct DynamicBody {
+			million::resources::Handle shape;
+			float mass;
+			btRigidBody* physics_body;
+		};
+
+		// A physics object whose motion is externally controlled
+		struct KinematicBody {
+			million::resources::Handle shape;
+			float mass;
+			btRigidBody* physics_body;
+		};
+
+		// Entity sends signal when a physics body collides with it
+		struct CollisionSensor {
+			entt::hashed_string::hash_type on_collision;
+			std::uint8_t collision_mask;
+		};
+
+		// A region which emits an event when a physics body enters or exits its area
+		struct TriggerRegion {
+			million::resources::Handle shape;
+			entt::hashed_string::hash_type on_enter;
+			entt::hashed_string::hash_type on_exit;
+			std::uint8_t trigger_mask;
+		};
+
+	} // physics
 
 	namespace graphics {
 
@@ -83,42 +126,5 @@ namespace components::core {
 		};
 
 	} // graphics
-
-	namespace physics {
-
-		// A static (immobile) physics object
-		struct StaticBody {
-			million::resources::Handle shape;
-			btRigidBody* physics_body;
-		};
-
-		// A physics object whose motion is dictated by the physics engine
-		struct DynamicBody {
-			million::resources::Handle shape;
-			float mass;
-			btRigidBody* physics_body;
-		};
-
-		// A physics object whose motion is externally controlled
-		struct KinematicBody {
-			million::resources::Handle shape;
-			float mass;
-			btRigidBody* physics_body;
-		};
-
-		// Entity sends signal when a physics body collides with it
-		struct CollisionSensor {
-			std::uint8_t collision_mask;
-		};
-
-		// A region which emits an event when a physics body enters or exits its area
-		struct TriggerRegion {
-			million::resources::Handle shape;
-			entt::hashed_string::hash_type on_enter;
-			entt::hashed_string::hash_type on_exit;
-			std::uint8_t trigger_mask;
-		};
-
-	} // physics
 
 } // components::core

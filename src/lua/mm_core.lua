@@ -11,7 +11,6 @@ ffi.cdef[[
     struct SceneActivatedEvent {uint32_t id;};
 ]]
 local C = ffi.C
-require('jit').opt.start('hotloop=28', 'maxmcode=2048', 'sizemcode=64', 'maxtrace=2000', 'maxrecord=8000')
 
 local function table_merge(...)
     local tables_to_merge = { ... }
@@ -61,7 +60,7 @@ local obj = {
     game_event_map = {},
     -- Scene events
     scene_event_maps = {},
-    -- API
+    -- API, used internally by the engine to register information with Lua
     register_components = register_components,
     register_events = register_events,
     register_game_script = function(self, script)

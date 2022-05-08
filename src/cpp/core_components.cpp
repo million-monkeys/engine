@@ -56,6 +56,30 @@ namespace init_core {
 			};
 			engine->registerComponent<components::core::Global>(component_def);
 		}
+		{ // components::core::Category
+			million::api::definitions::Component component_def {"category"_hs, entt::type_hash<components::core::Category>::value(), "core", "Category"};
+			component_def.size_in_bytes = sizeof(components::core::Category);
+			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
+				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
+				
+				registry.emplace_or_replace<components::core::Category>(entity, std::uint16_t(toml::find<toml::integer>(table, "id")));
+			};
+            
+			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::Category>(entity)); };
+			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::Category>(entity); };
+			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
+				switch (op) {
+					case million::api::definitions::ManageOperation::Add:
+						registry.emplace_or_replace<components::core::Category>(entity);
+						break;
+					case million::api::definitions::ManageOperation::Remove:
+						registry.remove<components::core::Category>(entity);
+						break;
+					default: break;
+				}
+			};
+			engine->registerComponent<components::core::Category>(component_def);
+		}
 		{ // components::core::Position
 			million::api::definitions::Component component_def {"position"_hs, entt::type_hash<components::core::Position>::value(), "core", "Position"};
 			component_def.size_in_bytes = sizeof(components::core::Position);
@@ -111,7 +135,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, engine->loadResource(entt::hashed_string{"entity-script"}, toml::find<std::string>(table, "resource").c_str(), 0));
+				registry.emplace_or_replace<components::core::ScriptedBehavior>(entity, engine->loadResource("entity-script"_hs, toml::find<std::string>(table, "behavior").c_str(), 0));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::ScriptedBehavior>(entity)); };
@@ -181,7 +205,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::graphics::StaticImage>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "image").c_str(), 0));
+				registry.emplace_or_replace<components::core::graphics::StaticImage>(entity, engine->loadResource("texture"_hs, toml::find<std::string>(table, "image").c_str(), 0));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::StaticImage>(entity)); };
@@ -227,7 +251,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::graphics::Model>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "mesh").c_str(), 0));
+				registry.emplace_or_replace<components::core::graphics::Model>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "mesh").c_str(), 0));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::Model>(entity)); };
@@ -251,7 +275,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				auto color = table.at("color");
-				registry.emplace_or_replace<components::core::graphics::Material>(entity, glm::vec3{float(toml::find<toml::floating>(color, "r")), float(toml::find<toml::floating>(color, "g")), float(toml::find<toml::floating>(color, "b"))}, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "albedo").c_str(), 0), engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "normal").c_str(), 0), engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "metalic").c_str(), 0), engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "roughness").c_str(), 0), engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "ambient-occlusion").c_str(), 0));
+				registry.emplace_or_replace<components::core::graphics::Material>(entity, glm::vec3{float(toml::find<toml::floating>(color, "r")), float(toml::find<toml::floating>(color, "g")), float(toml::find<toml::floating>(color, "b"))}, engine->loadResource("texture"_hs, toml::find<std::string>(table, "albedo").c_str(), 0), engine->loadResource("texture"_hs, toml::find<std::string>(table, "normal").c_str(), 0), engine->loadResource("texture"_hs, toml::find<std::string>(table, "metalic").c_str(), 0), engine->loadResource("texture"_hs, toml::find<std::string>(table, "roughness").c_str(), 0), engine->loadResource("texture"_hs, toml::find<std::string>(table, "ambient-occlusion").c_str(), 0));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::graphics::Material>(entity)); };
@@ -324,7 +348,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::StaticBody>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "shape").c_str(), 0), nullptr);
+				registry.emplace_or_replace<components::core::physics::StaticBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), nullptr);
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::StaticBody>(entity)); };
@@ -348,7 +372,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::DynamicBody>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
+				registry.emplace_or_replace<components::core::physics::DynamicBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::DynamicBody>(entity)); };
@@ -372,7 +396,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::KinematicBody>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
+				registry.emplace_or_replace<components::core::physics::KinematicBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::KinematicBody>(entity)); };
@@ -396,7 +420,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::CollisionSensor>(entity, std::uint8_t(toml::find<toml::integer>(table, "collision-mask")));
+				registry.emplace_or_replace<components::core::physics::CollisionSensor>(entity, entt::hashed_string::value(toml::find<std::string>(table, "on-collision").c_str()), std::uint8_t(toml::find<toml::integer>(table, "collision-mask")));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::CollisionSensor>(entity)); };
@@ -420,7 +444,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::TriggerRegion>(entity, engine->loadResource(entt::hashed_string{""}, toml::find<std::string>(table, "shape").c_str(), 0), entt::hashed_string::value(toml::find<std::string>(table, "on-enter").c_str()), entt::hashed_string::value(toml::find<std::string>(table, "on-exit").c_str()), std::uint8_t(toml::find<toml::integer>(table, "trigger-mask")));
+				registry.emplace_or_replace<components::core::physics::TriggerRegion>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), entt::hashed_string::value(toml::find<std::string>(table, "on-enter").c_str()), entt::hashed_string::value(toml::find<std::string>(table, "on-exit").c_str()), std::uint8_t(toml::find<toml::integer>(table, "trigger-mask")));
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::TriggerRegion>(entity)); };

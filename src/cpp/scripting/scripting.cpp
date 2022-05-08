@@ -134,6 +134,31 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
     return true;
 }
 
+void scripting::detail::call (const std::string& function, const scripting::detail::VariantVector& args)
+{
+    EASY_BLOCK("Scripts/call", profiler::colors::Purple100);
+
+    // Only one thread can execute Lua code at once
+    std::lock_guard<std::mutex> guard(g_vm_mutex);
+
+    
+    lua_getglobal(g_lua_state, function.c_str());
+    for (const auto& arg : args) {
+        std::visit(
+            helpers::visitor{
+                [](const std::string& str) { lua_pushstring(g_lua_state, str.c_str()); },
+                [](const char* str) { lua_pushstring(g_lua_state, str); },
+                [](int num) { lua_pushinteger(g_lua_state, num); },
+                [](float num) { lua_pushnumber(g_lua_state, num); },
+            }, arg);
+    }
+    int ret = lua_pcall(g_lua_state, args.size(), 0, 0);
+    if (ret != 0) {
+        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+    }
+}
+
+
 void scripting::processGameEvents ()
 {
     EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);

@@ -31,7 +31,7 @@ local function gather_entities ()
             return entity_collection
         end
         -- Otherwise, get the entities message map
-        local message_map = core.message_maps[bit.band(scripted_behavior[0].resource, 0xfffff)]
+        local message_map = core.message_maps[bit.band(scripted_behavior[0].behavior, 0xfffff)]
         -- If it has one, add the entity and message map to collection
         if message_map then
             entity_collection[entity.id] = {
