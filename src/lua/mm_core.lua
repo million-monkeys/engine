@@ -49,6 +49,10 @@ local function register_events(self, type_list)
 end
 
 local obj = {
+    -- Various script settings
+    config = {
+        max_iterations = 15,
+    },
     -- Components
     component_types = {},
     -- Event/message types

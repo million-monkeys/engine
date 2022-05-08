@@ -1,6 +1,7 @@
 
 #include "config.hpp"
 #include <game.hpp>
+#include "scripting/scripting.hpp"
 #include <utils/parser.hpp>
 #include <filesystem>
 
@@ -38,6 +39,7 @@ bool core::readUserConfig (int argc, char* argv[])
     // Base settings loaded from init TOML file             //
     // These settings are meant to be editable by players   //
     // Loaded from Filesystem (not PhysicsFS)               //
+    // Loaded before anything else is set up                //
     //                                                      //
     //******************************************************//
     try {
@@ -192,45 +194,19 @@ bool core::readUserConfig (int argc, char* argv[])
     return true;
 }
 
-bool core::readGameConfig (helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes)
+
+bool core::readEngineConfig (helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes)
 {
     //******************************************************//
     //                                                      //
-    // Settings loaded from game config                     //
+    // Settings loaded from engine config                   //
     // These settings are NOT meant to be edited by players //
     // Loaded from PhysicsFS                                //
+    // Loaded after PhysicsFS is setup but before the engine//
     //                                                      //
     //******************************************************//
     try {
-        const auto config = parser::parse_toml("game.toml");
-        
-        //******************************************************//
-        // GAME
-        //******************************************************//
-        if (! config.contains("game")) {
-            spdlog::error("Game config file did not contain a [game] section.");
-            return false;
-        }
-        const auto& game = config.at("game");
-        entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
-        entt::monostate<"game/initial-state"_hs>{} = toml::find<std::string>(game, "initial-state");
-        entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
-        if (game.contains("game-script")) {
-            entt::monostate<"game/script-file"_hs>{} = std::string{game.at("game-script").as_string().str};
-        } else {
-            entt::monostate<"game/script-file"_hs>{} = std::string{};
-        }
-
-        //******************************************************//
-        // SCENES
-        //******************************************************//
-        if (! config.contains("scenes")) {
-            spdlog::error("Game config file did not contain a [scenes] section.");
-            return false;
-        }
-        const auto& scenes = config.at("scenes");
-        entt::monostate<"scenes/path"_hs>{} = toml::find<std::string>(scenes, "path");
-        entt::monostate<"scenes/initial"_hs>{} = toml::find<std::string>(scenes, "initial");
+        const auto config = parser::parse_toml("engine.toml");
 
         //******************************************************//
         // GRAPHICS
@@ -292,6 +268,90 @@ bool core::readGameConfig (helpers::hashed_string_flat_map<std::uint32_t>& strea
                 }
             }
         }
+    } catch (const std::exception& e) {
+        spdlog::critical("Could not load engine configuration: {}", e.what());
+        return false;
+    }
+
+    return true;
+}
+
+
+bool core::readGameConfig ()
+{
+    //******************************************************//
+    //                                                      //
+    // Settings loaded from game config                     //
+    // These settings are NOT meant to be edited by players //
+    // Loaded from PhysicsFS                                //
+    // Loaded after the engine and subsystems are setup     //
+    //                                                      //
+    //******************************************************//
+    try {
+        const auto config = parser::parse_toml("game.toml");
+        
+        //******************************************************//
+        // GAME
+        //******************************************************//
+        if (! config.contains("game")) {
+            spdlog::error("Game config file did not contain a [game] section.");
+            return false;
+        }
+        const auto& game = config.at("game");
+        entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
+        entt::monostate<"game/initial-state"_hs>{} = toml::find<std::string>(game, "initial-state");
+        entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
+        if (game.contains("game-script")) {
+            entt::monostate<"game/script-file"_hs>{} = std::string{game.at("game-script").as_string().str};
+        } else {
+            entt::monostate<"game/script-file"_hs>{} = std::string{};
+        }
+
+        //******************************************************//
+        // SCENES
+        //******************************************************//
+        if (! config.contains("scenes")) {
+            spdlog::error("Game config file did not contain a [scenes] section.");
+            return false;
+        }
+        const auto& scenes = config.at("scenes");
+        entt::monostate<"scenes/path"_hs>{} = toml::find<std::string>(scenes, "path");
+        entt::monostate<"scenes/initial"_hs>{} = toml::find<std::string>(scenes, "initial");
+
+        //******************************************************//
+        // ATTRIBUTES
+        //******************************************************//
+        if (config.contains("attributes")) {
+            const auto& attributes = config.at("attributes");
+            if (attributes.is_table()) {
+                for (const auto& [key, value] : attributes.as_table()) {
+                    if (value.is_floating()) {
+                        scripting::call("set_attribute_value", key, value.as_floating());
+                    } else if (value.is_integer()) {
+                        scripting::call("set_attribute_value", key, value.as_integer());
+                    } else if (value.is_string()) {
+                        scripting::call("set_attribute_value", key, value.as_string().str);
+                    } else if (value.is_boolean()) {
+                        scripting::call("set_attribute_value", key, value.as_boolean());
+                    } else if (value.is_table()) {
+                        for (const auto& [subkey, value] : value.as_table()) {
+                            if (value.is_floating()) {
+                                scripting::call("set_attribute_value", key, subkey, value.as_floating());
+                            } else if (value.is_integer()) {
+                                scripting::call("set_attribute_value", key, subkey, value.as_integer());
+                            } else if (value.is_string()) {
+                                scripting::call("set_attribute_value", key, subkey, value.as_string().str);
+                            } else if (value.is_boolean()) {
+                                scripting::call("set_attribute_value", key, subkey, value.as_boolean());
+                            }
+                        }
+                    }
+                }
+            } else {
+                spdlog::error("Game config 'attributes' not a TOML table");
+                return false;
+            }
+        }
 
         //******************************************************//
         // PHYSICS
@@ -318,7 +378,7 @@ bool core::readGameConfig (helpers::hashed_string_flat_map<std::uint32_t>& strea
             entt::monostate<"physics/gravity"_hs>{} = glm::vec3{0, 0, 0};
         }
     } catch (const std::exception& e) {
-        spdlog::critical("Could not load game config: {}", e.what());
+        spdlog::critical("Could not load game configuration: {}", e.what());
         return false;
     }
 

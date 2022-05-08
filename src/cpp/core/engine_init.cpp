@@ -1,7 +1,9 @@
 
 #include "engine.hpp"
+#include "config.hpp"
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
+
 #include <events/engine.hpp>
 
 #include <entt/entity/organizer.hpp>
@@ -127,8 +129,16 @@ bool core::Engine::init ()
     return true;
 }
 
-void core::Engine::setupGame ()
+bool core::Engine::setupGame ()
 {
+    // Read game configuration
+    if (!core::readGameConfig()) {
+        return false;
+    }
+
+    // Make sure game-specific events are declared in Lua
+    scripting::load(entt::monostate<"game/script-events"_hs>());
+
     // Create game task graph
     m_scheduler.createTaskGraph(*this);
 
@@ -156,4 +166,6 @@ void core::Engine::setupGame ()
 
     // Make events emitted during load visible on first frame
     pumpEvents();
+
+    return true;
 }

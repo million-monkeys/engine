@@ -87,9 +87,6 @@ bool scripting::init (core::Engine* engine)
     // Initialize scripting system
     luaL_dostring(g_lua_state, "require('mm_init')");
 
-    // Make sure game-specific events are declared
-    load(entt::monostate<"game/script-events"_hs>());
-
     return true;
 }
 
@@ -137,11 +134,11 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
 void scripting::detail::call (const std::string& function, const scripting::detail::VariantVector& args)
 {
     EASY_BLOCK("Scripts/call", profiler::colors::Purple100);
+    spdlog::trace("Calling function {}", function);
 
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
-    
     lua_getglobal(g_lua_state, function.c_str());
     for (const auto& arg : args) {
         std::visit(
@@ -149,12 +146,17 @@ void scripting::detail::call (const std::string& function, const scripting::deta
                 [](const std::string& str) { lua_pushstring(g_lua_state, str.c_str()); },
                 [](const char* str) { lua_pushstring(g_lua_state, str); },
                 [](int num) { lua_pushinteger(g_lua_state, num); },
+                [](long num) { lua_pushinteger(g_lua_state, num); },
                 [](float num) { lua_pushnumber(g_lua_state, num); },
+                [](double num) { lua_pushnumber(g_lua_state, num); },
+                [](bool boolean) { lua_pushboolean(g_lua_state, boolean); },
             }, arg);
     }
     int ret = lua_pcall(g_lua_state, args.size(), 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+    } else {
+        spdlog::trace("Success {}", function);
     }
 }
 

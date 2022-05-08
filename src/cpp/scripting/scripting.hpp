@@ -9,7 +9,7 @@ namespace core {
 namespace scripting {
 
     namespace detail {
-        using VariantVector = std::vector<std::variant<std::string,const char*,int,float>>;
+        using VariantVector = std::vector<std::variant<std::string,const char*,int,long,float,double,bool>>;
         void call (const std::string& function, const VariantVector& args);
     }
 

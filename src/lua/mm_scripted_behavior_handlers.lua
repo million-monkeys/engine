@@ -16,8 +16,6 @@ local core = require('mm_core')
 local mm = require('mm_script_api')
 local registry = mm.registry
 
-local MAX_ITERATIONS = 15
-
 local function gather_entities ()
     local scripted_behavior = ffi.new('const struct Component_Core_ScriptedBehavior*[1]')
     local entity_collection = {}
@@ -73,6 +71,7 @@ local function process_messages (entities, message_buffer, buffer_size)
 end
 
 return function ()
+    local max_iterations = core.config.max_iterations
     local message_buffer = ffi.new('const char*[1]')
     -- Collect entities that have a ScriptedBehavior component and valid message map resource
     local entity_message_maps = gather_entities()
@@ -88,5 +87,5 @@ return function ()
         process_messages(entity_message_maps, message_buffer[0], buffer_size)
         -- Increment iteration count and stop if MAX_ITERATIONS has been reached
         iteration = iteration + 1
-    until iteration >= MAX_ITERATIONS
+    until iteration >= max_iterations
 end

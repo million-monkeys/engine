@@ -105,7 +105,7 @@ namespace core {
         bool init ();
         void shutdown ();
 
-        void setupGame ();
+        bool setupGame ();
 
         // Execute the Taskflow graph of tasks, returns true if still running
         bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);

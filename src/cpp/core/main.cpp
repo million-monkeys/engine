@@ -76,8 +76,7 @@ int game_main (int argc, char** argv)
 
     // Now that both the filesystem and logger are set up, load the game-specific settings
     helpers::hashed_string_flat_map<std::uint32_t> stream_sizes;
-    if (! core::readGameConfig(stream_sizes)) {
-        spdlog::critical("Could not initialize scripting subsystem");
+    if (! core::readEngineConfig(stream_sizes)) {
         return -1;
     }
 
@@ -101,43 +100,44 @@ int game_main (int argc, char** argv)
         if (false) {
             spdlog::critical("Could not load some required modules. Terminating.");
         } else {
-            engine.setupGame();
+            if (!engine.setupGame()) {
+                spdlog::critical("Game could not be set up. Terminating.");
+            } else {
+                // Initialise timekeeping
+                timekeeping::FrameTimer frame_timer;
 
-            // Initialise timekeeping
-            timekeeping::FrameTimer frame_timer;
+        // #ifdef DEV_MODE
+        //         ElapsedTime last_update_time = 0L; // microseconds
+        //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
+        // #endif
 
-    // #ifdef DEV_MODE
-    //         ElapsedTime last_update_time = 0L; // microseconds
-    //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
-    // #endif
+                // Run main loop
+                spdlog::info("Game Running...");
+                do {
+                    // // Execute systems and copy current frames events for processing next frame
+                    if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
+                        break;
+                    }
 
-            // Run main loop
-            spdlog::info("Game Running...");
-            do {
-                // // Execute systems and copy current frames events for processing next frame
-                if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
-                    break;
-                }
+                    // Update timekeeping
+                    frame_timer.update();
 
-                // Update timekeeping
-                frame_timer.update();
+                    // WIP: For now just die after a short time
+                    // if (frame_timer.sinceStart() > 0.0075f) {
+                    //     spdlog::warn("Terminating because of WIP");
+                    //     break;
+                    // }
 
-                // WIP: For now just die after a short time
-                // if (frame_timer.sinceStart() > 0.0075f) {
-                //     spdlog::warn("Terminating because of WIP");
-                //     break;
-                // }
-
-    // #ifdef DEV_MODE
-                // In dev mode, update plugins every few seconds for hot code reloading
-                // if (frame_timer.sinceStart() - last_update_time > update_interval) {
-                //     last_update_time = frame_timer.sinceStart();
-                //     moduleManager.update();
-                // }
-    // #endif
-            } while (true);
-            frame_timer.reportAverage();
-
+        // #ifdef DEV_MODE
+                    // In dev mode, update plugins every few seconds for hot code reloading
+                    // if (frame_timer.sinceStart() - last_update_time > update_interval) {
+                    //     last_update_time = frame_timer.sinceStart();
+                    //     moduleManager.update();
+                    // }
+        // #endif
+                } while (true);
+                frame_timer.reportAverage();
+            }
             // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
             engine.shutdown();
             // moduleManager.unload();
