@@ -117,7 +117,6 @@ namespace core {
 
         // Make previously emitted events visible to consumers
         void pumpMessages ();
-        void resetEngineEvents (entt::hashed_string stream_name);
 
         RegistryPair& backgroundRegistries()
         {

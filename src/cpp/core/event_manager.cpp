@@ -20,11 +20,6 @@ void core::Engine::pumpEvents ()
     // TODO: Add debug telemetry to track the buffer sizes
 }
 
-void core::Engine::resetEngineEvents (entt::hashed_string stream_name)
-{
-    m_engine_streams[stream_name].iterable->swap();
-}
-
 void core::Engine::pumpMessages ()
 {
     m_message_pool.reset();
