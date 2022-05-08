@@ -94,6 +94,11 @@ namespace core {
         // Attach a name to a resource handle
         void bindResourceToName (million::resources::Handle handle, entt::hashed_string::hash_type name);
 
+        // Like createStream, but used for "engine" streams: game scripts, scene scripts and entity scripts. These differ in that they are available to read immediately after their respective owner scripts have executed
+        void createEngineStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single, std::uint32_t=0);
+
+        million::events::Stream* engineStream (entt::hashed_string);
+
         // Time
         DeltaTime deltaTime () { return m_current_time_delta; }
 
@@ -112,6 +117,7 @@ namespace core {
 
         // Make previously emitted events visible to consumers
         void pumpMessages ();
+        void resetEngineEvents (entt::hashed_string stream_name);
 
         RegistryPair& backgroundRegistries()
         {
@@ -177,26 +183,16 @@ namespace core {
         // Make previously emitted events visible to consumers
         void pumpEvents ();
 
-        void setGameState (entt::hashed_string new_state);
+        million::events::Stream& createStreamInternal (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size, bool engine_stream);
 
-        // Emit an event directly to the global pool (warning: unsynchronised)
-        template <typename T>
-        [[maybe_unused]] T& internalEmitEvent (entt::entity target=entt::null)
-        {
-            // auto envelope = m_event_pool.emplace<million::events::Envelope>(T::EventID, target, sizeof(T));
-            // m_event_pool.unaligned_allocate(sizeof(T));
-            // return *(new (reinterpret_cast<std::byte*>(envelope) + sizeof(million::events::Envelope)) T{});
-        }
-        [[maybe_unused]] void internalEmitEvent (entt::hashed_string id, entt::entity target=entt::null)
-        {
-            // m_event_pool.push(id, target, std::uint32_t(0));
-        }
+        void setGameState (entt::hashed_string new_state);
 
         // Event & messaging system
         helpers::hashed_string_flat_map<std::uint32_t>& m_stream_sizes; // Must be initialized first so that other memeber objects may create streams
         std::vector<MessagePool*> m_message_pools;
         MessagePool::PoolType m_message_pool;
         helpers::hashed_string_node_map<StreamInfo> m_named_streams; // TODO: delete
+        helpers::hashed_string_node_map<StreamInfo> m_engine_streams;
         million::events::Stream& m_commands;
 
         // ECS registries to manage all entities

@@ -7,6 +7,13 @@
 // Script functions need access to an engine instance
 core::Engine* g_engine = nullptr;
 
+million::events::Stream* g_active_stream;
+
+void set_active_stream (entt::hashed_string stream_name)
+{
+    g_active_stream = g_engine->engineStream(stream_name);
+}
+
 void init_scripting_api (core::Engine* engine)
 {
     g_engine = engine;
@@ -177,6 +184,12 @@ extern "C" void* allocate_command (const char* event_name, uint8_t size)
 {
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     return core::RawAccessWrapper(g_engine->commandStream()).push(event_type, size);
+}
+
+extern "C" void* allocate_event (const char* event_name, uint8_t size)
+{
+    entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
+    return core::RawAccessWrapper(*g_active_stream).push(event_type, size);
 }
 
 extern "C" std::uint32_t get_messages (const char** buffer)

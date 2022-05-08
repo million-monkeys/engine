@@ -251,6 +251,7 @@ namespace helpers {
     struct Identity {
         template <typename T> T operator()(T k) const { return k; }
     };
+    template <typename T> T identity(T k) { return k; }
 
     ///////////////////////////////////////////////////////////////////////////
     // Return (copy of) value from container or 'default_value' if not found

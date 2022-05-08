@@ -13,6 +13,7 @@ ffi.cdef [[
     void output_log (uint32_t, const char*);
     void* allocate_message (const char*, uint32_t, uint8_t);
     void* allocate_command (const char*, uint8_t);
+    void* allocate_event (const char*, uint8_t);
     uint32_t load_resource (const char*, const char*, const char*);
     uint32_t find_resource (const char*);
 ]]
@@ -106,6 +107,15 @@ local function emit_command(command_name)
     end
 end
 
+local function emit_event(event_name)
+    local type_info = core.types_by_name[event_name]
+    if type_info then
+        return ffi.cast(type_info.type, C.allocate_event(event_name, type_info.size))
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Event "'..event_name..'" not found')
+    end
+end
+
 local function get_entity_by_id(self, entity_id)
     if entity_id ~= NULL_ENTITY then
         local entity = {
@@ -163,6 +173,7 @@ return {
     ref = C.get_ref,
     post=post_message,
     command=emit_command,
+    emit=emit_event,
     log = {
         debug   = function(...) log_output(LOG_LEVELS.DEBUG,   ...) end,
         info    = function(...) log_output(LOG_LEVELS.INFO,    ...) end,

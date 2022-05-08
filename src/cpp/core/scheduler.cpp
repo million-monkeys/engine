@@ -88,16 +88,19 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
 
     Task events_game = m_coordinator.emplace([&engine](){
         SPDLOG_TRACE("Running Game event handlers");
+        engine.resetEngineEvents("game"_hs);
         engine.executeHandlers(core::HandlerType::Game);
     }).name("events/game");
 
     Task events_scene = m_coordinator.emplace([&engine](){
         SPDLOG_TRACE("Running Scene event handlers");
+        engine.resetEngineEvents("scene"_hs);
         engine.executeHandlers(core::HandlerType::Scene);
     }).name("events/scene");
 
-    Task scripts_behavior = m_coordinator.emplace([](){
+    Task scripts_behavior = m_coordinator.emplace([&engine](){
         SPDLOG_TRACE("Running ScriptedBehaviors");
+        engine.resetEngineEvents("behavior"_hs);
         scripting::processMessages();
     }).name("scripts/behavior");
     

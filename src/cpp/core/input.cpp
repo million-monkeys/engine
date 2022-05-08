@@ -50,7 +50,7 @@ void core::Engine::handleInput ()
     {
         switch (event.type) {
             case SDL_QUIT:
-                internalEmitEvent("engine/exit"_hs);
+                m_commands.emit("engine/exit"_hs);
                 break;
             case SDL_WINDOWEVENT:
             {
@@ -70,7 +70,7 @@ void core::Engine::handleInput ()
             case SDL_KEYUP:
             {
                 if (event.key.keysym.sym == SDLK_ESCAPE) {
-                    internalEmitEvent("engine/exit"_hs);
+                    m_commands.emit("engine/exit"_hs);
                 } else {
                     // handleInput(engine, input_mapping, InputKeys::KeyType::KeyboardButton, event.key.keysym.scancode, [&event]() -> float {
                     //     return event.key.state == SDL_PRESSED ? 1.0f : 0.0f;

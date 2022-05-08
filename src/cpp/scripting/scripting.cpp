@@ -6,6 +6,7 @@
 #include <spdlog/fmt/fmt.h>
 
 void init_scripting_api (core::Engine* engine);
+void set_active_stream (entt::hashed_string stream_name);
 
 lua_State* g_lua_state;
 std::mutex g_vm_mutex;
@@ -136,9 +137,11 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
 void scripting::processGameEvents ()
 {
     EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
+    set_active_stream("game"_hs);
     lua_getglobal(g_lua_state, "handle_game_events");
     int ret = lua_pcall(g_lua_state, 0, 0, 0);
     if (ret != 0) {
@@ -152,6 +155,7 @@ void scripting::processSceneEvents (million::resources::Handle handle)
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
+    set_active_stream("scene"_hs);
     lua_getglobal(g_lua_state, "handle_scene_events");
     lua_pushinteger(g_lua_state, handle.id());
     int ret = lua_pcall(g_lua_state, 1, 0, 0);
@@ -166,6 +170,7 @@ void scripting::processMessages ()
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
+    set_active_stream("behavior"_hs);
     lua_getglobal(g_lua_state, "handle_messages");
     int ret = lua_pcall(g_lua_state, 0, 0, 0);
     if (ret != 0) {

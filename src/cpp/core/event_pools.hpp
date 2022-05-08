@@ -114,6 +114,45 @@ namespace core {
         const typename Base::PoolType& back () const { return m_pools[1 - m_current]; }
     };
 
+    template <typename StreamPoolBase>
+    class SingleBufferStreamPool : public StreamPoolBase, public IterableStream
+    {
+        using Base = StreamPoolBase;
+    public:
+        SingleBufferStreamPool (uint32_t size) :
+            m_pool{size}
+        {}
+        SingleBufferStreamPool (SingleBufferStreamPool&& other)
+            : m_pool{std::move(other.m_pool[0])}
+        {}
+        virtual ~SingleBufferStreamPool () {}
+
+        million::events::EventIterable iter () const final
+        {
+            return Base::iter(m_pool);
+        }
+
+        void swap () final
+        {
+            m_pool.reset();
+        }
+
+        template <typename OtherPool>
+        void copyInto (OtherPool& destination) const
+        {
+            using Pool = typename Base::PoolType;
+            destination.template pushAll<Pool>(m_pool);
+        }
+
+        std::byte* push (entt::hashed_string::hash_type event_id, uint32_t payload_size)
+        {
+            return Base::push(m_pool, event_id, payload_size);
+        }
+
+    private:
+        typename Base::PoolType m_pool;
+    };
+
     template <typename Pool>
     class EventStream : public million::events::Stream
     {

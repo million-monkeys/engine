@@ -36,6 +36,9 @@ core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_size
     m_scene_manager(*this),
     m_input_data(createInputData())
 {
+    createEngineStream("game"_hs);
+    createEngineStream("scene"_hs);
+    createEngineStream("behavior"_hs);
 }
 
 void* core::Engine::allocModule (std::size_t bytes) {
