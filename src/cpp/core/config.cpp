@@ -1,5 +1,6 @@
 
 #include "config.hpp"
+#include "engine.hpp"
 #include <game.hpp>
 #include "scripting/scripting.hpp"
 #include <utils/parser.hpp>
@@ -277,7 +278,7 @@ bool core::readEngineConfig (helpers::hashed_string_flat_map<std::uint32_t>& str
 }
 
 
-bool core::readGameConfig ()
+bool core::readGameConfig (helpers::hashed_string_flat_map<std::string>& game_scripts)
 {
     //******************************************************//
     //                                                      //
@@ -301,11 +302,31 @@ bool core::readGameConfig ()
         entt::monostate<"game/user-mods"_hs>{} = toml::find<std::string>(game, "user-mods");
         entt::monostate<"game/initial-state"_hs>{} = toml::find<std::string>(game, "initial-state");
         entt::monostate<"game/script-events"_hs>{} = toml::find<std::string>(game, "script-events");
-        if (game.contains("game-script")) {
-            entt::monostate<"game/script-file"_hs>{} = std::string{game.at("game-script").as_string().str};
-        } else {
-            entt::monostate<"game/script-file"_hs>{} = std::string{};
+        if (game.contains("states")) {
+            const auto& states = game.at("states");
+            if (states.is_table()) {
+                for (const auto& [state_name, state] : states.as_table()) {
+                    if (state.is_table()) {
+                        if (state.contains("script")) {
+                            const auto& script = state.at("script");
+                            if (script.is_string()) {
+                                game_scripts.emplace(entt::hashed_string::value(state_name.c_str()), script.as_string().str);
+                            } else {
+                                spdlog::error("State '{}'.script must be a string.", state_name);
+                                return false;
+                            }
+                        }
+                    } else {
+                        spdlog::error("State '{}' value must be a TOML table.", state_name);
+                        return false;
+                    }
+                }
+            } else {
+                spdlog::error("[game.states] is not a TOML table.");
+                return false;
+            }
         }
+
 
         //******************************************************//
         // SCENES

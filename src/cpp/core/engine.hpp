@@ -27,6 +27,16 @@ namespace core {
         Scene,
     };
 
+    struct GameEventHandler {
+        entt::hashed_string::hash_type events;
+        million::GameHandler handler;
+    };
+
+    struct SceneEventHandler {
+        entt::hashed_string::hash_type events;
+        million::GameHandler handler;
+    };
+
     struct RegistryPair {
     public:
         struct NamedEntityInfo {
@@ -63,8 +73,8 @@ namespace core {
         /////////////////////////////////////////
 
         // Setup API
-        void registerGameHandler (entt::hashed_string state, million::GameHandler handler) final;
-        void registerSceneHandler (entt::hashed_string scene, million::SceneHandler handler) final;
+        void registerGameHandler (entt::hashed_string state, entt::hashed_string::hash_type events, million::GameHandler handler) final;
+        void registerSceneHandler (entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler) final;
         void readBinaryFile (const std::string& filename, std::string& buffer) const final;
         million::resources::Handle loadResource (entt::hashed_string, const std::string&, entt::hashed_string::hash_type) final;
         entt::registry& registry (million::Registry) final;
@@ -227,9 +237,9 @@ namespace core {
         SystemStatus m_system_status;                           // Track whether systems should be run or not
         entt::hashed_string::hash_type m_current_game_state;    // Track whether on menu, loading screen, etc
 
-        helpers::hashed_string_flat_map<std::vector<million::GameHandler>> m_game_handlers;
-        helpers::hashed_string_flat_map<std::vector<million::SceneHandler>> m_scene_handlers;
-        million::resources::Handle m_game_script;
+        helpers::hashed_string_flat_map<std::vector<GameEventHandler>> m_game_handlers;
+        helpers::hashed_string_flat_map<std::vector<SceneEventHandler>> m_scene_handlers;
+        helpers::hashed_string_flat_map<million::resources::Handle> m_game_scripts;
 
         // Timing
         DeltaTime m_current_time_delta = 0;

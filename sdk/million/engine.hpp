@@ -30,8 +30,8 @@ namespace million {
         Multi,
     };
 
-    using GameHandler = void (*)(const million::events::EventIterable events, million::events::Publisher& publisher);
-    using SceneHandler = void (*)(const million::events::EventIterable events, million::events::Publisher& publisher);
+    using GameHandler = void (*)(const million::events::EventIterable events, million::events::Stream& stream, million::events::Publisher& publisher);
+    using SceneHandler = void (*)(const million::events::EventIterable events, million::events::Stream& stream, million::events::Publisher& publisher);
 }
 
 // The engine-provided API to modules
@@ -105,10 +105,10 @@ namespace million::api {
         virtual ~EngineSetup() {}
 
         /** Register an event handler to be run for a specific game state */
-        virtual void registerGameHandler (entt::hashed_string state, million::GameHandler handler) = 0;
+        virtual void registerGameHandler (entt::hashed_string state, entt::hashed_string::hash_type events, million::GameHandler handler) = 0;
 
         /** Register an event handler to be run for a specific scene */
-        virtual void registerSceneHandler (entt::hashed_string scene, million::SceneHandler handler) = 0;
+        virtual void registerSceneHandler (entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler) = 0;
 
         virtual void readBinaryFile (const std::string& filename, std::string& buffer) const = 0;
 

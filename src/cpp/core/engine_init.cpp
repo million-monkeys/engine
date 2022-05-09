@@ -64,14 +64,14 @@ void core::Engine::registerModule (std::uint32_t flags, million::api::Module* mo
     }
 }
 
-void core::Engine::registerGameHandler (entt::hashed_string state, million::GameHandler handler)
+void core::Engine::registerGameHandler (entt::hashed_string state, entt::hashed_string::hash_type events, million::GameHandler handler)
 {
-    m_game_handlers[state].push_back(handler);
+    m_game_handlers[state].push_back({events, handler});
 }
 
-void core::Engine::registerSceneHandler (entt::hashed_string scene, million::SceneHandler handler)
+void core::Engine::registerSceneHandler (entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler)
 {
-    m_scene_handlers[scene].push_back(handler);
+    m_scene_handlers[scene].push_back({events, handler});
 }
 
 void core::Engine::addModuleHook (million::api::Module::CallbackMasks hook, million::api::Module* mod) {
@@ -132,7 +132,8 @@ bool core::Engine::init ()
 bool core::Engine::setupGame ()
 {
     // Read game configuration
-    if (!core::readGameConfig()) {
+    helpers::hashed_string_flat_map<std::string> game_scripts;
+    if (!core::readGameConfig(game_scripts)) {
         return false;
     }
 
@@ -153,16 +154,23 @@ bool core::Engine::setupGame ()
         load.auto_swap = true;
     });
 
-    // Load game event handler script
     const std::string& script_file = entt::monostate<"game/script-file"_hs>();
     if (! script_file.empty()) {
-        m_system_status = SystemStatus::Loading;
-        loadResource("game-script"_hs, script_file, "game-script"_hs);
+    
     }
 
     // Set up game state
-    const std::string& start_state = entt::monostate<"game/initial-state"_hs>();
-    setGameState(entt::hashed_string{start_state.c_str()});
+    const std::string& start_state_str = entt::monostate<"game/initial-state"_hs>();
+    auto start_state = entt::hashed_string{start_state_str.c_str()};
+    setGameState(start_state);
+
+    // Load game event handler scripts
+    for (const auto& [game_state, script_file] :  game_scripts) {
+        if (game_state == start_state) {
+            m_system_status = SystemStatus::Loading;
+        }
+        loadResource("game-script"_hs, script_file, game_state);
+    }
 
     // Make events emitted during load visible on first frame
     pumpEvents();

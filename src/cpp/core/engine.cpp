@@ -113,9 +113,9 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                 case events::resources::Loaded::ID:
                 {
                     auto& loaded = eventData<events::resources::Loaded>(ev);
-                    if (loaded.name == "game-script"_hs) {
-                        m_game_script = loaded.handle;
-                        if (m_system_status == SystemStatus::Loading) {
+                    if (loaded.type == "game-script"_hs) {
+                        m_game_scripts.emplace(loaded.name, loaded.handle);
+                        if (m_system_status == SystemStatus::Loading && loaded.name == m_current_game_state) {
                             m_system_status = SystemStatus::Running;
                         }
                     }
@@ -176,13 +176,15 @@ void core::Engine::executeHandlers (HandlerType type)
     case HandlerType::Game:
         {
             EASY_BLOCK("Events/game", profiler::colors::Purple100);
-            for (const auto& handler : m_game_handlers[m_current_game_state]) {
-                handler(events("core"_hs), message_publisher);
+            auto& stream = *m_engine_streams["game"_hs].streamable;
+            for (const auto& [event_stream, handler] : m_game_handlers[m_current_game_state]) {
+                handler(events(event_stream), stream, message_publisher);
             }
         }
         {
             EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
-            if (m_game_script.valid()) {
+            auto it = m_game_scripts.find(m_current_game_state);
+            if (it != m_game_scripts.end() && it->second.valid()) {
                 scripting::processGameEvents();
             }
         }
@@ -190,8 +192,9 @@ void core::Engine::executeHandlers (HandlerType type)
     case HandlerType::Scene:
         {
             EASY_BLOCK("Events/scene", profiler::colors::Purple100);
-            for (const auto& handler : m_scene_handlers[m_scene_manager.current()]) {
-                handler(events("core"_hs), message_publisher);
+            auto& stream = *m_engine_streams["scene"_hs].streamable;
+            for (const auto& [event_stream, handler] : m_scene_handlers[m_scene_manager.current()]) {
+                handler(events(event_stream), stream, message_publisher);
             }
         }
         m_scene_manager.processEvents();
