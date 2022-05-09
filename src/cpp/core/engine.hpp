@@ -240,6 +240,7 @@ namespace core {
         helpers::hashed_string_flat_map<std::vector<GameEventHandler>> m_game_handlers;
         helpers::hashed_string_flat_map<std::vector<SceneEventHandler>> m_scene_handlers;
         helpers::hashed_string_flat_map<million::resources::Handle> m_game_scripts;
+        million::resources::Handle m_current_game_script; // Cache the active one to avoid a hash map lookup every frame
 
         // Timing
         DeltaTime m_current_time_delta = 0;

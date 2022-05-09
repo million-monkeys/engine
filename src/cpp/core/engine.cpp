@@ -47,6 +47,12 @@ void core::Engine::setGameState (entt::hashed_string new_state)
     spdlog::info("Setting game state to: {}", new_state.data());
     m_current_game_state = new_state;
     scripting::call("set_game_state", new_state.data());
+    auto it = m_game_scripts.find(m_current_game_state);
+    if (it != m_game_scripts.end()) {
+        m_current_game_script = it->second;
+    } else {
+        m_current_game_script = million::resources::Handle::invalid();
+    }
 }
 
 bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
@@ -116,6 +122,7 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
                     if (loaded.type == "game-script"_hs) {
                         m_game_scripts.emplace(loaded.name, loaded.handle);
                         if (m_system_status == SystemStatus::Loading && loaded.name == m_current_game_state) {
+                            m_current_game_script = loaded.handle;
                             m_system_status = SystemStatus::Running;
                         }
                     }
@@ -183,8 +190,7 @@ void core::Engine::executeHandlers (HandlerType type)
         }
         {
             EASY_BLOCK("Scripts/game", profiler::colors::Purple100);
-            auto it = m_game_scripts.find(m_current_game_state);
-            if (it != m_game_scripts.end() && it->second.valid()) {
+            if (m_current_game_script.valid()) {
                 scripting::processGameEvents();
             }
         }
