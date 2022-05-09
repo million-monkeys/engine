@@ -97,6 +97,7 @@ void scripting::term ()
 
 bool scripting::load (const std::string& filename)
 {
+    EASY_BLOCK("Scripts/load", profiler::colors::Purple100);
     try {
         spdlog::debug("[script] Loading: {}", filename);
         auto source = helpers::readToString(filename);
@@ -110,6 +111,7 @@ bool scripting::load (const std::string& filename)
 
 bool scripting::evaluate (const std::string& name, const std::string& source)
 {
+    EASY_BLOCK("Scripts/evaluate", profiler::colors::Purple200);
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
@@ -133,7 +135,7 @@ bool scripting::evaluate (const std::string& name, const std::string& source)
 
 void scripting::detail::call (const std::string& function, const scripting::detail::VariantVector& args)
 {
-    EASY_BLOCK("Scripts/call", profiler::colors::Purple100);
+    EASY_BLOCK("Scripts/call", profiler::colors::Purple200);
     spdlog::trace("Calling function {}", function);
 
     // Only one thread can execute Lua code at once
@@ -163,7 +165,7 @@ void scripting::detail::call (const std::string& function, const scripting::deta
 
 void scripting::processGameEvents ()
 {
-    EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+    EASY_BLOCK("Scripts/scene", profiler::colors::Purple200);
 
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
@@ -178,7 +180,7 @@ void scripting::processGameEvents ()
 
 void scripting::processSceneEvents (million::resources::Handle handle)
 {
-    EASY_BLOCK("Scripts/scene", profiler::colors::Purple100);
+    EASY_BLOCK("Scripts/scene", profiler::colors::Purple200);
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 
@@ -193,7 +195,7 @@ void scripting::processSceneEvents (million::resources::Handle handle)
 
 void scripting::processMessages ()
 {
-    EASY_BLOCK("Scripts/behavior", profiler::colors::Purple100);
+    EASY_BLOCK("Scripts/behavior", profiler::colors::Purple200);
     // Only one thread can execute Lua code at once
     std::lock_guard<std::mutex> guard(g_vm_mutex);
 

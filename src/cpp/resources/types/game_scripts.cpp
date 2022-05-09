@@ -5,6 +5,7 @@
 
 bool resources::types::GameScripts::cached (const std::string& filename, std::uint32_t* id)
 {
+    EASY_FUNCTION(profiler::colors::Teal300);
     return m_cached_ids.if_contains(
         entt::hashed_string::value(filename.c_str()),
         [&id](auto& element){
@@ -14,6 +15,7 @@ bool resources::types::GameScripts::cached (const std::string& filename, std::ui
 
 bool resources::types::GameScripts::load (million::resources::Handle handle, const std::string& filename)
 {
+    EASY_FUNCTION(profiler::colors::Teal300);
     try {
         auto config = parser::parse_toml(filename);
 

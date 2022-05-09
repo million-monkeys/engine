@@ -126,6 +126,7 @@ void resources::install (million::api::resources::Loader* loader, bool managed)
 
 million::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
+    EASY_FUNCTION(profiler::colors::Teal100);
     auto it = g_resource_loaders.find(type.value());
     if (it != g_resource_loaders.end()) {
         return it->second.enqueue(filename, name);
@@ -148,6 +149,7 @@ million::resources::Handle ResourceStorage::enqueue (const std::string& filename
     if (m_loader->cached(filename, &id)) {
         return million::resources::Handle::make(m_resource_id, id);
     }
+    EASY_FUNCTION(profiler::colors::Teal300);
     million::resources::Handle handle = million::resources::Handle::make(m_resource_id, m_idx.fetch_add(1));
     g_work_queue.enqueue({m_loader, filename, handle, name});
     return handle;

@@ -18,6 +18,7 @@ void core::Engine::readBinaryFile (const std::string& filename, std::string& buf
 
 million::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name)
 {
+    EASY_FUNCTION(profiler::colors::Blue300);
     auto it = m_named_resources.find(name);
     if (it != m_named_resources.end()) {
         spdlog::debug("Resource with name {:#x} found: {:#x}", name, it->second.handle);
@@ -29,6 +30,7 @@ million::resources::Handle core::Engine::findResource (entt::hashed_string::hash
 
 million::resources::Handle core::Engine::loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
+    EASY_FUNCTION(profiler::colors::Blue300);
     auto handle = resources::load(type, filename, name);
     if (name != 0) {
         bindResourceToName(handle, name);
@@ -38,12 +40,14 @@ million::resources::Handle core::Engine::loadResource (entt::hashed_string type,
 
 void core::Engine::bindResourceToName (million::resources::Handle handle, entt::hashed_string::hash_type name)
 {
+    EASY_FUNCTION(profiler::colors::Blue400);
     m_named_resources[name] = handle;
     spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
 }
 
 void core::Engine::setGameState (entt::hashed_string new_state)
 {
+    EASY_FUNCTION(profiler::colors::Blue200);
     spdlog::info("Setting game state to: {}", new_state.data());
     m_current_game_state = new_state;
     scripting::call("set_game_state", new_state.data());
@@ -210,6 +214,7 @@ void core::Engine::executeHandlers (HandlerType type)
 
 void core::Engine::shutdown ()
 {
+    EASY_FUNCTION(profiler::colors::Pink50);
     // // Unload the current scene
     // callModuleHook<CM::UNLOAD_SCENE>();
     // // Shut down graphics thread

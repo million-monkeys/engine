@@ -18,18 +18,21 @@ core::RegistryPair::~RegistryPair()
 
 void core::RegistryPair::onAddNamedEntity (entt::registry& registry, entt::entity entity)
 {
+    EASY_FUNCTION(profiler::colors::Green500);
     const auto& named = registry.get<components::core::Named>(entity);
     entity_names[named.name] = {entity, named.name.data()};
 }
 
 void core::RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::entity entity)
 {
+    EASY_FUNCTION(profiler::colors::Green500);
     const auto& named = registry.get<components::core::Named>(entity);
     entity_names.erase(named.name);
 }
 
 void core::RegistryPair::clear ()
 {
+    EASY_FUNCTION(profiler::colors::Green800);
     runtime = {};
     prototypes = {};
     entity_names.clear();
@@ -55,6 +58,7 @@ entt::registry& core::Engine::registry(million::Registry which)
 
 entt::entity core::Engine::findEntity (entt::hashed_string name) const
 {
+    EASY_FUNCTION(profiler::colors::Green200);
     const auto& entities = m_registries.foreground().entity_names;
     auto it = entities.find(name);
     if (it != entities.end()) {
@@ -65,6 +69,7 @@ entt::entity core::Engine::findEntity (entt::hashed_string name) const
 
 const std::string& core::Engine::findEntityName (const components::core::Named& named) const
 {
+    EASY_FUNCTION(profiler::colors::Green200);
     const auto& entities = m_registries.foreground().entity_names;
     auto it = entities.find(named.name);
     if (it != entities.end()) {

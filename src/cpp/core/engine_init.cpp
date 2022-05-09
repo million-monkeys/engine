@@ -118,6 +118,7 @@ void core::Engine::installComponent (const million::api::definitions::Component&
 
 bool core::Engine::init ()
 {
+    EASY_FUNCTION(profiler::colors::Pink50);
     init_core::register_components(this);
     resources::init(this);
     if (! scripting::init(this)) {
@@ -131,6 +132,7 @@ bool core::Engine::init ()
 
 bool core::Engine::setupGame ()
 {
+    EASY_FUNCTION(profiler::colors::Pink50);
     // Read game configuration
     helpers::hashed_string_flat_map<std::string> game_scripts;
     if (!core::readGameConfig(game_scripts)) {

@@ -37,6 +37,7 @@ extern "C" std::uint32_t null_entity_value ()
 
 extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -50,6 +51,7 @@ extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
 
 extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_registry, const char* prototype)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         return magic_enum::enum_integer(g_engine->loadEntity(selected_registry.value(), entt::hashed_string{prototype}));
@@ -62,6 +64,7 @@ extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_regis
 
 extern "C" void entity_destroy (std::uint32_t which_registry, std::uint32_t entity)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -74,11 +77,13 @@ extern "C" void entity_destroy (std::uint32_t which_registry, std::uint32_t enti
 
 extern "C" std::uint32_t entity_lookup_by_name (std::uint32_t which_registry, const char* name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     return magic_enum::enum_integer(g_engine->findEntity(entt::hashed_string{name}));
 }
 
 extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -105,6 +110,7 @@ extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::ui
 
 extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -133,6 +139,7 @@ extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uin
 
 extern "C" void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -150,6 +157,7 @@ extern "C" void component_tag_entity (uint32_t which_registry, uint32_t entity, 
 
 extern "C" void component_remove_from_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
     if (selected_registry.has_value()) {
         entt::registry& registry = g_engine->registry(selected_registry.value());
@@ -175,6 +183,7 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
 
 extern "C" void* allocate_message (const char* message_name, std::uint32_t target_entity, std::uint8_t size)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type message_type = entt::hashed_string::value(message_name);
     entt::entity target = static_cast<entt::entity>(target_entity);
     return g_engine->publisher().push(message_type, target, size);
@@ -182,18 +191,21 @@ extern "C" void* allocate_message (const char* message_name, std::uint32_t targe
 
 extern "C" void* allocate_command (const char* event_name, uint8_t size)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     return core::RawAccessWrapper(g_engine->commandStream()).push(event_type, size);
 }
 
 extern "C" void* allocate_event (const char* event_name, uint8_t size)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     return core::RawAccessWrapper(*g_active_stream).push(event_type, size);
 }
 
 extern "C" std::uint32_t get_messages (const char** buffer)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     g_engine->pumpMessages();
     auto iterable = g_engine->messages();
     auto& first = *iterable.begin();
@@ -203,6 +215,7 @@ extern "C" std::uint32_t get_messages (const char** buffer)
 
 extern "C" std::uint32_t get_stream_events (std::uint32_t stream_name, const char** buffer)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto iterable = g_engine->events(stream_name);
     auto& first = *iterable.begin();
     *buffer = reinterpret_cast<const char*>(&first);
@@ -232,6 +245,7 @@ void BehaviorIterator::cleanup ()
 
 extern "C" BehaviorIterator* setup_scripted_behavior_iterator ()
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     const auto& registry = g_engine->registry(million::Registry::Runtime);
     const auto& storage = registry.storage<components::core::ScriptedBehavior>();
     return BehaviorIterator::start(storage.each());
@@ -239,6 +253,7 @@ extern "C" BehaviorIterator* setup_scripted_behavior_iterator ()
 
 extern "C" std::uint32_t get_next_scripted_behavior (BehaviorIterator* iter, const components::core::ScriptedBehavior** behavior)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     if (iter->next != iter->end) {
         const auto&& [entity, sb] = *iter->next;
         ++iter->next;
@@ -253,6 +268,7 @@ extern "C" std::uint32_t get_next_scripted_behavior (BehaviorIterator* iter, con
 
 extern "C" void output_log (std::uint32_t level, const char* message)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     switch (level) {
     case 0:
         spdlog::critical("[script] {}", message);
@@ -288,12 +304,14 @@ extern "C" std::uint32_t get_ref (const char* name)
 
 extern "C" std::uint32_t load_resource (const char* type, const char* filename, const char* name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto handle = g_engine->loadResource(entt::hashed_string{type}, std::string{filename}, name != nullptr ? entt::hashed_string::value(name) : 0);
     return handle.handle;
 }
 
 extern "C" std::uint32_t find_resource (const char* name)
 {
+    EASY_FUNCTION(profiler::colors::Purple400);
     auto handle = g_engine->findResource(entt::hashed_string::value(name));
     return handle.handle;
 }

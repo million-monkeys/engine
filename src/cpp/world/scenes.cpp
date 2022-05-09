@@ -21,6 +21,7 @@ world::SceneManager::~SceneManager ()
 
 void world::SceneManager::loadSceneList (const std::string& path)
 {
+    EASY_FUNCTION(profiler::colors::Pink100);
     // Clear previous scenes, if any
     m_scenes.clear();
 
@@ -96,7 +97,7 @@ void world::SceneManager::update ()
     if (! m_pending_scenes.empty()) {
         auto iter = m_engine.events("resources"_hs);
         if (iter.size() > 0) {
-            EASY_BLOCK("SceneManager handling resource events", profiler::colors::Amber200);
+            EASY_BLOCK("SceneManager handling resource events", profiler::colors::Amber300);
             for (const auto& ev : iter) {   
                 switch (ev.type) {
                     case events::resources::Loaded::ID:
@@ -104,6 +105,7 @@ void world::SceneManager::update ()
                         auto& loaded = m_engine.eventData<events::resources::Loaded>(ev);
                         auto it = m_pending_scenes.find(loaded.name);
                         if (it != m_pending_scenes.end()) {
+                            EASY_BLOCK("SceneManager handling loaded event", profiler::colors::Amber500);
                             PendingScene& pending = it->second;
                             pending.resources.erase(loaded.handle.handle);
                             if (loaded.type == "scene-script"_hs) {
@@ -134,6 +136,7 @@ void world::SceneManager::update ()
 // Swap foreground and background scenes, and clear the (new) background scene
 void world::SceneManager::swapScenes ()
 {
+    EASY_FUNCTION(profiler::colors::Amber800);
     // Call UNLOAD_SCENE hooks on old scene
     // m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
 

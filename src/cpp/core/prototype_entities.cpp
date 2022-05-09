@@ -3,6 +3,7 @@
 
 void core::RegistryPair::onAddPrototypeEntity (entt::registry& registry, entt::entity entity)
 {
+    EASY_FUNCTION(profiler::colors::Yellow500);
     const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
     auto it = prototype_names.find(prototype_id.id);
     if (it != prototype_names.end()) {
@@ -14,12 +15,14 @@ void core::RegistryPair::onAddPrototypeEntity (entt::registry& registry, entt::e
 
 void core::RegistryPair::onRemovePrototypeEntity (entt::registry& registry, entt::entity entity)
 {
+    EASY_FUNCTION(profiler::colors::Yellow500);
     const auto& prototype_id = registry.get<core::EntityPrototypeID>(entity);
     prototype_names.erase(prototype_id.id);
 }
 
 void mergeEntityInternal (entt::registry& source_registry, entt::registry& destination_registry, entt::entity source_entity, entt::entity destination_entity, bool overwrite_components)
 {
+    EASY_FUNCTION(profiler::colors::Yellow200);
     for(auto [id, source_storage]: source_registry.storage()) {
         auto it = destination_registry.storage(id);
         if (it != destination_registry.storage().end() && source_storage.contains(source_entity)) {

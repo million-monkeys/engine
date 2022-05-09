@@ -12,6 +12,7 @@ resources::types::SceneEntities::SceneEntities(core::Engine* engine)
 
 bool resources::types::SceneEntities::load (million::resources::Handle handle, const std::string& filename)
 {
+    EASY_FUNCTION(profiler::colors::Teal300);
     try {
         auto config = parser::parse_toml(filename);
 

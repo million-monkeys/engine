@@ -81,13 +81,16 @@ int game_main (int argc, char** argv)
     }
 
 #ifdef BUILD_WITH_EASY_PROFILER
-    {
-        const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
-        if (profiling_enabled) {
-            spdlog::info("Starting easy_profiler");
-            profiler::startListen();
-        }
-        spdlog::info("Is easy_profiler listening: {}", profiler::isListening());
+    const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
+    if (profiling_enabled) {
+        EASY_PROFILER_ENABLE;
+        spdlog::info("Starting easy_profiler");
+        profiler::startListen();
+    }
+    if (profiler::isListening()) {
+        spdlog::info("easy_profiler is listening");
+    } else {
+        spdlog::info("easy_profiler is not listening");
     }
 #endif
 
@@ -149,6 +152,16 @@ int game_main (int argc, char** argv)
         spdlog::critical("Terminating.");
         clean_exit = false;
     }
+
+#ifdef BUILD_WITH_EASY_PROFILER
+    if (profiling_enabled) {
+        const std::string& filename = entt::monostate<"telemetry/profiling-dump-file"_hs>();
+        if (! filename.empty()) {
+            spdlog::info("Writing easy_profiler data to file: {}", filename);
+            profiler::dumpBlocksToFile(filename.c_str());
+        }
+    }
+#endif
 
     physfs::deinit();
     if (clean_exit) {

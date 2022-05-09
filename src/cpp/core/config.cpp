@@ -63,7 +63,11 @@ bool core::readUserConfig (int argc, char* argv[])
         if (config.contains("telemetry")) {
             const auto& telemetry = config.at("telemetry");
             maybe_set<"telemetry/log-level"_hs, std::string>(telemetry, "logging");
-            maybe_set<"telemetry/profiling"_hs, bool>(telemetry, "profiling");
+            if (telemetry.contains("profiling")) {
+                const auto& profiling = telemetry.at("profiling");
+                maybe_set<"telemetry/profiling"_hs, bool>(profiling, "enabled");
+                maybe_set<"telemetry/profiling-dump-file"_hs, std::string>(profiling, "dump-file");
+            }
         } else {
             entt::monostate<"telemetry/log-level"_hs>{} = "info";
         }
@@ -285,7 +289,7 @@ bool core::readGameConfig (helpers::hashed_string_flat_map<std::string>& game_sc
     // Settings loaded from game config                     //
     // These settings are NOT meant to be edited by players //
     // Loaded from PhysicsFS                                //
-    // Loaded after the engine and subsystems are setup     //
+    // Loaded after the engine and subsysteentt::monostate<"telemetry/profiling-dump-file"_hs>ms are setup     //
     //                                                      //
     //******************************************************//
     try {

@@ -22,6 +22,7 @@ void core::Engine::pumpEvents ()
 
 void core::Engine::pumpMessages ()
 {
+    EASY_FUNCTION(profiler::colors::Amber200);
     m_message_pool.reset();
     // Copy thread local events into global pool and reset thread local pools
     for (auto pool : m_message_pools) {
@@ -38,6 +39,7 @@ const million::events::MessageIterable core::Engine::messages () const
 million::events::Publisher& core::Engine::publisher()
 {
     if (! g_message_publisher.valid()) {
+        EASY_FUNCTION(profiler::colors::Pink100);
         // Lazy initialisation is unfortunately the only way we can initialise thread_local variables after config is read
         const std::uint32_t message_pool_size = entt::monostate<"memory/events/pool-size"_hs>();
 
@@ -115,11 +117,13 @@ million::events::Stream& core::Engine::createStreamInternal (entt::hashed_string
 
 million::events::Stream& core::Engine::createStream (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size)
 {
+    EASY_FUNCTION(profiler::colors::Amber300);
     return createStreamInternal(stream_name, writers, buffer_size, false);
 }
 
 void core::Engine::createEngineStream (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size)
 {
+    EASY_FUNCTION(profiler::colors::Amber300);
     createStreamInternal(stream_name, writers, buffer_size, true);
 }
 
