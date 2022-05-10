@@ -5,10 +5,11 @@ ffi.cdef[[
 struct MessageEnvelope {
     uint32_t type;
     uint32_t target;
-    uint32_t size;
+    uint32_t metadata;
 };
 struct BehaviorIterator* setup_scripted_behavior_iterator ();
 uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
+bool is_in_group (uint32_t, uint32_t);
 uint32_t get_messages (const char**);
 ]]
 local C = ffi.C
@@ -29,13 +30,33 @@ local function gather_entities ()
             return entity_collection
         end
         -- Otherwise, get the entities message map
-        local message_map = core.message_maps[bit.band(scripted_behavior[0].behavior, 0xfffff)]
+        local message_map = core.message_maps[bit.band(scripted_behavior[0].behavior, 0x003fffff)]
         -- If it has one, add the entity and message map to collection
         if message_map then
             entity_collection[entity.id] = {
                 entity=entity,
                 message_map=message_map,
             }
+        end
+    end
+end
+
+local function handle_message (message_type, entity_info, ptr)
+    if entity_info then
+        -- Get the entities message map and the handler for this message, if any
+        local message_map = entity_info.message_map
+        local handler = message_map[message_type]
+        -- If the entity has a handler for this type of message, get the message data type
+        if handler then
+            local entity = entity_info.entity
+            local ctype = core.types_by_id[message_type]
+            -- If the message type is registered, then extract the message data and call the handler
+            if ctype then
+                local msg = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
+                handler(entity, msg, mm)
+            else
+                mm.log.warning("Entity %d registered for unknown message type: %d", entity.id, message_type)
+            end
         end
     end
 end
@@ -47,23 +68,38 @@ local function process_messages (entities, message_buffer, buffer_size)
         ptr = message_buffer + index
         -- Get envelope for next message
         local envelope = ffi.cast("struct MessageEnvelope*", ptr)
-        index = index + envelope.size + ffi.sizeof("struct MessageEnvelope")
-        -- Get the target entities info, if any
-        local entity_info = entities[envelope.target]
-        if entity_info then
-            -- Get the entities message map and the handler for this message, if any
-            local message_map = entity_info.message_map
-            local handler = message_map[envelope.type]
-            -- If the entity has a handler for this type of message, get the message data type
-            if handler then
-                local entity = entity_info.entity
-                local ctype = core.types_by_id[envelope.type]
-                -- If the message type is registered, then extract the message data and call the handler
-                if ctype then
-                    local msg = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
-                    handler(entity, msg, mm)
-                else
-                    mm.log.warning("Entity %d registered for unknown message type: %d", entity.id, envelope.type)
+        local size =  bit.band(envelope.metadata, 0xffff)
+        index = index + size + ffi.sizeof("struct MessageEnvelope")
+
+        -- MessageEnvelope.metadata: 0bTFCCCCCCCCCCCCCCSSSSSSSSSSSSSSSS
+        -- Check target flag, 1 = group, 0 = entity
+        local target_type = bit.band(envelope.metadata, 0x80000000)
+        local is_filtered = bit.band(envelope.metadata, 0x40000000)
+        local categories = bit.rshift(bit.band(envelope.metadata, 0x3fff0000), 16)
+        if target_type == 0 then
+            -- Entity target
+            -- Get the target entities info, if any
+            local entity_info = entities[envelope.target]
+            -- If the message is not filtered or the entity has one of the required categories
+            if is_filtered == 0 or bit.band(entity_info.entity.category.id, categories) ~= 0 then
+                handle_message(envelope.type, entity_info, ptr)
+            end
+        else
+            -- Group target
+            local group = envelope.target
+            if is_filtered == 0 then
+                -- Every entity that is in the group
+                for id, entity_info in ipairs(entities) do
+                    if C.is_in_group(id, group) then
+                        handle_message(envelope.type, entity_info, ptr)
+                    end
+                end
+            else
+                -- Every entity that is in the group and has one of the required categories
+                for id, entity_info in ipairs(entities) do
+                    if C.is_in_group(id, group) and bit.band(entity_info.entity.category.id, categories) ~= 0 then
+                        handle_message(envelope.type, entity_info, ptr)
+                    end
                 end
             end
         end

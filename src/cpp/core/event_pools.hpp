@@ -46,16 +46,28 @@ namespace core {
             destination.template pushAll<PoolType>(m_pool);
         }
 
-        std::byte* push (entt::hashed_string::hash_type message_id, entt::entity target, uint32_t payload_size)
+        std::byte* push (entt::hashed_string::hash_type message_id, std::uint32_t target, std::uint16_t flags, std::uint16_t payload_size)
         {
-            using EnvelopeT = million::events::MessageEnvelope;
-            std::byte* ptr = m_pool.allocate(sizeof(EnvelopeT) + payload_size);
-            new (ptr) EnvelopeT{message_id, target, payload_size};
-            return ptr + sizeof(EnvelopeT);
+            std::byte* ptr = m_pool.allocate(sizeof(MessageEnvelope) + payload_size);
+            new (ptr) MessageEnvelope{message_id, target, (std::uint32_t(flags) << 16) | payload_size};
+            return ptr + sizeof(MessageEnvelope);
         }
 
     private:
         PoolType m_pool;
+
+        struct MessageEnvelope { // Message envelope is targetted at a specific entity
+            entt::hashed_string::hash_type type;
+            std::uint32_t target; // Entity ID or Group ID
+            /* Metadata, 32 bits
+             * 0bTFCCCCCCCCCCCCCCSSSSSSSSSSSSSSSS
+             * T = 1bit flag, Target type. 0 => target entity, 1 => target group
+             * F = 1bit flag, Filter. 0 => not filtered by category, 1 => filtered by category (only target entities with specified category will receive message)
+             * C = 14bit bitfield, Category bitfield, each bit represents one of 14 total possible categories. 0 => Category not filtered by, 1 => category filtered by
+             * S = 16bit number, Size of payload in bytes
+             */
+            std::uint32_t metadata;
+        };
     };
 
     class IterableStream {
@@ -204,9 +216,9 @@ namespace core {
 
         bool valid () const { return m_pool != nullptr; }
 
-        std::byte* push (entt::hashed_string::hash_type event_id, entt::entity source, std::uint32_t payload_size)
+        std::byte* push (entt::hashed_string::hash_type event_id, std::uint32_t target, std::uint16_t flags, std::uint16_t payload_size)
         {
-            return m_pool->push(event_id, source, payload_size);
+            return m_pool->push(event_id, target, flags, payload_size);
         }
         
         Pool* m_pool;

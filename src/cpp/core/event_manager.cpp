@@ -31,9 +31,9 @@ void core::Engine::pumpMessages ()
     }
 }
 
-const million::events::MessageIterable core::Engine::messages () const
+const std::pair<std::byte*, std::byte*> core::Engine::messages () const
 {
-    return {m_message_pool.begin(), m_message_pool.end()};
+    return std::make_pair(m_message_pool.begin(), m_message_pool.end());
 }
 
 million::events::Publisher& core::Engine::publisher()
@@ -47,7 +47,7 @@ million::events::Publisher& core::Engine::publisher()
         std::lock_guard<std::mutex> guard(g_pool_mutex);
         auto message_pool = new MessagePool(message_pool_size);
         m_message_pools.push_back(message_pool); // Keep track of this pool so that we can gather the events into a global pool at the end of each frame
-        g_message_publisher = core::MessagePublisher<core::MessagePool>(message_pool);
+        g_message_publisher = MessagePublisher<core::MessagePool>(message_pool);
     }
     return g_message_publisher;
 }

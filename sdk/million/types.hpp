@@ -49,24 +49,17 @@ namespace million {
             Type handle = 0xffffffff;
             // 10 bits (1024) = type, 22 bits (4194304) = id
             const std::uint32_t type () const { return handle >> 22; }
-            const std::uint32_t id () const { return handle & 0x3fffff; }
+            const std::uint32_t id () const { return handle & 0x003fffff; }
             const bool valid () const { return *this != invalid(); }
             bool operator== (const Handle other) const { return handle == other.handle; }
             bool operator!= (const Handle other) const { return handle != other.handle; }
 
-            static constexpr Handle make (std::uint32_t type, std::uint32_t id) { return Handle{type << 22 | (id & 0x3fffff)}; }
+            static constexpr Handle make (std::uint32_t type, std::uint32_t id) { return Handle{type << 22 | (id & 0x003fffff)}; }
             static constexpr Handle invalid () { return Handle{0xffffffff}; }
         };
     }
 
     namespace events {
-        /// Internal type: not expected to be used directly.
-        struct MessageEnvelope { // Message envelope is targetted at a specific entity
-            entt::hashed_string::hash_type type;
-            entt::entity target;
-            std::uint32_t size;
-        };
-
         /// Internal type: not expected to be used directly.
         struct EventEnvelope { // Event envelope is not targetted
             entt::hashed_string::hash_type type;
@@ -90,11 +83,22 @@ namespace million {
         {
         public:
             virtual ~Publisher () {}
-            template <typename Message> Message& post (entt::entity target) { return *(new (push(Message::ID, target, sizeof(Message))) Message{}); }
+
+            // Post to an entity, no categories filter
+            template <typename Message> Message& post (entt::entity target) { return *(new (push(Message::ID, entt::to_integral(target), 0x00, sizeof(Message))) Message{}); }
             template <typename Message, typename Function> void post (entt::entity target, Function fn) { fn(post<Message>(target)); }
+            // Post to an entity, filtered by categories
+            template <typename Message> Message& postFiltered (entt::entity target, std::uint16_t categories) { return *(new (push(Message::ID, entt::to_integral(target), 0x40 | categories, sizeof(Message))) Message{}); }
+            template <typename Message, typename Function> void postFiltered (entt::entity target, std::uint16_t categories, Function fn) { fn(post<Message>(target, categories)); }
+            // Post to a group, no categories filter
+            template <typename Message> Message& post (entt::hashed_string::hash_type target, std::uint16_t categories) { return *(new (push(Message::ID, target, 0x80, sizeof(Message))) Message{}); }
+            template <typename Message, typename Function> void post (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) { fn(post<Message>(target)); }
+            // Post to a group, filtered by categories
+            template <typename Message> Message& postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories) { return *(new (push(Message::ID, entt::to_integral(target), 0xC0 | categories, sizeof(Message))) Message{}); }
+            template <typename Message, typename Function> void postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) { fn(post<Message>(target, categories)); }
 
             // Internal! Even though this is public, it should not be used directly.
-            virtual std::byte* push (entt::hashed_string::hash_type, entt::entity, std::uint32_t) = 0;
+            virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t, std::uint16_t, std::uint16_t) = 0;
         };
 
         /// Internal type: not expected to be used directly.
@@ -147,7 +151,6 @@ namespace million {
             const std::byte* m_end_ptr;
         };
 
-        using MessageIterable = Iterable<MessageEnvelope>;
         using EventIterable = Iterable<EventEnvelope>;
     }
 }

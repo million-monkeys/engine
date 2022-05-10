@@ -181,12 +181,11 @@ extern "C" void component_remove_from_entity (std::uint32_t which_registry, std:
     }
 }
 
-extern "C" void* allocate_message (const char* message_name, std::uint32_t target_entity, std::uint8_t size)
+extern "C" void* allocate_message (const char* message_name, std::uint32_t target, std::uint8_t size)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type message_type = entt::hashed_string::value(message_name);
-    entt::entity target = static_cast<entt::entity>(target_entity);
-    return g_engine->publisher().push(message_type, target, size);
+    return g_engine->publisher().push(message_type, target, 0, size);
 }
 
 extern "C" void* allocate_command (const char* event_name, uint8_t size)
@@ -203,14 +202,18 @@ extern "C" void* allocate_event (const char* event_name, uint8_t size)
     return core::RawAccessWrapper(*g_active_stream).push(event_type, size);
 }
 
+extern "C" bool is_in_group (uint32_t entity, uint32_t group)
+{
+    return g_engine->isInGroup(static_cast<entt::entity>(entity), entt::hashed_string::hash_type(group));
+}
+
 extern "C" std::uint32_t get_messages (const char** buffer)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     g_engine->pumpMessages();
-    auto iterable = g_engine->messages();
-    auto& first = *iterable.begin();
-    *buffer = reinterpret_cast<const char*>(&first);
-    return iterable.size();
+    auto [begin, end] = g_engine->messages();
+    *buffer = reinterpret_cast<const char*>(begin);
+    return end - begin;
 }
 
 extern "C" std::uint32_t get_stream_events (std::uint32_t stream_name, const char** buffer)

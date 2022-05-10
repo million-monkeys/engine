@@ -173,9 +173,6 @@ namespace million::api {
         /** Get the global engine commands event stream, used to control the engine */
         virtual million::events::Stream& commandStream() = 0;
 
-        /** Access an iterable collection of all emitted events */
-        virtual const million::events::MessageIterable messages () const = 0;
-
         /** Retrieve events from a named event stream  */
         virtual const million::events::EventIterable events (entt::hashed_string) const = 0;
 

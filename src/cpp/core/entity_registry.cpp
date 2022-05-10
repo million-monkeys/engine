@@ -80,6 +80,13 @@ const std::string& core::Engine::findEntityName (const components::core::Named& 
     return m_empty_string;
 }
 
+bool core::Engine::isInGroup (entt::entity entity, entt::hashed_string::hash_type group_name) const
+{
+    const auto& registry = m_registries.foreground().runtime;
+    const auto& storage = registry.storage<core::EntityGroup>(group_name);
+    return storage.contains(entity);
+}
+
 void core::Engine::loadComponent (entt::registry& registry, entt::hashed_string component, entt::entity entity, const void* table)
 {
     EASY_FUNCTION(profiler::colors::Green100);

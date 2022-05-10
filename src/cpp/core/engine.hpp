@@ -21,6 +21,9 @@ namespace core {
     struct EntityPrototypeID {
         entt::hashed_string::hash_type id;
     };
+    
+    // Component used to represent group membership. Component named storage is used for different groups.
+    struct EntityGroup {};
 
     enum class HandlerType {
         Game,
@@ -89,14 +92,16 @@ namespace core {
         entt::entity loadEntity (million::Registry, entt::hashed_string) final;
         void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) final;
         million::resources::Handle findResource (entt::hashed_string::hash_type) final;
-        const million::events::MessageIterable messages () const final;
         const million::events::EventIterable events (entt::hashed_string) const final;
-
-        const million::events::EventIterable events (entt::hashed_string::hash_type) const;
 
         /////////////////////////////////////////
         // Internal API
         /////////////////////////////////////////
+        
+        const million::events::EventIterable events (entt::hashed_string::hash_type) const;
+        const std::pair<std::byte*, std::byte*> messages () const;
+
+        bool isInGroup (entt::entity entity, entt::hashed_string::hash_type group_name) const;
 
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);
