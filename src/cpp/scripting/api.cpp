@@ -35,149 +35,119 @@ extern "C" std::uint32_t null_entity_value ()
     return magic_enum::enum_integer(entt::entity{entt::null});
 }
 
-extern "C" std::uint32_t entity_create (std::uint32_t which_registry)
+extern "C" std::uint32_t entity_create ()
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        return magic_enum::enum_integer(registry.create());
-    } else {
-        // Invalid registry
-        spdlog::error("[script] entity_create called with invalid registry: {}", which_registry);
-        return magic_enum::enum_integer(entt::entity{entt::null});
-    }
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    return magic_enum::enum_integer(registry.create());
 }
 
-extern "C" std::uint32_t entity_create_from_prototype (std::uint32_t which_registry, const char* prototype)
+extern "C" std::uint32_t entity_create_from_prototype (const char* prototype)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        return magic_enum::enum_integer(g_engine->loadEntity(selected_registry.value(), entt::hashed_string{prototype}));
-    } else {
-        // Invalid registry
-        spdlog::error("[script] entity_create called with invalid registry: {}", which_registry);
-        return magic_enum::enum_integer(entt::entity{entt::null});
-    }
+    return magic_enum::enum_integer(g_engine->loadEntity(million::Registry::Runtime, entt::hashed_string{prototype}));
 }
 
-extern "C" void entity_destroy (std::uint32_t which_registry, std::uint32_t entity)
+extern "C" void entity_destroy (std::uint32_t entity)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        registry.destroy(static_cast<entt::entity>(entity));
-    } else {
-        // Invalid registry
-        spdlog::error("[script] entity_destroy called with invalid registry: {}", which_registry);
-    }
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    registry.destroy(static_cast<entt::entity>(entity));
 }
 
-extern "C" std::uint32_t entity_lookup_by_name (std::uint32_t which_registry, const char* name)
+extern "C" std::uint32_t entity_lookup_by_name (const char* name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     return magic_enum::enum_integer(g_engine->findEntity(entt::hashed_string{name}));
 }
 
-extern "C" void* component_get_for_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
+extern "C" bool entity_has_component (std::uint32_t entity, const char* component_name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        auto it = g_component_types.find(entt::hashed_string::value(component_name));
-        if (it != g_component_types.end()) {
-            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
-            entt::entity e = static_cast<entt::entity>(entity);
-            if (storage.contains(e)) {
-                return storage.get(e);
-            }
-            // Entity does not have component
-            spdlog::warn("[script] entity {} does not have component: {}", entity, component_name);
-        } else {
-            // Invalid component name
-            spdlog::error("[script] component_get_for_entity invalid component name: {}", component_name);
-        }
-        return nullptr;
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto it = g_component_types.find(entt::hashed_string::value(component_name));
+    if (it != g_component_types.end()) {
+        auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
+        entt::entity e = static_cast<entt::entity>(entity);
+        return storage.contains(e);
     } else {
-        // Invalid registry
-        spdlog::error("[script] component_get_for_entity called with invalid registry: {}", which_registry);
-        return nullptr;
+        // Invalid component name
+        spdlog::error("[script] component_get_for_entity invalid component name: {}", component_name);
     }
+    return false;
 }
 
-extern "C" void* component_add_to_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
+extern "C" void* component_get_for_entity (std::uint32_t entity, const char* component_name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        auto it = g_component_types.find(entt::hashed_string::value(component_name));
-        if (it != g_component_types.end()) {
-            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
-            entt::entity e = static_cast<entt::entity>(entity);
-            if (!storage.contains(e)) {
-                if (storage.emplace(e) == storage.end()) {
-                    // Could not insert component
-                    spdlog::warn("[script] component_add_to_entity with entity {} was unable to add component: {}", entity, component_name);
-                    return nullptr;
-                }
-            }
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto it = g_component_types.find(entt::hashed_string::value(component_name));
+    if (it != g_component_types.end()) {
+        auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
+        entt::entity e = static_cast<entt::entity>(entity);
+        if (storage.contains(e)) {
             return storage.get(e);
         }
-        // Invalid component name
-        spdlog::error("[script] component_add_to_entity invalid component name: {}", component_name);
-        return nullptr;
+        // Entity does not have component
+        spdlog::warn("[script] entity {} does not have component: {}", entity, component_name);
     } else {
-        // Invalid registry
-        spdlog::error("[script] component_add_to_entity called with invalid registry: {}", which_registry);
-        return nullptr;
+        // Invalid component name
+        spdlog::error("[script] component_get_for_entity invalid component name: {}", component_name);
     }
+    return nullptr;
 }
 
-extern "C" void component_tag_entity (uint32_t which_registry, uint32_t entity, const char* tag_name)
+extern "C" void* component_add_to_entity (std::uint32_t entity, const char* component_name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        auto& storage = registry.storage<void>(entt::hashed_string{tag_name});
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto it = g_component_types.find(entt::hashed_string::value(component_name));
+    if (it != g_component_types.end()) {
+        auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
         entt::entity e = static_cast<entt::entity>(entity);
         if (!storage.contains(e)) {
-            spdlog::warn("Adding tag {} to {}", tag_name, entity);
-            storage.emplace(e);
+            if (storage.emplace(e) == storage.end()) {
+                // Could not insert component
+                spdlog::warn("[script] component_add_to_entity with entity {} was unable to add component: {}", entity, component_name);
+                return nullptr;
+            }
         }
-    } else {
-        // Invalid registry
-        spdlog::error("[script] component_add_to_entity called with invalid registry: {}", which_registry);
+        return storage.get(e);
+    }
+    // Invalid component name
+    spdlog::error("[script] component_add_to_entity invalid component name: {}", component_name);
+    return nullptr;
+}
+
+extern "C" void component_tag_entity (uint32_t entity, const char* tag_name)
+{
+    EASY_FUNCTION(profiler::colors::Purple400);
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto& storage = registry.storage<void>(entt::hashed_string{tag_name});
+    entt::entity e = static_cast<entt::entity>(entity);
+    if (!storage.contains(e)) {
+        spdlog::warn("Adding tag {} to {}", tag_name, entity);
+        storage.emplace(e);
     }
 }
 
-extern "C" void component_remove_from_entity (std::uint32_t which_registry, std::uint32_t entity, const char* component_name)
+extern "C" void component_remove_from_entity (std::uint32_t entity, const char* component_name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
-    auto selected_registry = magic_enum::enum_cast<million::Registry>(which_registry);
-    if (selected_registry.has_value()) {
-        entt::registry& registry = g_engine->registry(selected_registry.value());
-        auto it = g_component_types.find(entt::hashed_string::value(component_name));
-        if (it != g_component_types.end()) {
-            auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
-            entt::entity e = static_cast<entt::entity>(entity);
-            if (!storage.contains(e)) {
-                storage.remove(e);
-            } else {
-                // Entity does not have component
-                spdlog::warn("[script] component_remove_from_entity entity {} does not have component: {}", entity, component_name);
-            }
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto it = g_component_types.find(entt::hashed_string::value(component_name));
+    if (it != g_component_types.end()) {
+        auto& storage = registry.storage(it->second)->second; // `it` would not be valid if this storage doesn't exist
+        entt::entity e = static_cast<entt::entity>(entity);
+        if (!storage.contains(e)) {
+            storage.remove(e);
         } else {
-            // Invalid component name
-            spdlog::error("[script] component_remove_from_entity invalid component name: {}", component_name);
+            // Entity does not have component
+            spdlog::warn("[script] component_remove_from_entity entity {} does not have component: {}", entity, component_name);
         }
     } else {
-        // Invalid registry
-        spdlog::error("[script] component_remove_from_entity called with invalid registry: {}", which_registry);
+        // Invalid component name
+        spdlog::error("[script] component_remove_from_entity invalid component name: {}", component_name);
     }
 }
 
@@ -205,6 +175,11 @@ extern "C" void* allocate_event (const char* event_name, uint8_t size)
 extern "C" bool is_in_group (uint32_t entity, uint32_t group)
 {
     return g_engine->isInGroup(static_cast<entt::entity>(entity), entt::hashed_string::hash_type(group));
+}
+
+extern "C" uint32_t get_group (uint32_t group, const uint32_t** entities)
+{
+    return g_engine->entitiesInGroup(entt::hashed_string::hash_type(group), reinterpret_cast<const entt::entity**>(entities));
 }
 
 extern "C" std::uint32_t get_messages (const char** buffer)
