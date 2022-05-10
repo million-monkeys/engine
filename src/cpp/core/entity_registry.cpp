@@ -87,14 +87,6 @@ bool core::Engine::isInGroup (entt::entity entity, entt::hashed_string::hash_typ
     return storage.contains(entity);
 }
 
-unsigned core::Engine::entitiesInGroup (entt::hashed_string::hash_type group_name, const entt::entity** entities) const
-{
-    const auto& registry = m_registries.foreground().runtime;
-    const auto& storage = registry.storage<core::EntityGroup>(group_name);
-    *entities = storage.data();
-    return storage.size();
-}
-
 void core::Engine::loadComponent (entt::registry& registry, entt::hashed_string component, entt::entity entity, const void* table)
 {
     EASY_FUNCTION(profiler::colors::Green100);

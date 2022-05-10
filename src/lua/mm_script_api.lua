@@ -7,6 +7,7 @@ ffi.cdef [[
     void entity_destroy (uint32_t);
     uint32_t entity_lookup_by_name (const char*);
     bool entity_has_component (uint32_t, const char*);
+    void entity_set_group (uint32_t, const char*, bool);
     void* component_get_for_entity (uint32_t, const char*);
     void* component_add_to_entity (uint32_t, const char*);
     void component_tag_entity (uint32_t, const char*);
@@ -76,6 +77,10 @@ local function destroy_entity(self)
     C.entity_destroy(self.id)
 end
 
+local function set_in_group(self, group_name, in_group)
+    C.entity_set_group(self.id, group_name, in_group)
+end
+
 local function post_message(target, message_name)
     local message_info = core.types_by_name[message_name]
     if message_info then
@@ -115,6 +120,7 @@ local function get_entity_by_id(self, entity_id)
             has = has_component,
             add = add_component,
             tag = add_tag_component,
+            group = set_in_group,
             post = function(entity, message_name) return post_message(entity.id, message_name) end,
             remove = remove_component,
             destroy = destroy_entity

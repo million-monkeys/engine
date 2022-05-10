@@ -102,7 +102,6 @@ namespace core {
         const std::pair<std::byte*, std::byte*> messages () const;
 
         bool isInGroup (entt::entity entity, entt::hashed_string::hash_type group_name) const;
-        unsigned entitiesInGroup (entt::hashed_string::hash_type group_name, const entt::entity** entities) const;
 
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);

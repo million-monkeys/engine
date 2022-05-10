@@ -77,6 +77,25 @@ extern "C" bool entity_has_component (std::uint32_t entity, const char* componen
     return false;
 }
 
+extern "C" void entity_set_group (uint32_t entity, const char* group_name, bool in_group)
+{
+    EASY_FUNCTION(profiler::colors::Purple400);
+    entt::registry& registry = g_engine->registry(million::Registry::Runtime);
+    auto& storage = registry.storage<core::EntityGroup>(entt::hashed_string::value(group_name));
+    entt::entity e = static_cast<entt::entity>(entity);
+    if (storage.contains(e)) {
+        if (! in_group) {
+            // Remove from group
+            storage.erase(e);
+        }
+    } else {
+        if (in_group) {
+            // Add to group
+            storage.emplace(e);
+        }
+    }
+}
+
 extern "C" void* component_get_for_entity (std::uint32_t entity, const char* component_name)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
@@ -179,7 +198,10 @@ extern "C" bool is_in_group (uint32_t entity, uint32_t group)
 
 extern "C" uint32_t get_group (uint32_t group, const uint32_t** entities)
 {
-    return g_engine->entitiesInGroup(entt::hashed_string::hash_type(group), reinterpret_cast<const entt::entity**>(entities));
+    const auto& registry = g_engine->registry(million::Registry::Runtime);
+    const auto& storage = registry.storage<core::EntityGroup>(entt::hashed_string::hash_type(group));
+    *entities = reinterpret_cast<const uint32_t*>(storage.data());
+    return storage.size();
 }
 
 extern "C" std::uint32_t get_messages (const char** buffer)
