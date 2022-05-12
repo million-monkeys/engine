@@ -16,6 +16,15 @@ void core::Engine::readBinaryFile (const std::string& filename, std::string& buf
     buffer = helpers::readToString(filename);
 }
 
+std::uint16_t core::Engine::categoryBitflag (entt::hashed_string::hash_type category_name) const
+{
+    auto it = m_category_bitfields.find(category_name);
+    if (it != m_category_bitfields.end()) {
+        return it->second;
+    }
+    return 0;
+}
+
 million::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name) const
 {
     EASY_FUNCTION(profiler::colors::Blue300);

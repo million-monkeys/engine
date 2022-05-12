@@ -81,7 +81,7 @@ local function process_messages (entities, message_buffer, buffer_size)
             -- Get the target entities info, if any
             local entity_info = entities[envelope.target]
             -- If the message is not filtered or the entity has one of the required categories
-            if entity_info and (is_filtered == 0 or (entity_info.entity.has('category') and bit.band(entity_info.entity.category.id, categories) ~= 0)) then
+            if entity_info and (is_filtered == 0 or (entity_info.entity:has('category') and bit.band(entity_info.entity.category.id, categories) ~= 0)) then
                 handle_message(envelope.type, entity_info, ptr)
             end
         else
@@ -102,7 +102,7 @@ local function process_messages (entities, message_buffer, buffer_size)
                 repeat
                     num_entities = num_entities - 1
                     local entity_info = entities[entity_id_ptr[num_entities]]
-                    if entity_info and entity_info.entity.has('category') and bit.band(entity_info.entity.category.id, categories) ~= 0 then
+                    if entity_info and entity_info.entity:has('category') and bit.band(entity_info.entity.category.id, categories) ~= 0 then
                         handle_message(envelope.type, entity_info, ptr)
                     end
                 until num_entities == 0

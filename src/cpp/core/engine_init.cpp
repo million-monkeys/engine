@@ -136,8 +136,15 @@ bool core::Engine::setupGame ()
     EASY_FUNCTION(profiler::colors::Pink50);
     // Read game configuration
     helpers::hashed_string_flat_map<std::string> game_scripts;
-    if (!core::readGameConfig(game_scripts)) {
+    std::vector<entt::hashed_string::hash_type> entity_categories;
+    if (!core::readGameConfig(game_scripts, entity_categories)) {
         return false;
+    }
+
+    // Add entity categories
+    std::uint16_t bit_index = 0;
+    for (const auto& category : entity_categories) {
+        m_category_bitfields.emplace(category, 1 << bit_index++);
     }
 
     // Set up game scenes

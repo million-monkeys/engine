@@ -102,6 +102,7 @@ namespace core {
         const std::pair<std::byte*, std::byte*> messages () const;
 
         bool isInGroup (entt::entity entity, entt::hashed_string::hash_type group_name) const;
+        std::uint16_t categoryBitflag (entt::hashed_string::hash_type category_name) const;
 
         // Load component and add it to entity
         void loadComponent (entt::registry& registry, entt::hashed_string, entt::entity, const void*);
@@ -233,6 +234,8 @@ namespace core {
         helpers::hashed_string_flat_map<million::api::definitions::LoaderFn> m_component_loaders;
         world::SceneManager m_scene_manager;
         const std::string m_empty_string = {};
+
+        helpers::hashed_string_flat_map<std::uint16_t> m_category_bitfields;
 
         // System and task scheduling
         scheduler::Scheduler m_scheduler;

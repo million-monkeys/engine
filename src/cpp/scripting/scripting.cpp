@@ -157,8 +157,7 @@ void scripting::detail::call (const std::string& function, const scripting::deta
     int ret = lua_pcall(g_lua_state, args.size(), 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
-    } else {
-        spdlog::trace("Success {}", function);
+        throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
@@ -175,6 +174,7 @@ void scripting::processGameEvents ()
     int ret = lua_pcall(g_lua_state, 0, 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
@@ -190,6 +190,7 @@ void scripting::processSceneEvents (million::resources::Handle handle)
     int ret = lua_pcall(g_lua_state, 1, 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
@@ -204,5 +205,6 @@ void scripting::processMessages ()
     int ret = lua_pcall(g_lua_state, 0, 0, 0);
     if (ret != 0) {
         spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        throw std::runtime_error("Script encountered unrecoverable error");
     }
 }

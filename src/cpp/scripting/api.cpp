@@ -170,11 +170,16 @@ extern "C" void component_remove_from_entity (std::uint32_t entity, const char* 
     }
 }
 
-extern "C" void* allocate_message (const char* message_name, std::uint32_t target, std::uint8_t size)
+extern "C" std::uint32_t get_category (const char* category_name)
+{
+    return g_engine->categoryBitflag(entt::hashed_string::value(category_name));
+}
+
+extern "C" void* allocate_message (const char* message_name, std::uint32_t target, std::uint16_t flags, std::uint16_t size)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type message_type = entt::hashed_string::value(message_name);
-    return g_engine->publisher().push(message_type, target, 0, size);
+    return g_engine->publisher().push(message_type, target, flags, size);
 }
 
 extern "C" void* allocate_command (const char* event_name, uint8_t size)

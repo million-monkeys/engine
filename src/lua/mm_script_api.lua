@@ -1,4 +1,5 @@
 local core = require('mm_core')
+local bit = require("bit")
 local ffi = require('ffi')
 ffi.cdef [[
     uint32_t null_entity_value ();
@@ -13,11 +14,12 @@ ffi.cdef [[
     void component_tag_entity (uint32_t, const char*);
     void component_remove_from_entity (uint32_t, const char*);
     void output_log (uint32_t, const char*);
-    void* allocate_message (const char*, uint32_t, uint8_t);
+    void* allocate_message (const char*, uint32_t, uint16_t, uint16_t);
     void* allocate_command (const char*, uint8_t);
     void* allocate_event (const char*, uint8_t);
     uint32_t load_resource (const char*, const char*, const char*);
     uint32_t find_resource (const char*);
+    uint32_t get_category (const char*);
 ]]
 local C = ffi.C
 
@@ -77,17 +79,32 @@ local function destroy_entity(self)
     C.entity_destroy(self.id)
 end
 
-local function set_in_group(self, group_name, in_group)
-    C.entity_set_group(self.id, group_name, in_group)
+local function get_or_set_in_group(self, group_name, in_group)
+    if in_group ~= nil then
+        C.entity_set_group(self.id, group_name, in_group)
+    else
+        C.is_in_group(self.id, C.get_ref(group_name))
+    end
 end
 
-local function post_message(target, message_name)
+local function post_message(target, message_name, categories)
     local message_info = core.types_by_name[message_name]
     if message_info then
         if target == nil then
             C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
         else
-            return ffi.cast(message_info.type, C.allocate_message(message_name, target, message_info.size))
+            local flags = 0 -- 0bTFCCCCCCCCCCCCCC T = Target (0=entity, 1=group), F = Filtered (0=no category, 1=cateogry), C = Category bit flags
+            if type(target) == 'string' then
+                flags = 0x8000             -- target = group
+                target = C.get_ref(target) -- convert string to int hash
+            end
+            if categories ~= nil then
+                flags = bit.bor(flags, 0x4000) -- filtered by category = true
+                for i, category in ipairs(categories) do
+                    flags = bit.bor(flags, C.get_category(category)) -- add category to lower 14 bits
+                end
+            end
+            return ffi.cast(message_info.type, C.allocate_message(message_name, target, flags, message_info.size))
         end
     else
         C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')
@@ -120,7 +137,7 @@ local function get_entity_by_id(self, entity_id)
             has = has_component,
             add = add_component,
             tag = add_tag_component,
-            group = set_in_group,
+            group = get_or_set_in_group,
             post = function(entity, message_name) return post_message(entity.id, message_name) end,
             remove = remove_component,
             destroy = destroy_entity
@@ -182,6 +199,7 @@ return {
     ref = C.get_ref,
     -- Communicate through messages, commands and events
     post=post_message,
+
     command=emit_command,
     emit=emit_event,
     -- Debug and error logging

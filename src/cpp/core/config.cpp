@@ -282,7 +282,7 @@ bool core::readEngineConfig (helpers::hashed_string_flat_map<std::uint32_t>& str
 }
 
 
-bool core::readGameConfig (helpers::hashed_string_flat_map<std::string>& game_scripts)
+bool core::readGameConfig (helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories)
 {
     //******************************************************//
     //                                                      //
@@ -342,6 +342,31 @@ bool core::readGameConfig (helpers::hashed_string_flat_map<std::string>& game_sc
         const auto& scenes = config.at("scenes");
         entt::monostate<"scenes/path"_hs>{} = toml::find<std::string>(scenes, "path");
         entt::monostate<"scenes/initial"_hs>{} = toml::find<std::string>(scenes, "initial");
+
+        //******************************************************//
+        // ECS
+        //******************************************************//
+        if (config.contains("ecs")) {
+            const auto& ecs = config.at("ecs");
+            if (! ecs.is_table()) {
+                spdlog::error("Game config files \"ecs\" section is not a table.");
+                return false;
+            }
+            if (ecs.contains("categories")) {
+                const auto& categories = ecs.at("categories");
+                if (! categories.is_array()) {
+                    spdlog::error("Game config files \"ecs.categories\" field is not an array.");
+                    return false;
+                }
+                for (const auto& category : categories.as_array()) {
+                    if (! category.is_string()) {
+                        spdlog::error("Game config files \"ecs.categories\" values must be strings.");
+                        return false;
+                    }
+                    entity_categories.push_back(entt::hashed_string::value(category.as_string().str.c_str()));
+                }
+            }
+        }
 
         //******************************************************//
         // ATTRIBUTES
