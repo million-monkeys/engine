@@ -41,6 +41,7 @@ core::Engine::Engine(helpers::hashed_string_flat_map<std::uint32_t>& stream_size
     createEngineStream("game"_hs);
     createEngineStream("scene"_hs);
     createEngineStream("behavior"_hs);
+    setContextData();
 }
 
 void* core::Engine::allocModule (std::size_t bytes) {
@@ -139,15 +140,15 @@ bool core::Engine::setupGame ()
         return false;
     }
 
+    // Set up game scenes
+    const std::string& scene_path = entt::monostate<"scenes/path"_hs>();
+    m_scene_manager.loadSceneList(scene_path);
+
     // Make sure game-specific events are declared in Lua
     scripting::load(entt::monostate<"game/script-events"_hs>());
 
     // Create game task graph
     m_scheduler.createTaskGraph(*this);
-
-    // Set up game scenes
-    const std::string& scene_path = entt::monostate<"scenes/path"_hs>();
-    m_scene_manager.loadSceneList(scene_path);
 
     // load initial scene
     m_commands.emit<commands::scenes::Load>([](auto& load){
@@ -155,11 +156,6 @@ bool core::Engine::setupGame ()
         load.scene_id = entt::hashed_string::value(initial_scene.c_str());
         load.auto_swap = true;
     });
-
-    const std::string& script_file = entt::monostate<"game/script-file"_hs>();
-    if (! script_file.empty()) {
-    
-    }
 
     // Set up game state
     const std::string& start_state_str = entt::monostate<"game/initial-state"_hs>();

@@ -33,8 +33,8 @@ void core::RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::en
 void core::RegistryPair::clear ()
 {
     EASY_FUNCTION(profiler::colors::Green800);
-    runtime = {};
-    prototypes = {};
+    runtime.clear();
+    prototypes.clear();
     entity_names.clear();
     prototype_names.clear();
 }
@@ -132,4 +132,9 @@ void core::Engine::Registries::copyGlobals ()
             }
         }
     }
+}
+
+void core::Engine::setContextData ()
+{
+    m_registries.foreground().runtime.ctx().emplace<million::api::Runtime>(this);
 }

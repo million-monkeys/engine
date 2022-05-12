@@ -91,7 +91,7 @@ namespace core {
         const std::string& findEntityName (const components::core::Named&) const final;
         entt::entity loadEntity (million::Registry, entt::hashed_string) final;
         void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) final;
-        million::resources::Handle findResource (entt::hashed_string::hash_type) final;
+        million::resources::Handle findResource (entt::hashed_string::hash_type) const final;
         const million::events::EventIterable events (entt::hashed_string) const final;
 
         /////////////////////////////////////////
@@ -196,6 +196,9 @@ namespace core {
 
         // Make previously emitted events visible to consumers
         void pumpEvents ();
+
+        // Add context data to registry
+        void setContextData();
 
         million::events::Stream& createStreamInternal (entt::hashed_string stream_name, million::StreamWriters writers, std::uint32_t buffer_size, bool engine_stream);
 

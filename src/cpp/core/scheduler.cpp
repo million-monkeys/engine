@@ -43,17 +43,21 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
             auto graph = it->second.graph();
             // First pass, prepare registry and create taskflow task
             for(auto&& node : graph) {
-                SPDLOG_DEBUG("Setting up system: {}", node.name());
+                auto name = node.name();
+                if (name) {
+                    SPDLOG_DEBUG("Setting up system: {}", name);
+                }
                 node.prepare(registry);
                 auto callback = node.callback();
                 auto userdata = node.data();
-                auto name = node.name();
                 tasks.push_back({
                     node,
-                    taskflow->emplace([&registry, userdata, callback, name](){
-                        (void)name; SPDLOG_TRACE("Running System: {}", name);
-                        callback(userdata, registry);
-                    }).name(node.name())
+                    taskflow->emplace([&engine, userdata, callback, name](){
+                        if (name) {
+                            SPDLOG_TRACE("Running System: {}", name);
+                        }
+                        callback(userdata, engine.m_registries.foreground().runtime);
+                    }).name(name ? name : "Task")
                 });
             }
             // Second pass, set parent-child relationship of tasks

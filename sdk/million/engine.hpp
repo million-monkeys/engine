@@ -113,7 +113,7 @@ namespace million::api {
         virtual void readBinaryFile (const std::string& filename, std::string& buffer) const = 0;
 
         // Retrieve a resource handle by name
-        virtual million::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
+        virtual million::resources::Handle findResource (entt::hashed_string::hash_type) const = 0;
 
         // Load a new resource
         virtual million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
@@ -157,7 +157,7 @@ namespace million::api {
         virtual void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) = 0;
 
         // Retrieve a resource handle by name
-        virtual million::resources::Handle findResource (entt::hashed_string::hash_type) = 0;
+        virtual million::resources::Handle findResource (entt::hashed_string::hash_type) const = 0;
 
         // Load a new resource
         virtual million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
@@ -178,7 +178,7 @@ namespace million::api {
 
         /** Retrieve the payload from an individual event */
         template <typename EventT, typename Envelope>
-        const EventT& eventData (const Envelope& envelope) {
+        const EventT& eventData (const Envelope& envelope) const {
             if (EventT::ID == envelope.type && sizeof(EventT) == envelope.size) {
                 return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(Envelope));
             } else {
@@ -186,5 +186,58 @@ namespace million::api {
                 throw std::runtime_error("bad event type");
             }
         }
+    };
+
+    // Wrapper to provide runtime API to systems through organizer context variables. Must be const to avoid systems from running serially
+    class Runtime {
+    public:
+        Runtime() {}
+        Runtime(EngineRuntime* runtime) : m_runtime(runtime) {}
+        Runtime(Runtime&& other) : m_runtime(other.m_runtime) {}
+        ~Runtime() {}
+
+        entt::entity findEntity (entt::hashed_string name) const
+        {
+            return m_runtime->findEntity(name);
+        }
+
+        /** Get the string name of a named entity */
+        const std::string& findEntityName (const components::core::Named& named) const
+        {
+            return m_runtime->findEntityName (named);
+        }
+
+        // Retrieve a resource handle by name
+        million::resources::Handle findResource (entt::hashed_string::hash_type name) const
+        {
+            return m_runtime->findResource(name);
+        }
+
+        /** Get the global message publisher. This publisher should not be passed to another thread, instead each thread should get its own reference using this function */
+        million::events::Publisher& publisher() const
+        {
+            return m_runtime->publisher();
+        }
+
+        /** Get the global engine commands event stream, used to control the engine */
+        million::events::Stream& commandStream() const
+        {
+            return m_runtime->commandStream();
+        }
+
+        /** Retrieve events from a named event stream  */
+        const million::events::EventIterable events (entt::hashed_string stream_name) const
+        {
+            return m_runtime->events(stream_name);
+        }
+
+        /** Retrieve the payload from an individual event */
+        template <typename EventT, typename Envelope>
+        const EventT& eventData (const Envelope& envelope) const {
+            return m_runtime->eventData<EventT, Envelope>(envelope);
+        }
+        
+    private:
+        mutable EngineRuntime* m_runtime = nullptr;
     };
 }

@@ -16,7 +16,7 @@ void core::Engine::readBinaryFile (const std::string& filename, std::string& buf
     buffer = helpers::readToString(filename);
 }
 
-million::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name)
+million::resources::Handle core::Engine::findResource (entt::hashed_string::hash_type name) const
 {
     EASY_FUNCTION(profiler::colors::Blue300);
     auto it = m_named_resources.find(name);

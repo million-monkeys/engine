@@ -138,7 +138,9 @@ void world::SceneManager::swapScenes ()
 {
     EASY_FUNCTION(profiler::colors::Amber800);
     // Call UNLOAD_SCENE hooks on old scene
-    // m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
+    // if (m_current.scene) {
+    //     m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
+    // }
 
     // Set current scene and scripts
     m_current.scene = m_pending.scene;
@@ -154,14 +156,18 @@ void world::SceneManager::swapScenes ()
     m_engine.m_registries.copyGlobals();
     // Clear the background registry
     m_engine.m_registries.background().clear();
+    // Set context variables
+    m_engine.setContextData();
 
     // Call LOAD_SCENE hooks on new scene
     // TODO: Create a scene API object to pass in? What can it do?
-    // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
+    if (m_current.scene) {
+        // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
 
-    m_stream.emit<events::scenes::Activated>([this](auto& scene){
-        scene.id = m_current.scene;
-    });
+        m_stream.emit<events::scenes::Activated>([this](auto& scene){
+            scene.id = m_current.scene;
+        });
+    }
 }
 
 void world::SceneManager::processEvents ()
