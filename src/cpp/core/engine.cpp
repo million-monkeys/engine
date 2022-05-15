@@ -68,9 +68,10 @@ void core::Engine::setGameState (entt::hashed_string new_state)
     }
 }
 
-bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_count)
+bool core::Engine::execute (timing::Time current_time, timing::Delta delta, uint64_t frame_count)
 {
     EASY_FUNCTION(profiler::colors::Blue100);
+    m_current_time = current_time;
     m_current_time_delta = delta;
 
     scripting::call("set_game_time", delta, current_time);
@@ -82,7 +83,8 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
     m_scene_manager.update();
 
     // Read input device states and dispatch events. Input events are emitted directly into the global pool, immediately readable "this frame" (no frame delay!)
-    handleInput();
+    // TODO: Move to graphics thread, because that's where SDL will be running
+    // handleInput();
 
     {
         EASY_BLOCK("Handling System Events", profiler::colors::Amber100);
@@ -167,19 +169,19 @@ bool core::Engine::execute (Time current_time, DeltaTime delta, uint64_t frame_c
      * a render list and hand exclusive access back to the engine. The renderer wil then asynchronously
      * render from its locally owned render list.
      */
-    // {
-    //     EASY_BLOCK("Waiting on renderer", profiler::colors::Red100);
-    //     // First, signal to the renderer that it has exclusive access to the engines state
-    //     {
-    //         std::scoped_lock<std::mutex> lock(m_graphics_sync->state_mutex);
-    //         m_graphics_sync->owner = graphics::Sync::Owner::Renderer;
-    //     }
-    //     m_graphics_sync->sync_cv.notify_one();
+    {
+        EASY_BLOCK("Waiting on renderer", profiler::colors::Red100);
+        // First, signal to the renderer that it has exclusive access to the engines state
+        {
+            std::scoped_lock<std::mutex> lock(m_graphics_sync->state_mutex);
+            m_graphics_sync->owner = graphics::Sync::Owner::Renderer;
+        }
+        m_graphics_sync->sync_cv.notify_one();
 
-    //     // Now wait for the renderer to relinquish exclusive access back to the engine
-    //     std::unique_lock<std::mutex> lock(m_graphics_sync->state_mutex);
-    //     m_graphics_sync->sync_cv.wait(lock, [this]{ return m_graphics_sync->owner == graphics::Sync::Owner::Engine; });
-    // }
+        // Now wait for the renderer to relinquish exclusive access back to the engine
+        std::unique_lock<std::mutex> lock(m_graphics_sync->state_mutex);
+        m_graphics_sync->sync_cv.wait(lock, [this]{ return m_graphics_sync->owner == graphics::Sync::Owner::Engine; });
+    }
 
     /*
      * Engine has exclusive access again.
@@ -227,7 +229,8 @@ void core::Engine::shutdown ()
     // // Unload the current scene
     // callModuleHook<CM::UNLOAD_SCENE>();
     // // Shut down graphics thread
-    // graphics::term(m_renderer);
+
+    graphics::term(m_graphics_sync);
     
     // Uninstall resources managers
     resources::term();

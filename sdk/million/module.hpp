@@ -50,7 +50,7 @@ namespace million::api {
         virtual void on_before_reload () = 0; // Before hot code reload, use to persist data
         virtual void on_after_reload () = 0; // After hot code reload, use to reload data
         // Logic hooks. Use these to add custom logic on a per-frame basis.
-        virtual void on_before_frame (Time, DeltaTime, uint64_t) = 0;
+        virtual void on_before_frame (timing::Time, timing::Delta, uint64_t) = 0;
         virtual void on_before_update () = 0;
         virtual void on_after_frame () = 0;
         // Rendering hooks. Use these to add custom rendering, including dev tool UI.

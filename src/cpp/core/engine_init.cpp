@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "resources/resources.hpp"
 #include "scripting/scripting.hpp"
+#include "graphics/graphics.hpp"
 
 #include <events/engine.hpp>
 
@@ -127,6 +128,23 @@ bool core::Engine::init ()
         return false;
     }
     m_system_status = SystemStatus::Running;
+
+    m_graphics_sync = graphics::init(*this);
+    if (m_graphics_sync == nullptr) {
+        return false;
+    }
+    // Sync with graphics to make sure render thread is set up before continuing
+    {
+        // First, signal to the renderer that it has exclusive access to the engines state
+        {
+            std::scoped_lock<std::mutex> lock(m_graphics_sync->state_mutex);
+            m_graphics_sync->owner = graphics::Sync::Owner::Renderer;
+        }
+        m_graphics_sync->sync_cv.notify_one();
+        // Now wait for the renderer to relinquish exclusive access back to the engine
+        std::unique_lock<std::mutex> lock(m_graphics_sync->state_mutex);
+        m_graphics_sync->sync_cv.wait(lock, [this]{ return m_graphics_sync->owner == graphics::Sync::Owner::Engine; });
+    }
         
     return true;
 }

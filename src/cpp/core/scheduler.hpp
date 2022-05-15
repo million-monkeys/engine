@@ -29,6 +29,9 @@ namespace scheduler {
 
         // Services
         [[maybe_unused]] physics::Context* m_physics_context;
+
+        using TaskCallback = void(*)(const void*, entt::registry&);
+        tf::Task createTask (tf::Taskflow* taskflow, const char* name, core::Engine& engine, const void* userdata, TaskCallback callback);
     };
 
 }

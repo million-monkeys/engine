@@ -30,7 +30,7 @@ bool resources::types::SceneEntities::load (million::resources::Handle handle, c
     try {
         auto config = parser::parse_toml(filename);
 
-        auto& registries = m_engine->backgroundRegistries();
+        auto& registries = m_engine->registries(core::RegistryPair::Registries::Background);
 
         // Load prototype entities
         if (config.contains("prototypes")) {

@@ -4,7 +4,7 @@ BINARY_NAME = game
 PCH = game_pch
 
 CFLAGS += -Wall -Werror -I. -Wno-delete-non-abstract-non-virtual-dtor
-LINKER += -pthread -ldl -lSDL2 -lGL
+LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL
 
 INCLUDES += -I$(DEPENDENCIES)/spdlog/include
 INCLUDES += -I$(DEPENDENCIES)/cr/
@@ -38,15 +38,13 @@ endif
 : foreach ai/*.cpp |> !compile-engine |> ai__%B.o
 : foreach ai/planning/*.cpp |> !compile-engine |> ai_planning__%B.o
 : foreach core/*.cpp |> !compile-engine |> core__%B.o
+: foreach graphics/*.cpp |> !compile-engine |> graphics__%B.o
 : foreach memory/*.cpp |> !compile-engine |> memory__%B.o
 : foreach resources/*.cpp |> !compile-engine |> resources__%B.o
 : foreach resources/types/*.cpp |> !compile-engine |> resources_types__%B.o
 : foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o
 : foreach utils/*.cpp |> !compile-engine |> utils__%B.o
 : foreach world/*.cpp |> !compile-engine |> world__%B.o
-
-# : foreach graphics/*.cpp |> !compile-engine |> graphics__%B.o
-# : foreach graphics/renderer/*.cpp |> !compile-engine |> graphics_renderer__%B.o
 : core_components.cpp |> !compile-engine |> %B.o
 
 : foreach $(DEPENDENCIES)/physfs/src/*.c |> !compile-c |>

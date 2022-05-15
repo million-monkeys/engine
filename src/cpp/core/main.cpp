@@ -3,6 +3,7 @@
 #include "config.hpp"
 #include "core/engine.hpp"
 #include "utils/timekeeping.hpp"
+#include "graphics/graphics.hpp"
 
 #include <map>
 
@@ -98,54 +99,49 @@ int game_main (int argc, char** argv)
     try {
         core::Engine engine(stream_sizes);
         // core::ModuleManager moduleManager(engine);
-        engine.init();
-        // if (! moduleManager.load(logger, imgui_ctx)) {
-        if (false) {
-            spdlog::critical("Could not load some required modules. Terminating.");
-        } else {
-            if (!engine.setupGame()) {
-                spdlog::critical("Game could not be set up. Terminating.");
+        if (engine.init()) {
+            // if (! moduleManager.load(logger, imgui_ctx)) {
+            if (false) {
+                spdlog::critical("Could not load some required modules. Terminating.");
             } else {
-                // Initialise timekeeping
-                timekeeping::FrameTimer frame_timer;
+                if (!engine.setupGame()) {
+                    spdlog::critical("Game could not be set up. Terminating.");
+                } else {
+                    // Initialise timekeeping
+                    timekeeping::FrameTimer frame_timer;
 
-        // #ifdef DEV_MODE
-        //         ElapsedTime last_update_time = 0L; // microseconds
-        //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
-        // #endif
+            // #ifdef DEV_MODE
+            //         ElapsedTime last_update_time = 0L; // microseconds
+            //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
+            // #endif
 
-                // Run main loop
-                spdlog::info("Game Running...");
-                do {
-                    // // Execute systems and copy current frames events for processing next frame
-                    if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
-                        break;
-                    }
+                    // Run main loop
+                    spdlog::info("Game Running...");
+                    do {
+                        // // Execute systems and copy current frames events for processing next frame
+                        if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
+                            break;
+                        }
 
-                    // Update timekeeping
-                    frame_timer.update();
+                        // Update timekeeping
+                        frame_timer.update();
 
-                    // WIP: For now just die after a short time
-                    // if (frame_timer.sinceStart() > 0.0075f) {
-                    //     spdlog::warn("Terminating because of WIP");
-                    //     break;
-                    // }
-
-        // #ifdef DEV_MODE
-                    // In dev mode, update plugins every few seconds for hot code reloading
-                    // if (frame_timer.sinceStart() - last_update_time > update_interval) {
-                    //     last_update_time = frame_timer.sinceStart();
-                    //     moduleManager.update();
-                    // }
-        // #endif
-                } while (true);
-                frame_timer.reportAverage();
+            // #ifdef DEV_MODE
+                        // In dev mode, update plugins every few seconds for hot code reloading
+                        // if (frame_timer.sinceStart() - last_update_time > update_interval) {
+                        //     last_update_time = frame_timer.sinceStart();
+                        //     moduleManager.update();
+                        // }
+            // #endif
+                    } while (true);
+                    frame_timer.reportAverage();
+                }
             }
-            // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
-            engine.shutdown();
-            // moduleManager.unload();
-            logger->flush();
         }
+        // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
+        engine.shutdown();
+        // moduleManager.unload();
+        logger->flush();
 
     } catch (const std::exception& e) {
         spdlog::error("Uncaught exception: {}", e.what());

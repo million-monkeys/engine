@@ -28,6 +28,24 @@ public:
     tf::Task task;
 };
 
+tf::Task scheduler::Scheduler::createTask (tf::Taskflow* taskflow, const char* name, core::Engine& engine, const void* userdata, scheduler::Scheduler::TaskCallback callback)
+{
+    if (name) {
+        auto fn = [&engine, userdata, callback, name](){
+            SPDLOG_TRACE("Running System: {}", name);
+            EASY_BLOCK(name, profiler::colors::Indigo600);
+            callback(userdata, engine.m_registries.foreground().runtime);
+        };
+        return taskflow->emplace(fn).name(name);
+    } else {
+        auto fn = [&engine, userdata, callback](){
+            EASY_BLOCK("Systems/task", profiler::colors::Indigo600);
+            callback(userdata, engine.m_registries.foreground().runtime);
+        };
+        return taskflow->emplace(fn).name("Task");
+    }
+}
+
 void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
 {
     SPDLOG_DEBUG("Generating task graph from systems");
@@ -52,12 +70,7 @@ void scheduler::Scheduler::createTaskGraph (core::Engine& engine)
                 auto userdata = node.data();
                 tasks.push_back({
                     node,
-                    taskflow->emplace([&engine, userdata, callback, name](){
-                        if (name) {
-                            SPDLOG_TRACE("Running System: {}", name);
-                        }
-                        callback(userdata, engine.m_registries.foreground().runtime);
-                    }).name(name ? name : "Task")
+                    createTask(taskflow, name, engine, userdata, callback)
                 });
             }
             // Second pass, set parent-child relationship of tasks

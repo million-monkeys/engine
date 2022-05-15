@@ -1,19 +1,16 @@
 #pragma once
 
+#include <game.hpp>
+
 #include <mutex>
 #include <condition_variable>
-
-struct ImGuiContext;
 
 namespace core {
     class Engine;
 }
 
-namespace gou::api {
-    class Renderer;
-}
-
 namespace graphics {
+
     struct Sync {
         std::mutex state_mutex;
         std::condition_variable sync_cv;
@@ -22,11 +19,8 @@ namespace graphics {
             Renderer,
         } owner = Owner::Engine;
     };
-    void waitForRenderer ();
 
+    Sync* init (core::Engine&);
+    void term (Sync*);
 
-    gou::api::Renderer* init (core::Engine&, graphics::Sync*&, ImGuiContext*&);
-    void windowChanged(gou::api::Renderer*);
-    void term (gou::api::Renderer*);
-
-} // graphics::
+}

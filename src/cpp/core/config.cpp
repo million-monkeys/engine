@@ -155,6 +155,7 @@ bool core::readUserConfig (int argc, char* argv[])
             entt::monostate<"graphics/renderer/field-of-view"_hs>{} = float(toml::find_or<double>(graphics, "fov", 60.0));
             entt::monostate<"graphics/debug-rendering"_hs>{} = toml::find_or<bool>(graphics, "debug", false);
             entt::monostate<"graphics/resolution/resizable"_hs>{} = toml::find_or<bool>(graphics, "resizable", false);
+            entt::monostate<"graphics/force-wm-backend"_hs>{} = toml::find_or<std::string>(graphics, "force-wm-backend", "");
         } else {
             // No [graphics] section, use default settings
             entt::monostate<"graphics/resolution/width"_hs>{} = int{640};
@@ -164,6 +165,7 @@ bool core::readUserConfig (int argc, char* argv[])
             entt::monostate<"graphics/v-sync"_hs>{} = true;
             entt::monostate<"graphics/renderer/field-of-view"_hs>{} = 60.0f;
             entt::monostate<"graphics/debug-rendering"_hs>{} = false;
+            entt::monostate<"graphics/force-wm-backend"_hs>{} = std::string{""};
         }
 #ifdef DEBUG_BUILD
         entt::monostate<"graphics/debug-rendering"_hs>{} = bool{cli["debug"].count() > 0};

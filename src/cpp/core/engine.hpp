@@ -9,6 +9,10 @@
 
 #include "event_pools.hpp"
 
+namespace graphics {
+    struct Sync;
+}
+
 namespace core {
     using CM = million::api::Module::CallbackMasks;
 
@@ -42,6 +46,11 @@ namespace core {
 
     struct RegistryPair {
     public:
+        enum class Registries {
+            Background,
+            Foreground,
+        };
+
         struct NamedEntityInfo {
             entt::entity entity;
             std::string name;
@@ -116,7 +125,8 @@ namespace core {
         million::events::Stream* engineStream (entt::hashed_string);
 
         // Time
-        DeltaTime deltaTime () { return m_current_time_delta; }
+        timing::Delta deltaTime () const { return m_current_time_delta; }
+        timing::Time currentTime () const { return m_current_time; }
 
         bool init ();
         void shutdown ();
@@ -124,7 +134,7 @@ namespace core {
         bool setupGame ();
 
         // Execute the Taskflow graph of tasks, returns true if still running
-        bool execute (Time current_time, DeltaTime delta, uint64_t frame_count);
+        bool execute (timing::Time current_time, timing::Delta delta, uint64_t frame_count);
 
         void executeHandlers (HandlerType type);
 
@@ -134,9 +144,17 @@ namespace core {
         // Make previously emitted events visible to consumers
         void pumpMessages ();
 
-        RegistryPair& backgroundRegistries()
+        // Process input events
+        void handleInput ();
+
+        RegistryPair& registries (RegistryPair::Registries which)
         {
-            return m_registries.background();
+            switch (which) {
+                case RegistryPair::Registries::Background:
+                    return m_registries.background();
+                case RegistryPair::Registries::Foreground:
+                    return m_registries.foreground();
+            }
         }
 
         // Call all modules that are added as a specific engine hook
@@ -191,9 +209,6 @@ namespace core {
 
         // Add a module to be called by a specific engine hook
         void addModuleHook (million::api::Module::CallbackMasks hook, million::api::Module* module);
-
-        // Process input events
-        void handleInput ();
 
         // Make previously emitted events visible to consumers
         void pumpEvents ();
@@ -254,7 +269,8 @@ namespace core {
         million::resources::Handle m_current_game_script; // Cache the active one to avoid a hash map lookup every frame
 
         // Timing
-        DeltaTime m_current_time_delta = 0;
+        timing::Delta m_current_time_delta = 0;
+        timing::Time m_current_time = 0;
 
         // Module Hooks
         std::vector<million::api::Module*> m_hooks_beforeFrame;
@@ -271,6 +287,8 @@ namespace core {
 
         // Resource name bindings
         helpers::hashed_string_flat_map<million::resources::Handle> m_named_resources;
+
+        graphics::Sync* m_graphics_sync;
 
         friend class scheduler::Scheduler;
         friend class world::SceneManager;

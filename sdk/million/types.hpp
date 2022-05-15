@@ -3,8 +3,10 @@
 #include <entt/core/hashed_string.hpp>
 #include <glm/glm.hpp>
 
-using Time = float;
-using DeltaTime = Time;
+namespace timing {
+    using Time = float;
+    using Delta = Time;
+}
 
 namespace million {
 
