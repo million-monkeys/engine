@@ -47,6 +47,24 @@ endif
 : foreach world/*.cpp |> !compile-engine |> world__%B.o
 : core_components.cpp |> !compile-engine |> %B.o
 
+# Refactor
+: foreach _refactor/audio/*.cpp |> !compile-engine |> r_audo__%B.o
+: foreach _refactor/config/*.cpp |> !compile-engine |> r_config__%B.o
+: foreach _refactor/core/*.cpp |> !compile-engine |> r_core__%B.o
+: foreach _refactor/events/*.cpp |> !compile-engine |> r_events__%B.o
+: foreach _refactor/game/*.cpp |> !compile-engine |> r_game__%B.o
+: foreach _refactor/graphics/*.cpp |> !compile-engine |> r_graphics__%B.o
+: foreach _refactor/input/*.cpp |> !compile-engine |> r_input__%B.o
+: foreach _refactor/memory/*.cpp |> !compile-engine |> r_memory__%B.o
+: foreach _refactor/messages/*.cpp |> !compile-engine |> r_messages__%B.o
+: foreach _refactor/modules/*.cpp |> !compile-engine |> r_modules__%B.o
+: foreach _refactor/physics/*.cpp |> !compile-engine |> r_physics__%B.o
+: foreach _refactor/resources/*.cpp |> !compile-engine |> r_resources__%B.o
+: foreach _refactor/scenes/*.cpp |> !compile-engine |> r_scenes__%B.o
+: foreach _refactor/scheduler/*.cpp |> !compile-engine |> r_scheduler__%B.o
+: foreach _refactor/scripting/*.cpp |> !compile-engine |> r_scripting__%B.o
+: foreach _refactor/utils/*.cpp |> !compile-engine |> r_utils__%B.o
+
 : foreach $(DEPENDENCIES)/physfs/src/*.c |> !compile-c |>
 
 # Link binary
