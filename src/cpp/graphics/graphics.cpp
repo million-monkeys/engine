@@ -19,6 +19,7 @@ void terminateGraphics (SDL_Window* window);
 
 void graphicsThread (core::Engine* engine, graphics::Sync* sync_obj)
 {
+    EASY_NONSCOPED_BLOCK("Setup Graphics", profiler::colors::Pink100);
     const int width = entt::monostate<"graphics/resolution/width"_hs>();
     const int height = entt::monostate<"graphics/resolution/height"_hs>();
     SDL_Window* window = initializeGraphics(width, height);
@@ -40,6 +41,7 @@ void graphicsThread (core::Engine* engine, graphics::Sync* sync_obj)
         lock.unlock();
         sync_obj->sync_cv.notify_one();
     }
+    EASY_END_BLOCK
 
     std::vector<SDL_Rect> rects;
 
@@ -56,7 +58,7 @@ void graphicsThread (core::Engine* engine, graphics::Sync* sync_obj)
         * then asynchronously render from its locally owned render list.
         *********************************************************************/
         {
-            EASY_BLOCK("Renderer waiting for exclusive access to engine", profiler::colors::Red100);
+            EASY_NONSCOPED_BLOCK("Wait for Exclusive Access", profiler::colors::Red300);
             // Wait for exclusive access to engine state
             std::unique_lock<std::mutex> lock(sync_obj->state_mutex);
             {
@@ -64,7 +66,7 @@ void graphicsThread (core::Engine* engine, graphics::Sync* sync_obj)
             }
             EASY_END_BLOCK;
 
-            EASY_BLOCK("Collecting render data", profiler::colors::Red300);
+            EASY_BLOCK("Collecting render data", profiler::colors::Red800);
             
 //             // Call onPrepareRender during the critical section, before performing any rendering
 //             engine.callModuleHook<CM::PREPARE_RENDER>();
@@ -132,9 +134,7 @@ graphics::Sync* graphics::init (core::Engine& engine)
     graphics::Sync* sync_obj = new graphics::Sync();
     g_running = true;
     g_graphics_thread = std::thread(graphicsThread, &engine, sync_obj);
-    spdlog::warn("Waiting for graphics thread");
     while (! g_initialized.load()) {}
-    spdlog::warn("Done waiting");
     if (!g_error.load()) {
         return sync_obj;
     } else {

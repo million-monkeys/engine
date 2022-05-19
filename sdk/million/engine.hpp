@@ -178,7 +178,7 @@ namespace million::api {
 
         /** Retrieve the payload from an individual event */
         template <typename EventT, typename Envelope>
-        const EventT& eventData (const Envelope& envelope) const {
+        static const EventT& eventData (const Envelope& envelope) {
             if (EventT::ID == envelope.type && sizeof(EventT) == envelope.size) {
                 return *reinterpret_cast<const EventT*>(reinterpret_cast<const std::byte*>(&envelope) + sizeof(Envelope));
             } else {

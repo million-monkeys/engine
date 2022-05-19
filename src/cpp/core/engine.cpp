@@ -170,7 +170,7 @@ bool core::Engine::execute (timing::Time current_time, timing::Delta delta, uint
      * render from its locally owned render list.
      */
     {
-        EASY_BLOCK("Waiting on renderer", profiler::colors::Red100);
+        EASY_BLOCK("Waiting for renderer to sync", profiler::colors::Red800);
         // First, signal to the renderer that it has exclusive access to the engines state
         {
             std::scoped_lock<std::mutex> lock(m_graphics_sync->state_mutex);

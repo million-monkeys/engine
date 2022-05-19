@@ -7,6 +7,7 @@
 #include <string>
 #include <cstdint>
 #include <variant>
+#include <array>
 #include <cassert>
 
 // From third-party dependencies
@@ -46,23 +47,26 @@ using namespace entt::literals;
 #include "utils/helpers.hpp"
 #include "memory/pools.hpp"
 
-// Convenience types
-namespace helpers {
+// Subsystem contexts
+namespace audio { struct Context; }
+namespace config { struct Context; }
+namespace events { struct Context; }
+namespace graphics { struct Context; }
+namespace input { struct Context; }
+namespace memory { struct Context; }
+namespace messages { struct Context; }
+namespace modules { struct Context; }
+namespace physics { struct Context; }
+namespace resources { struct Context; }
+namespace scenes { struct Context; }
+namespace scripting { struct Context; }
 
-    template <typename KeyT, typename ValueT, typename HashT = std::hash<KeyT>>
-    using thread_safe_flat_map = phmap::parallel_flat_hash_map<KeyT, ValueT, HashT, std::equal_to<size_t>, std::allocator<std::pair<const size_t, size_t>>,  4,  std::mutex>;
 
-    template <typename KeyT, typename ValueT, typename HashT = std::hash<KeyT>>
-    using thread_safe_node_map = phmap::parallel_node_hash_map<KeyT, ValueT, HashT, std::equal_to<size_t>, std::allocator<std::pair<const size_t, size_t>>,  4,  std::mutex>;
-
-    template <typename ValueT, template<typename, typename, typename> typename BaseType>
-    using hashed_string_map = BaseType<entt::hashed_string::hash_type, ValueT, helpers::Identity>;
-
-    template <typename ValueT>
-    using hashed_string_flat_map = phmap::flat_hash_map<entt::hashed_string::hash_type, ValueT, helpers::Identity>;
-
-    template <typename ValueT>
-    using hashed_string_node_map = phmap::node_hash_map<entt::hashed_string::hash_type, ValueT, helpers::Identity>;
-}
+// Macros
+#if defined(__GNUC__) || defined(__clang__) || defined(__GNUG__)
+#   define EXPECT_NOT_TAKEN(cond) (__builtin_expect((cond), 0))
+#else
+#   define EXPECT_NOT_TAKEN(cond) (cond)
+#endif
 
 #endif

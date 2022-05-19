@@ -46,10 +46,10 @@ namespace core {
             destination.template pushAll<PoolType>(m_pool);
         }
 
-        std::byte* push (entt::hashed_string::hash_type message_id, std::uint32_t target, std::uint16_t flags, std::uint16_t payload_size)
+        std::byte* push (entt::hashed_string::hash_type message_id, std::uint32_t target, std::uint32_t flags, std::uint8_t payload_size)
         {
             std::byte* ptr = m_pool.allocate(sizeof(MessageEnvelope) + payload_size);
-            new (ptr) MessageEnvelope{message_id, target, (std::uint32_t(flags) << 16) | payload_size};
+            new (ptr) MessageEnvelope{message_id, target, (std::uint32_t(flags) << 8) | payload_size};
             return ptr + sizeof(MessageEnvelope);
         }
 
@@ -60,11 +60,11 @@ namespace core {
             entt::hashed_string::hash_type type;
             std::uint32_t target; // Entity ID or Group ID
             /* Metadata, 32 bits
-             * 0bTFCCCCCCCCCCCCCCSSSSSSSSSSSSSSSS
-             * T = 1bit flag, Target type. 0 => target entity, 1 => target group
-             * F = 1bit flag, Filter. 0 => not filtered by category, 1 => filtered by category (only target entities with specified category will receive message)
-             * C = 14bit bitfield, Category bitfield, each bit represents one of 14 total possible categories. 0 => Category not filtered by, 1 => category filtered by
-             * S = 16bit number, Size of payload in bytes
+             * T = 2bits flag, Mask: 0xd0000000, Target type. 00 => target entity, 01 => target group, 10 => target entity set, 11 => target composite
+             * F = 1bit flag, Mask: 0x20000000, Filter. 0 => not filtered by category, 1 => filtered by category (only target entities with specified category will receive message)
+             * x = reserved
+             * C = 16bit bitfield, Mask: 0x00ffff00, Category bitfield, each bit represents one of 14 total possible categories. 0 => Category not filtered by, 1 => category filtered by
+             * S = 8bit number, Mask: 0x000000ff, Size of payload in bytes
              */
             std::uint32_t metadata;
         };
@@ -216,7 +216,7 @@ namespace core {
 
         bool valid () const { return m_pool != nullptr; }
 
-        std::byte* push (entt::hashed_string::hash_type event_id, std::uint32_t target, std::uint16_t flags, std::uint16_t payload_size)
+        std::byte* push (entt::hashed_string::hash_type event_id, std::uint32_t target, std::uint32_t flags, std::uint8_t payload_size)
         {
             return m_pool->push(event_id, target, flags, payload_size);
         }

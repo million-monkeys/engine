@@ -35,6 +35,15 @@ local function process_events (events_buffer, buffer_size, event_map)
 end
 
 return {
+    handle_game_events = function ()
+        local event_buffer = ffi.new('const char*[1]')
+        for stream, event_map in pairs(core.game_event_map) do
+            local buffer_size = C.get_stream_events(stream, event_buffer)
+            if buffer_size > 0 then
+                process_events(event_buffer[0], buffer_size, event_map)
+            end
+        end
+    end,
     handle_scene_events = function (current_scene)
         local scene_events = core.scene_event_maps[current_scene]
         if scene_events then
@@ -44,15 +53,6 @@ return {
                 if buffer_size > 0 then
                     process_events(event_buffer[0], buffer_size, event_map)
                 end
-            end
-        end
-    end,
-    handle_game_events = function ()
-        local event_buffer = ffi.new('const char*[1]')
-        for stream, event_map in pairs(core.game_event_map) do
-            local buffer_size = C.get_stream_events(stream, event_buffer)
-            if buffer_size > 0 then
-                process_events(event_buffer[0], buffer_size, event_map)
             end
         end
     end,

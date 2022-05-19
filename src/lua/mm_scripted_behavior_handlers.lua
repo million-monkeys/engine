@@ -11,6 +11,8 @@ struct BehaviorIterator* setup_scripted_behavior_iterator ();
 uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
 bool is_in_group (uint32_t, uint32_t);
 uint32_t get_group (uint32_t, const uint32_t**);
+uint32_t get_entity_set (uint32_t, const uint32_t**);
+uint32_t get_entity_composite (uint32_t, const uint32_t**);
 uint32_t get_messages (const char**);
 ]]
 local C = ffi.C
@@ -68,14 +70,20 @@ local function process_messages (entities, message_buffer, buffer_size)
         ptr = message_buffer + index
         -- Get envelope for next message
         local envelope = ffi.cast("struct MessageEnvelope*", ptr)
-        local size =  bit.band(envelope.metadata, 0xffff)
+        -- MessageEnvelope.metadata: 0bTTFxxxxxCCCCCCCCCCCCCCCCSSSSSSSS
+        -- T = 2bits flag, Mask: 0xd0000000, Target type. 00 => target entity, 01 => target group, 10 => target entity set, 11 => target composite
+        -- F = 1bit flag, Mask: 0x20000000, Filter. 0 => not filtered by category, 1 => filtered by category (only target entities with specified category will receive message)
+        -- x = reserved
+        -- C = 16bit bitfield, Mask: 0x00ffff00, Category bitfield, each bit represents one of 14 total possible categories. 0 => Category not filtered by, 1 => category filtered by
+        -- S = 8bit number, Mask: 0x000000ff, Size of payload in bytes
+
+        local size =  bit.band(envelope.metadata, 0x000000ff)
         index = index + size + ffi.sizeof("struct MessageEnvelope")
 
-        -- MessageEnvelope.metadata: 0bTFCCCCCCCCCCCCCCSSSSSSSSSSSSSSSS
         -- Check target flag, 1 = group, 0 = entity
-        local target_type = bit.band(envelope.metadata, 0x80000000)
-        local is_filtered = bit.band(envelope.metadata, 0x40000000)
-        local categories = bit.rshift(bit.band(envelope.metadata, 0x3fff0000), 16)
+        local target_type = bit.rshift(bit.band(envelope.metadata, 0xd0000000), 30)
+        local is_filtered = bit.band(envelope.metadata, 0x20000000)
+        local categories = bit.rshift(bit.band(envelope.metadata, 0x00ffff00), 8)
         if target_type == 0 then
             -- Entity target
             -- Get the target entities info, if any
@@ -85,8 +93,18 @@ local function process_messages (entities, message_buffer, buffer_size)
                 handle_message(envelope.type, entity_info, ptr)
             end
         else
-            -- Group target
-            local num_entities = C.get_group(envelope.target, entity_ids)
+            -- Group target or Entity Set target
+            local num_entities
+            if target_type == 1 then
+                -- Group target
+                num_entities = C.get_group(envelope.target, entity_ids)
+            elseif target_type == 2 then
+                -- Entity Set target
+                num_entities = C.get_entity_set(envelope.target, entity_ids)
+            else
+                -- Composite target
+                num_entities = C.get_entity_composite(envelope.target, entity_ids)
+            end
             local entity_id_ptr = entity_ids[0]
             if is_filtered == 0 then
                 -- Every entity that is in the group

@@ -28,6 +28,34 @@ namespace helpers {
     } // impl::
 
     ///////////////////////////////////////////////////////////////////////////
+    // Identity callable, for use with spp::sparse_hash_map when the key
+    // is already hashed (eg when using entt::hashed_string::hash_value as keys)
+    ///////////////////////////////////////////////////////////////////////////
+    struct Identity {
+        template <typename T> T operator()(T k) const { return k; }
+    };
+    template <typename T> T identity(T k) { return k; }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Convenience types
+    ///////////////////////////////////////////////////////////////////////////
+
+    template <typename KeyT, typename ValueT, typename HashT = std::hash<KeyT>>
+    using thread_safe_flat_map = phmap::parallel_flat_hash_map<KeyT, ValueT, HashT, std::equal_to<size_t>, std::allocator<std::pair<const size_t, size_t>>,  4,  std::mutex>;
+
+    template <typename KeyT, typename ValueT, typename HashT = std::hash<KeyT>>
+    using thread_safe_node_map = phmap::parallel_node_hash_map<KeyT, ValueT, HashT, std::equal_to<size_t>, std::allocator<std::pair<const size_t, size_t>>,  4,  std::mutex>;
+
+    template <typename ValueT, template<typename, typename, typename> typename BaseType>
+    using hashed_string_map = BaseType<entt::hashed_string::hash_type, ValueT, Identity>;
+
+    template <typename ValueT>
+    using hashed_string_flat_map = phmap::flat_hash_map<entt::hashed_string::hash_type, ValueT, Identity>;
+
+    template <typename ValueT>
+    using hashed_string_node_map = phmap::node_hash_map<entt::hashed_string::hash_type, ValueT, Identity>;
+
+    ///////////////////////////////////////////////////////////////////////////
     // Utility to make a variant visitor out of lambdas, using the *overloaded
     // pattern* as describped in cppreference:
     //  https://en.cppreference.com/w/cpp/utility/variant/visit).
@@ -245,15 +273,6 @@ namespace helpers {
     void string_replace_inplace (std::string& input, const std::string& search, const std::string& replace);
 
     ///////////////////////////////////////////////////////////////////////////
-    // Identity callable, for use with spp::sparse_hash_map when the key
-    // is already hashed (eg when using entt::hashed_string::hash_value as keys)
-    ///////////////////////////////////////////////////////////////////////////
-    struct Identity {
-        template <typename T> T operator()(T k) const { return k; }
-    };
-    template <typename T> T identity(T k) { return k; }
-
-    ///////////////////////////////////////////////////////////////////////////
     // Return (copy of) value from container or 'default_value' if not found
     ///////////////////////////////////////////////////////////////////////////
     template <typename Container>
@@ -302,10 +321,12 @@ namespace helpers {
         const std::uint32_t size () const {
             return m_size;
         }
+
         T& operator[] (std::size_t i) {
             assert(i < m_size);
             return m_items[i];
         }
+
     private:
         std::uint32_t m_size;
         T m_items[];
@@ -340,10 +361,10 @@ namespace helpers {
     // Create an iterable from an object with a 'data' pointer and a 'count' variable
     ///////////////////////////////////////////////////////////////////////////
     template <typename T>
-    class Iterable {
+    class CountedIterable {
     public:
-        Iterable(T iterable) : iterable(iterable) {}
-        ~Iterable() {}
+        CountedIterable(T iterable) : iterable(iterable) {}
+        ~CountedIterable() {}
         typename T::Type* begin() const {return iterable.data;}
         typename T::Type* end() const {return iterable.data + iterable.count;}
         typename T::Type& first() const {return *iterable.data;}
@@ -352,10 +373,10 @@ namespace helpers {
         T iterable;
     };
     template <typename T>
-    class ConstIterable {
+    class ConstCountedIterable {
     public:
-        ConstIterable(T iterable) : iterable(iterable) {}
-        ~ConstIterable() {}
+        ConstCountedIterable(T iterable) : iterable(iterable) {}
+        ~ConstCountedIterable() {}
         const typename T::Type* begin() const {return iterable.data;}
         const typename T::Type* end() const {return iterable.data + iterable.count;}
         const typename T::Type& first() const {return *iterable.data;}
@@ -365,12 +386,12 @@ namespace helpers {
     };
 
     template <typename T>
-    Iterable<T> iterate (T iterable) {
-        return Iterable<T>(iterable);
+    CountedIterable<T> iterate_counted (T iterable) {
+        return CountedIterable<T>(iterable);
     }
     template <typename T>
-    ConstIterable<T> const_iterate (const T iterable) {
-        return ConstIterable<T>(iterable);
+    ConstCountedIterable<T> const_iterate_counted (const T iterable) {
+        return ConstCountedIterable<T>(iterable);
     }
 
 } // helpers::

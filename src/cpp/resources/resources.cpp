@@ -113,7 +113,6 @@ void resources::poll ()
             loaded.handle = item.handle;
         }
     } while (count > 0);
-
 }
 
 void resources::install (million::api::resources::Loader* loader, bool managed)

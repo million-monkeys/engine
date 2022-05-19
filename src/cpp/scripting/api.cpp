@@ -182,31 +182,41 @@ extern "C" void* allocate_message (const char* message_name, std::uint32_t targe
     return g_engine->publisher().push(message_type, target, flags, size);
 }
 
-extern "C" void* allocate_command (const char* event_name, uint8_t size)
+extern "C" void* allocate_command (const char* event_name, std::uint8_t size)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     return core::RawAccessWrapper(g_engine->commandStream()).push(event_type, size);
 }
 
-extern "C" void* allocate_event (const char* event_name, uint8_t size)
+extern "C" void* allocate_event (const char* event_name, std::uint8_t size)
 {
     EASY_FUNCTION(profiler::colors::Purple400);
     entt::hashed_string::hash_type event_type = entt::hashed_string::value(event_name);
     return core::RawAccessWrapper(*g_active_stream).push(event_type, size);
 }
 
-extern "C" bool is_in_group (uint32_t entity, uint32_t group)
+extern "C" bool is_in_group (std::uint32_t entity, std::uint32_t group)
 {
     return g_engine->isInGroup(static_cast<entt::entity>(entity), entt::hashed_string::hash_type(group));
 }
 
-extern "C" uint32_t get_group (uint32_t group, const uint32_t** entities)
+extern "C" std::uint32_t get_group (std::uint32_t group, const std::uint32_t** entities)
 {
     const auto& registry = g_engine->registry(million::Registry::Runtime);
     const auto& storage = registry.storage<core::EntityGroup>(entt::hashed_string::hash_type(group));
     *entities = reinterpret_cast<const uint32_t*>(storage.data());
     return storage.size();
+}
+
+extern "C" std::uint32_t get_entity_set (std::uint32_t, const std::uint32_t**)
+{
+    return 0;
+}
+
+extern "C" std::uint32_t get_entity_composite (std::uint32_t, const std::uint32_t**)
+{
+    return 0;
 }
 
 extern "C" std::uint32_t get_messages (const char** buffer)

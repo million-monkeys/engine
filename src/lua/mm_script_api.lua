@@ -93,11 +93,31 @@ local function post_message(target, message_name, categories)
         if target == nil then
             C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
         else
-            local flags = 0 -- 0bTFCCCCCCCCCCCCCC T = Target (0=entity, 1=group), F = Filtered (0=no category, 1=cateogry), C = Category bit flags
+            local flags = 0 -- 0bTTFxxxxxCCCCCCCCCCCCCCCC T = Target (0=entity, 1=group), F = Filtered (0=no category, 1=cateogry), C = Category bit flags
             if type(target) == 'string' then
-                flags = 0x8000             -- target = group
+                flags = 0x400000           -- target = group
                 target = C.get_ref(target) -- convert string to int hash
             end
+            if categories ~= nil then
+                flags = bit.bor(flags, 0x200000) -- filtered by category = true
+                for i, category in ipairs(categories) do
+                    flags = bit.bor(flags, C.get_category(category)) -- add category to lower 14 bits
+                end
+            end
+            return ffi.cast(message_info.type, C.allocate_message(message_name, target, flags, message_info.size))
+        end
+    else
+        C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" not found')
+    end
+end
+
+local function post_message_to_composite(target, message_name, categories)
+    local message_info = core.types_by_name[message_name]
+    if message_info then
+        if target == nil then
+            C.output_log(LOG_LEVELS.WARNING, 'Message "'..message_name..'" sent without target')
+        else
+            local flags = 0 -- 0bTTFxxxxxCCCCCCCCCCCCCCCC T = Target (0=entity, 1=group), F = Filtered (0=no category, 1=cateogry), C = Category bit flags
             if categories ~= nil then
                 flags = bit.bor(flags, 0x4000) -- filtered by category = true
                 for i, category in ipairs(categories) do
@@ -178,7 +198,7 @@ return {
         -- Access an entity, given an entity ID
         entity = get_entity_by_id,
         -- Find a named entity
-        lookup = get_entity_by_name,
+        find = get_entity_by_name,
         -- Create a new entity
         create = create_entity,
         -- Check if an ID is valid

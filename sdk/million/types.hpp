@@ -87,20 +87,30 @@ namespace million {
             virtual ~Publisher () {}
 
             // Post to an entity, no categories filter
-            template <typename Message> Message& post (entt::entity target) { return *(new (push(Message::ID, entt::to_integral(target), 0x00, sizeof(Message))) Message{}); }
+            template <typename Message> Message& post (entt::entity target) {
+                return *(new (push(Message::ID, entt::to_integral(target), 0x000000, sizeof(Message))) Message{});
+            }
             template <typename Message, typename Function> void post (entt::entity target, Function fn) { fn(post<Message>(target)); }
             // Post to an entity, filtered by categories
-            template <typename Message> Message& postFiltered (entt::entity target, std::uint16_t categories) { return *(new (push(Message::ID, entt::to_integral(target), 0x40 | categories, sizeof(Message))) Message{}); }
-            template <typename Message, typename Function> void postFiltered (entt::entity target, std::uint16_t categories, Function fn) { fn(post<Message>(target, categories)); }
+            template <typename Message> Message& postFiltered (entt::entity target, std::uint16_t categories) {
+                return *(new (push(Message::ID, entt::to_integral(target), 0x200000 | categories, sizeof(Message))) Message{});
+            }
+            template <typename Message, typename Function> void postFiltered (entt::entity target, std::uint16_t categories, Function fn) {
+                fn(post<Message>(target, categories));
+            }
             // Post to a group, no categories filter
-            template <typename Message> Message& post (entt::hashed_string::hash_type target, std::uint16_t categories) { return *(new (push(Message::ID, target, 0x80, sizeof(Message))) Message{}); }
-            template <typename Message, typename Function> void post (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) { fn(post<Message>(target)); }
+            template <typename Message> Message& post (entt::hashed_string::hash_type target, std::uint16_t categories) {
+                return *(new (push(Message::ID, target, 0x400000, sizeof(Message))) Message{});
+            }
+            template <typename Message, typename Function> void post (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) {fn(post<Message>(target)); }
             // Post to a group, filtered by categories
-            template <typename Message> Message& postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories) { return *(new (push(Message::ID, entt::to_integral(target), 0xC0 | categories, sizeof(Message))) Message{}); }
+            template <typename Message> Message& postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories) {
+                return *(new (push(Message::ID, entt::to_integral(target), 0x600000 | categories, sizeof(Message))) Message{});
+            }
             template <typename Message, typename Function> void postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) { fn(post<Message>(target, categories)); }
 
             // Internal! Even though this is public, it should not be used directly.
-            virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t, std::uint16_t, std::uint16_t) = 0;
+            virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t, std::uint32_t, std::uint8_t) = 0;
         };
 
         /// Internal type: not expected to be used directly.
