@@ -2,7 +2,7 @@
 
 // TODO: Replace with better modular design
 
-#include <game.hpp>
+#include <monkeys.hpp>
 
 namespace memory {
     template <typename PoolT, typename Envelope>

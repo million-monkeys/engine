@@ -1,10 +1,8 @@
 #pragma once
 
-#include <game.hpp>
+#include <monkeys.hpp>
 
 namespace resources {
-    struct Context;
-
     Context* init (events::Context* events_ctx);
     void term (Context* context);
     void poll (Context* context);

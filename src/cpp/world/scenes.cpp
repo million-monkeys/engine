@@ -114,7 +114,7 @@ void world::SceneManager::update ()
                             if (pending.resources.empty()) {
                                 // Scene fully loaded
                                 m_pending.scene = loaded.name;
-                                m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
+                                m_stream.emit<events::scene::Loaded>([&loaded](auto& scene){
                                     scene.id = loaded.name;
                                 });
                                 if (pending.auto_swap) {
@@ -164,7 +164,7 @@ void world::SceneManager::swapScenes ()
     if (m_current.scene) {
         // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
 
-        m_stream.emit<events::scenes::Activated>([this](auto& scene){
+        m_stream.emit<events::scene::Activated>([this](auto& scene){
             scene.id = m_current.scene;
         });
     }

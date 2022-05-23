@@ -1,11 +1,8 @@
 #pragma once
 
-#include <game.hpp>
+#include <monkeys.hpp>
 
 namespace events {
-
-    struct Context;
-
     Context* init ();
     void term (Context*);
 

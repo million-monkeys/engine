@@ -1,7 +1,7 @@
 include_rules
 
 BINARY_NAME = game
-PCH = game_pch
+PCH = monkeys_pch
 
 CFLAGS += -Wall -Werror -I. -Wno-delete-non-abstract-non-virtual-dtor
 LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL
@@ -48,6 +48,7 @@ endif
 : core_components.cpp |> !compile-engine |> %B.o
 
 # Refactor
+: foreach _refactor/audio/*.cpp |> !compile-engine |> r_ai__%B.o
 : foreach _refactor/audio/*.cpp |> !compile-engine |> r_audo__%B.o
 : foreach _refactor/config/*.cpp |> !compile-engine |> r_config__%B.o
 : foreach _refactor/core/*.cpp |> !compile-engine |> r_core__%B.o
@@ -60,10 +61,10 @@ endif
 : foreach _refactor/modules/*.cpp |> !compile-engine |> r_modules__%B.o
 : foreach _refactor/physics/*.cpp |> !compile-engine |> r_physics__%B.o
 : foreach _refactor/resources/*.cpp |> !compile-engine |> r_resources__%B.o
-: foreach _refactor/scenes/*.cpp |> !compile-engine |> r_scenes__%B.o
 : foreach _refactor/scheduler/*.cpp |> !compile-engine |> r_scheduler__%B.o
 : foreach _refactor/scripting/*.cpp |> !compile-engine |> r_scripting__%B.o
 : foreach _refactor/utils/*.cpp |> !compile-engine |> r_utils__%B.o
+: foreach _refactor/world/*.cpp |> !compile-engine |> r_world__%B.o
 
 : foreach $(DEPENDENCIES)/physfs/src/*.c |> !compile-c |>
 

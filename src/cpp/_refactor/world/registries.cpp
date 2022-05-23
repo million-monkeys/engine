@@ -1,5 +1,4 @@
-
-#include "scenes.hpp"
+#include "world.hpp"
 #include "context.hpp"
 
 void Registries::copyRegistry (const entt::registry& from, entt::registry& to)
@@ -37,7 +36,7 @@ void Registries::copyGlobals ()
     }
 }
 
-entt::registry& scenes::registry (scenes::Context* context)
+entt::registry& world::registry (world::Context* context)
 {
     return context->m_registries.foreground().runtime;
 }

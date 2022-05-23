@@ -118,9 +118,9 @@ bool core::Engine::execute (timing::Time current_time, timing::Delta delta, uint
                 // case "scene/registry/clear-runtime"_hs:
                 //     m_runtime_registry.clear();
                 //     break;
-                case commands::scenes::Load::ID:
+                case commands::scene::Load::ID:
                 {
-                    auto& new_scene = eventData<commands::scenes::Load>(ev);
+                    auto& new_scene = eventData<commands::scene::Load>(ev);
                     m_scene_manager.loadScene(new_scene.scene_id, new_scene.auto_swap);
                     break;
                 }

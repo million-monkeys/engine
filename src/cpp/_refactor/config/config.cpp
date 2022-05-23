@@ -1,5 +1,4 @@
 #include "config.hpp"
-#include <game.hpp>
 #include "scripting/scripting.hpp"
 #include "utils/parser.hpp"
 #include <filesystem>
@@ -208,7 +207,7 @@ bool config::readUserConfig (int argc, char* argv[])
 }
 
 
-bool config::readEngineConfig (helpers::hashed_string_flat_map<std::uint32_t>& stream_sizes)
+bool config::readEngineConfig ()
 {
     //******************************************************//
     //                                                      //
@@ -277,7 +276,7 @@ bool config::readEngineConfig (helpers::hashed_string_flat_map<std::uint32_t>& s
             }
             if (memory.contains("streams")) {
                 for (const auto& [key, value] : memory.at("streams").as_table()) {
-                    stream_sizes[entt::hashed_string::value(key.c_str())] = value.as_integer();
+                    g_stream_sizes[entt::hashed_string::value(key.c_str())] = value.as_integer();
                 }
             }
         }

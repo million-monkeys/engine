@@ -1,6 +1,6 @@
 #pragma once
 
-#include <game.hpp>
+#include <monkeys.hpp>
 #include <lua.hpp>
 #include <mutex>
 
@@ -19,7 +19,7 @@ namespace scripting {
         BehaviorIterator m_behavior_iterator;
 
         // Subsystem dependencies
-        scenes::Context* m_scene_ctx;
+        world::Context* m_world_ctx;
         messages::Context* m_messages_ctx;
         events::Context* m_events_ctx;
         resources::Context* m_resources_ctx;

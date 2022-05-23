@@ -1,10 +1,8 @@
 #pragma once
 
-#include <game.hpp>
+#include <monkeys.hpp>
 
 namespace messages {
-    struct Context;
-
     Context* init ();
     void term (Context*);
 

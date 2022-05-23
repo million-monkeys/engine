@@ -1,5 +1,4 @@
-
-#include "scenes.hpp"
+#include "world.hpp"
 #include "context.hpp"
 
 void mergeEntityInternal (entt::registry& source_registry, entt::registry& destination_registry, entt::entity source_entity, entt::entity destination_entity, bool overwrite_components)
@@ -19,7 +18,7 @@ void mergeEntityInternal (entt::registry& source_registry, entt::registry& desti
     }
 }
 
-entt::entity scenes::loadEntity (scenes::Context* context, entt::hashed_string prototype_id)
+entt::entity world::loadEntity (world::Context* context, entt::hashed_string prototype_id)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
     const auto& prototype_names = context->m_registries.foreground().prototype_names;
@@ -36,7 +35,7 @@ entt::entity scenes::loadEntity (scenes::Context* context, entt::hashed_string p
     return entt::null;
 }
 
-void scenes::mergeEntity (scenes::Context* context, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components)
+void world::mergeEntity (world::Context* context, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components)
 {
     EASY_FUNCTION(profiler::colors::Yellow100);
     const auto& prototype_names = context->m_registries.foreground().prototype_names;

@@ -176,7 +176,7 @@ bool core::Engine::setupGame ()
     m_scheduler.createTaskGraph(*this);
 
     // load initial scene
-    m_commands.emit<commands::scenes::Load>([](auto& load){
+    m_commands.emit<commands::scene::Load>([](auto& load){
         const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
         load.scene_id = entt::hashed_string::value(initial_scene.c_str());
         load.auto_swap = true;

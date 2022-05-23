@@ -52,11 +52,10 @@ bool setupPackageLoader(lua_State* state)
     return true;
 }
 
-scripting::Context* scripting::init (scenes::Context* scene_ctx, messages::Context* msgs_ctx, events::Context* events_ctx, resources::Context* resources_ctx)
+scripting::Context* scripting::init (messages::Context* msgs_ctx, events::Context* events_ctx, resources::Context* resources_ctx)
 {
     EASY_FUNCTION(scripting::COLOR(1));
     scripting::Context* context = new scripting::Context;
-    context->m_scene_ctx = scene_ctx;
     context->m_messages_ctx = msgs_ctx;
     context->m_events_ctx = events_ctx;
     context->m_resources_ctx = resources_ctx;
@@ -74,6 +73,11 @@ scripting::Context* scripting::init (scenes::Context* scene_ctx, messages::Conte
     luaL_dostring(context->m_state, "require('mm_init')");
 
     return context;
+}
+
+void scripting::setWorld (scripting::Context* context, world::Context* world_ctx)
+{
+    context->m_world_ctx = world_ctx;
 }
 
 void scripting::term (scripting::Context* context)

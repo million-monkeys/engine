@@ -1,12 +1,12 @@
 #include "scripting.hpp"
 #include "context.hpp"
 
-#include "_refactor/scenes/scenes.hpp"
+#include "_refactor/world/world.hpp"
 
 extern "C" BehaviorIterator* setup_scripted_behavior_iterator (scripting::Context* context)
 {
     EASY_FUNCTION(scripting::COLOR(3));
-    const auto& registry = scenes::registry(context->m_scene_ctx);
+    const auto& registry = world::registry(context->m_world_ctx);
     const auto& storage = registry.storage<components::core::ScriptedBehavior>();
     BehaviorIterator::const_iterable iter = storage.each();
     context->m_behavior_iterator = {iter.begin(), iter.end()};

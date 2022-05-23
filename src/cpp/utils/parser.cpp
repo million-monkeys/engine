@@ -1,5 +1,5 @@
 #include "parser.hpp"
-#include <game.hpp>
+#include <monkeys.hpp>
 
 const TomlValue parser::parse_toml (const std::string& filename, parser::FileLocation location) {
     if (location == parser::FileLocation::PhysicsFS) {

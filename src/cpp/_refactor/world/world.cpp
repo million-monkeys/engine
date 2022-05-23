@@ -1,10 +1,11 @@
-#include "scenes.hpp"
+#include "world.hpp"
 #include "context.hpp"
 
 #include "_refactor/scripting/scripting.hpp"
 #include "_refactor/events/events.hpp"
+#include "_refactor/messages/messages.hpp"
 
-void scenes::update (scenes::Context* context)
+void world::update (world::Context* context)
 {
     if (! context->m_pending_scenes.empty()) {
         auto iter = events::events(context->m_events_ctx, "resources"_hs);
@@ -26,11 +27,11 @@ void scenes::update (scenes::Context* context)
                             if (pending.resources.empty()) {
                                 // Scene fully loaded
                                 context->m_pending.scene = loaded.name;
-                                context->m_stream.emit<events::scenes::Loaded>([&loaded](auto& scene){
+                                context->m_stream.emit<events::scene::Loaded>([&loaded](auto& scene){
                                     scene.id = loaded.name;
                                 });
                                 if (pending.auto_swap) {
-                                    scenes::swapScenes(context);
+                                    world::swapScenes(context);
                                 }
                                 context->m_pending_scenes.erase(it);
                             }
@@ -46,7 +47,7 @@ void scenes::update (scenes::Context* context)
 }
 
 // Swap foreground and background scenes, and clear the (new) background scene
-void scenes::swapScenes (scenes::Context* context)
+void world::swapScenes (world::Context* context)
 {
     EASY_FUNCTION(profiler::colors::Amber800);
     // Call UNLOAD_SCENE hooks on old scene
@@ -75,15 +76,29 @@ void scenes::swapScenes (scenes::Context* context)
     // TODO: Create a scene API object to pass in? What can it do?
     if (context->m_current.scene) {
         // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
-        context->m_stream.emit<events::scenes::Activated>([context](auto& scene){
+        context->m_stream.emit<events::scene::Activated>([context](auto& scene){
             scene.id = context->m_current.scene;
         });
     }
 }
 
-void scenes::processEvents (scenes::Context* context)
+void world::processEvents (world::Context* context)
 {
+    EASY_FUNCTION(world::COLOR(2));
     if (context->m_current.scripts.valid()) {
         scripting::processSceneEvents(context->m_scripting_ctx, context->m_current.scripts);
     }
+}
+
+void world::executeHandlers (world::Context* context)
+{
+    EASY_FUNCTION(world::COLOR(1));
+    {
+        EASY_BLOCK("Events/scene", world::COLOR(2));
+        auto& message_publisher = messages::publisher(context->m_messages_ctx);
+        for (const auto& [event_stream, handler] : context->m_scene_handlers[context->m_current.scene]) {
+            handler(events::events(context->m_events_ctx, event_stream), context->m_stream, message_publisher);
+        }
+    }
+    world::processEvents(context);
 }

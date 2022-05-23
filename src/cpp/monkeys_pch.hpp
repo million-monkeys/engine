@@ -49,24 +49,26 @@ using namespace entt::literals;
 
 // Subsystem contexts
 namespace audio { struct Context; }
-namespace config { struct Context; }
 namespace events { struct Context; }
+namespace game { struct Context; }
 namespace graphics { struct Context; }
 namespace input { struct Context; }
-namespace memory { struct Context; }
 namespace messages { struct Context; }
 namespace modules { struct Context; }
 namespace physics { struct Context; }
 namespace resources { struct Context; }
-namespace scenes { struct Context; }
+namespace scheduler { struct Context; }
 namespace scripting { struct Context; }
+namespace world { struct Context; }
 
 
 // Macros
 #if defined(__GNUC__) || defined(__clang__) || defined(__GNUG__)
-#   define EXPECT_NOT_TAKEN(cond) (__builtin_expect((cond), 0))
+#   define EXPECT_NOT_TAKEN(cond) (__builtin_expect(int(cond), 0))
+#   define EXPECT_TAKEN(cond) (__builtin_expect(int(cond), 1))
 #else
 #   define EXPECT_NOT_TAKEN(cond) (cond)
+#   define EXPECT_TAKEN(cond) (cond)
 #endif
 
 #endif
