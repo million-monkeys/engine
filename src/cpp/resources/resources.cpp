@@ -26,21 +26,9 @@ void resources::install (resources::Context* context, million::api::resources::L
     EASY_BLOCK("resources::install", resources::COLOR(1));
     const auto type = loader->name();
     std::uint32_t index = context->m_resource_loaders.size() + 1;
-    spdlog::debug("[resources] Installing {} ({:x})", type.data(), index);
+    spdlog::debug("[resources] Installing {} ({}, 0x{:x})", type.data(), index, index << 22);
     context->m_resource_loaders.emplace(type.value(), ResourceStorage{index, loader, managed, context});
 }
-
-// million::resources::Handle loadResource (resources::Context* context, entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
-// {
-//     EASY_FUNCTION(resources::COLOR(2));
-//     auto it = context->m_resource_loaders.find(type.value());
-//     if (it != context->m_resource_loaders.end()) {
-//         return it->second.enqueue(filename, name);
-//     } else {
-//         spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
-//         return million::resources::Handle::invalid();
-//     }
-// }
 
 million::resources::Handle resources::load (resources::Context* context, entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
@@ -51,7 +39,14 @@ million::resources::Handle resources::load (resources::Context* context, entt::h
         return million::resources::Handle::invalid();
     }
     auto handle = it->second.enqueue(filename, name);
-    if (name != 0) {
+    return handle;
+}
+
+million::resources::Handle resources::loadNamed (resources::Context* context, entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
+{
+    EASY_BLOCK("resources::loadNamed", resources::COLOR(1));
+    auto handle = resources::load(context, type, filename, name);
+    if (name != 0 && handle.valid()) {
         resources::bindToName(context, handle, name);
     }
     return handle;

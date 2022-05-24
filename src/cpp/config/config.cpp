@@ -25,6 +25,7 @@ template <entt::id_type ID, typename T> void maybe_set (const TomlValue& table, 
 
 bool config::readUserConfig (int argc, char* argv[])
 {
+    EASY_FUNCTION(profiler::colors::Indigo500);
     cxxopts::Options options("Frenzy", "Game Engine");
     options.add_options()
 #ifdef DEBUG_BUILD
@@ -209,6 +210,7 @@ bool config::readUserConfig (int argc, char* argv[])
 
 bool config::readEngineConfig ()
 {
+    EASY_FUNCTION(profiler::colors::Indigo500);
     //******************************************************//
     //                                                      //
     // Settings loaded from engine config                   //
@@ -291,6 +293,7 @@ bool config::readEngineConfig ()
 
 bool config::readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories)
 {
+    EASY_FUNCTION(profiler::colors::Indigo500);
     //******************************************************//
     //                                                      //
     // Settings loaded from game config                     //

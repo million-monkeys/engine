@@ -216,7 +216,7 @@ return {
         end
     },
     -- Convert a string into a hashed integer reference
-    ref = C.get_ref,
+    ref = function(string) C.get_ref(string) end,
     -- Communicate through messages, commands and events
     post=post_message,
 

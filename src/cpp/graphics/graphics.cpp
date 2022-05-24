@@ -27,6 +27,7 @@ void graphics::handOff (graphics::Context* context)
 
 void graphics_thread (graphics::Context* context)
 {
+    EASY_THREAD_SCOPE("Render");
     EASY_NONSCOPED_BLOCK("Setup Graphics", graphics::COLOR(1));
     const int width = entt::monostate<"graphics/resolution/width"_hs>();
     const int height = entt::monostate<"graphics/resolution/height"_hs>();
@@ -110,9 +111,10 @@ void graphics_thread (graphics::Context* context)
             SDL_RenderPresent(renderer);
         } while (context->m_running.load());
     } catch (const std::exception& e) {
-        spdlog::critical("Exception in render thread: {}", e.what());
+        spdlog::critical("[graphics] Exception in render thread: {}", e.what());
         throw e;
     }
+    spdlog::debug("[graphics] Terminating graphics thread");
 
     SDL_DestroyRenderer(renderer);
     terminate_graphics(window);

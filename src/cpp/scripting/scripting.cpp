@@ -10,9 +10,8 @@ void set_active_stream (scripting::Context* context, entt::hashed_string stream_
 bool scripting::load (scripting::Context* context, const std::string& filename)
 {
     EASY_BLOCK("Scripts/load", scripting::COLOR(1));
-    SPDLOG_TRACE("[script] Loading script");
     try {
-        spdlog::debug("[script] Loading: {}", filename);
+        SPDLOG_DEBUG("[script] Loading: {}", filename);
         auto source = helpers::readToString(filename);
         return evaluate(context, filename, source);
     } catch (const std::invalid_argument& e) {

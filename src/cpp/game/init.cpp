@@ -58,13 +58,6 @@ std::optional<scheduler::SystemStatus> game::setup (game::Context* context)
     // Create game task graph
     scheduler::createTaskGraph(context->m_scheduler_ctx);
 
-    // load initial scene
-    context->m_commands.emit<commands::scene::Load>([](auto& load){
-        const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
-        load.scene_id = entt::hashed_string::value(initial_scene.c_str());
-        load.auto_swap = true;
-    });
-
     // Set up game state
     const std::string& start_state_str = entt::monostate<"game/initial-state"_hs>();
     auto start_state = entt::hashed_string{start_state_str.c_str()};
@@ -79,6 +72,13 @@ std::optional<scheduler::SystemStatus> game::setup (game::Context* context)
         }
         resources::load(context->m_resources_ctx, "game-script"_hs, script_file, game_state);
     }
+
+    // load initial scene
+    context->m_commands.emit<commands::scene::Load>([](auto& load){
+        const std::string initial_scene = entt::monostate<"scenes/initial"_hs>();
+        load.scene_id = entt::hashed_string::value(initial_scene.c_str());
+        load.auto_swap = true;
+    });
 
     // Make events emitted during load visible on first frame
     events::pump(context->m_events_ctx);

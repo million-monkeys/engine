@@ -26,6 +26,7 @@ void world::update (world::Context* context)
                                 context->m_pending.scripts = loaded.handle;
                             }
                             if (pending.resources.empty()) {
+                                spdlog::debug("[world] Scene fully loaded");
                                 // Scene fully loaded
                                 context->m_pending.scene = loaded.name;
                                 context->m_stream.emit<events::scene::Loaded>([&loaded](auto& scene){

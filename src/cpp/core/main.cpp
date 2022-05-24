@@ -75,7 +75,6 @@ int game_main (int argc, char** argv)
     auto logger = setupLogging();
     setupPhysFS(argv[0]);
 
-#ifdef BUILD_WITH_EASY_PROFILER
     const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
     if (profiling_enabled) {
         EASY_PROFILER_ENABLE;
@@ -87,7 +86,7 @@ int game_main (int argc, char** argv)
     } else {
         spdlog::info("easy_profiler is not listening");
     }
-#endif
+    EASY_MAIN_THREAD;
 
     bool clean_exit = true;
     try {

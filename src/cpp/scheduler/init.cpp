@@ -19,9 +19,7 @@ int get_num_workers () {
 
 scheduler::Context* scheduler::init (world::Context* world_ctx, scripting::Context* scripting_ctx, physics::Context* physics_ctx, events::Context* events_ctx, game::Context* game_ctx, modules::Context* modules_ctx)
 {
-    auto context = new scheduler::Context{
-        get_num_workers()
-    };
+    auto context = new scheduler::Context{get_num_workers()};
     context->m_world_ctx = world_ctx;
     context->m_scripting_ctx = scripting_ctx;
     context->m_physics_ctx = physics_ctx;

@@ -51,7 +51,7 @@ extern "C" std::uint32_t get_ref (const char* name)
 extern "C" std::uint32_t load_resource (scripting::Context* context, const char* type, const char* filename, const char* name)
 {
     EASY_FUNCTION(scripting::COLOR(3));
-    auto handle = resources::load(context->m_resources_ctx, entt::hashed_string{type}, std::string{filename}, name != nullptr ? entt::hashed_string::value(name) : 0);
+    auto handle = resources::loadNamed(context->m_resources_ctx, entt::hashed_string{type}, std::string{filename}, name != nullptr ? entt::hashed_string::value(name) : 0);
     return handle.handle;
 }
 

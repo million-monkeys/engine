@@ -84,7 +84,7 @@ million::events::Stream& events::commandStream(events::Context* context)
 
 void events::pump (events::Context* context)
 {
-    EASY_FUNCTION(events::COLOR(2));
+    EASY_BLOCK("events::pump", events::COLOR(2));
     SPDLOG_TRACE("[events] Pumping event pools");
     // Swap all event streams internal pools
     for (auto& [name, stream] : context->m_named_streams) {
