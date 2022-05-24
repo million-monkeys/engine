@@ -22,6 +22,9 @@ public:
 
 namespace scheduler {
     struct Context {
+        Context (int num_workers) : m_executor(num_workers) {}
+        ~Context () {}
+
         world::Context* m_world_ctx;
         scripting::Context* m_scripting_ctx;
         physics::Context* m_physics_ctx;

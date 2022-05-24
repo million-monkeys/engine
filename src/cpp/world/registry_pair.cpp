@@ -34,7 +34,7 @@ void RegistryPair::onRemoveNamedEntity (entt::registry& registry, entt::entity e
 
 void RegistryPair::clear ()
 {
-    EASY_FUNCTION(profiler::colors::Green800);
+    EASY_BLOCK("RegistryPair::clear", profiler::colors::Green800);
     runtime.clear();
     prototypes.clear();
     entity_names.clear();

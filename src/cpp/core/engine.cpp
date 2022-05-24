@@ -21,7 +21,7 @@ namespace init_core {
 
 bool Engine::init ()
 {
-    EASY_FUNCTION(Engine::COLOR(1));
+    EASY_BLOCK("Engine::init", Engine::COLOR(1));
     spdlog::debug("[Engine] init");
     // Load the game-specific settings
     if (! config::readEngineConfig()) {
@@ -72,7 +72,7 @@ bool Engine::init ()
 void Engine::shutdown ()
 {
     spdlog::debug("[Engine] shutdown");
-    EASY_FUNCTION(Engine::COLOR(1));
+    EASY_BLOCK("Engine::shutdown", Engine::COLOR(1));
     if (m_graphics_ctx) {
         graphics::term(m_graphics_ctx);
     }
@@ -110,7 +110,6 @@ void Engine::shutdown ()
 
 void Engine::execute ()
 {
-    EASY_FUNCTION(Engine::COLOR(1));
     timekeeping::FrameTimer frame_timer;
 
     // Run main loop

@@ -13,7 +13,7 @@ void loaderThread (resources::Context* context)
             break;
         }
 
-        EASY_BLOCK("Loading Resource", profiler::colors::Teal200);
+        EASY_BLOCK("Loading Resource", resources::COLOR(1));
 
         SPDLOG_DEBUG("[resources] Loading {}/{:#x} from file: {}", item.loader->name().data(), item.handle.handle, item.filename);
         auto loaded = item.loader->load(item.handle, item.filename);

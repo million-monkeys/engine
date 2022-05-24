@@ -22,7 +22,7 @@ scheduler::SystemStatus scheduler::status (scheduler::Context* context)
 
 bool scheduler::execute (scheduler::Context* context)
 {
-    EASY_FUNCTION(scheduler::COLOR(1));
+    EASY_BLOCK("scheduler::execute", scheduler::COLOR(1));
     if EXPECT_TAKEN(context->m_system_status == scheduler::SystemStatus::Running) {
         // Execute the taskflow graph if systems are running
         context->m_executor.run(context->m_coordinator);

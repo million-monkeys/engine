@@ -37,7 +37,7 @@ void game::setScheduler (game::Context* context, scheduler::Context* scheduler_c
 
 std::optional<scheduler::SystemStatus> game::setup (game::Context* context)
 {
-    EASY_FUNCTION(profiler::colors::Pink50);
+    EASY_BLOCK("game::setup", game::COLOR(1));
     // Read game configuration
     helpers::hashed_string_flat_map<std::string> game_scripts;
     std::vector<entt::hashed_string::hash_type> entity_categories;

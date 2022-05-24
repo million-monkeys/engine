@@ -54,7 +54,7 @@ bool setupPackageLoader(lua_State* state)
 
 scripting::Context* scripting::init (messages::Context* msgs_ctx, events::Context* events_ctx, resources::Context* resources_ctx)
 {
-    EASY_FUNCTION(scripting::COLOR(1));
+    EASY_BLOCK("scripting::init", scripting::COLOR(1));
     scripting::Context* context = new scripting::Context;
     context->m_messages_ctx = msgs_ctx;
     context->m_events_ctx = events_ctx;

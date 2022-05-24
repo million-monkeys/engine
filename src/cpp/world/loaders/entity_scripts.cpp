@@ -7,7 +7,7 @@
 
 bool loaders::EntityScripts::cached (const std::string& filename, std::uint32_t* id)
 {
-    EASY_FUNCTION(profiler::colors::Teal300);
+    EASY_BLOCK("EntityScripts::cached", world::COLOR(3));
     return m_cached_ids.if_contains(
         entt::hashed_string::value(filename.c_str()),
         [&id](auto& element){
@@ -17,7 +17,7 @@ bool loaders::EntityScripts::cached (const std::string& filename, std::uint32_t*
 
 bool loaders::EntityScripts::load (million::resources::Handle handle, const std::string& filename)
 {
-    EASY_FUNCTION(profiler::colors::Teal300);
+    EASY_BLOCK("EntityScripts::load", world::COLOR(3));
     try {
         auto config = parser::parse_toml(filename);
 
@@ -91,6 +91,7 @@ bool loaders::EntityScripts::load (million::resources::Handle handle, const std:
 
 void loaders::EntityScripts::unload (million::resources::Handle handle)
 {
+    EASY_BLOCK("EntityScripts::unload", world::COLOR(3));
     std::ostringstream oss;
     oss << "local core = require('mm_core')\n";
     oss << "core:unregister_entity_script(" << handle.id() << ")";

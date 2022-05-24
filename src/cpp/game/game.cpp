@@ -11,7 +11,7 @@
 
 void game::setState (game::Context* context, entt::hashed_string new_state)
 {
-    EASY_FUNCTION(game::COLOR(1));
+    EASY_BLOCK("game::setState", game::COLOR(1));
     auto new_state_name = new_state.data();
     spdlog::info("Setting game state to: {}", new_state_name);
     context->m_current_state = new_state;
@@ -26,7 +26,7 @@ void game::setState (game::Context* context, entt::hashed_string new_state)
 
 void game::execute (game::Context* context, timing::Time current_time, timing::Delta delta, uint64_t frame_count)
 {
-    EASY_FUNCTION(game::COLOR(1));
+    EASY_BLOCK("game::execute", game::COLOR(1));
     context->m_current_time = current_time;
     context->m_current_time_delta = delta;
 

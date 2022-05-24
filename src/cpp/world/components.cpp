@@ -19,7 +19,7 @@ void world::installComponent (world::Context* context, const million::api::defin
 
 void loadComponent (world::Context* context, entt::registry& registry, entt::hashed_string component, entt::entity entity, const void* table)
 {
-    EASY_FUNCTION(profiler::colors::Green100);
+    EASY_FUNCTION(world::COLOR(4));
     auto it = context->m_component_loaders.find(component);
     if (it != context->m_component_loaders.end()) {
         const auto& loader = it->second;

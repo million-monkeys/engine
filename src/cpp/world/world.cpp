@@ -51,7 +51,7 @@ void world::update (world::Context* context)
 
 void world::processEvents (world::Context* context)
 {
-    EASY_FUNCTION(world::COLOR(2));
+    EASY_BLOCK("world::processEvents", world::COLOR(2));
     if (context->m_current.scripts.valid()) {
         scripting::processSceneEvents(context->m_scripting_ctx, context->m_current.scripts);
     } else {
@@ -66,7 +66,7 @@ void world::registerHandler (world::Context* context, entt::hashed_string scene,
 
 void world::executeHandlers (world::Context* context)
 {
-    EASY_FUNCTION(world::COLOR(1));
+    EASY_BLOCK("world::executeHandlers", world::COLOR(1));
     SPDLOG_TRACE("[world] Executing handlers");
     {
         EASY_BLOCK("Events/scene", world::COLOR(2));

@@ -22,7 +22,7 @@ void addGroups (entt::registry& registry, const TomlValue& groups, entt::entity 
 
 bool loaders::SceneEntities::load (million::resources::Handle handle, const std::string& filename)
 {
-    EASY_FUNCTION(profiler::colors::Teal300);
+    EASY_BLOCK("SceneEntities::load", world::COLOR(3));
     try {
         auto config = parser::parse_toml(filename);
 
@@ -109,5 +109,5 @@ bool loaders::SceneEntities::load (million::resources::Handle handle, const std:
 
 void loaders::SceneEntities::unload (million::resources::Handle handle)
 {
-
+    EASY_BLOCK("SceneEntities::unload", world::COLOR(3));
 }

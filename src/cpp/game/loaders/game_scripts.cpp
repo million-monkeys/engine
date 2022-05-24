@@ -9,7 +9,7 @@
 
 bool loaders::GameScripts::cached (const std::string& filename, std::uint32_t* id)
 {
-    EASY_FUNCTION(profiler::colors::Teal300);
+    EASY_BLOCK("GameScripts::cached", game::COLOR(3));
     return m_cached_ids.if_contains(
         entt::hashed_string::value(filename.c_str()),
         [&id](auto& element){
@@ -19,7 +19,7 @@ bool loaders::GameScripts::cached (const std::string& filename, std::uint32_t* i
 
 bool loaders::GameScripts::load (million::resources::Handle handle, const std::string& filename)
 {
-    EASY_FUNCTION(profiler::colors::Teal300);
+    EASY_BLOCK("GameScripts::load", game::COLOR(3));
     try {
         auto config = parser::parse_toml(filename);
 
@@ -98,6 +98,7 @@ bool loaders::GameScripts::load (million::resources::Handle handle, const std::s
 
 void loaders::GameScripts::unload (million::resources::Handle handle)
 {
+    EASY_BLOCK("GameScripts::unload", game::COLOR(3));
     std::ostringstream oss;
     oss << "local core = require('mm_core')\n";
     oss << "core:unregister_game_script()";

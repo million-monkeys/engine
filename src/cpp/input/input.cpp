@@ -3,7 +3,7 @@
 
 void input::poll (input::Context* context)
 {
-    EASY_FUNCTION(input::COLOR(1));
+    EASY_BLOCK("input::poll", input::COLOR(1));
     /**
      * Gather input from input devices: keyboard, mouse, gamepad, joystick
      * Input is mapped to events and those events are emitted for systems to process.

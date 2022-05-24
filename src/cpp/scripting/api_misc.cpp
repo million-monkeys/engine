@@ -14,7 +14,7 @@ extern "C" std::uint32_t get_entity_set (scripting::Context* context, std::uint3
 
 extern "C" void output_log (scripting::Context* context, std::uint32_t level, const char* message)
 {
-    EASY_FUNCTION(profiler::colors::Purple400);
+    EASY_FUNCTION(scripting::COLOR(3));
     switch (level) {
     case 0:
         spdlog::critical("[script] {}", message);
