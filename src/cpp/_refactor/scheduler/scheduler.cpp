@@ -6,6 +6,7 @@
 #include "_refactor/physics/physics.hpp"
 #include "_refactor/events/events.hpp"
 #include "_refactor/game/game.hpp"
+#include "_refactor/modules/modules.hpp"
 
 using TaskCallback = void(*)(const void*, entt::registry&);
 
@@ -162,9 +163,8 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         events::pump(context->m_events_ctx);
     }).name("events/pump");
 
-    Task before_update = context->m_coordinator.emplace([](){
-        // call before_update hooks here
-        // engine.callModuleHook<core::CM::BEFORE_UPDATE>();
+    Task before_update = context->m_coordinator.emplace([context](){
+        modules::hooks::before_update(context->m_modules_ctx);
     }).name("hooks/before-update");
 
     Task game_logic = context->m_coordinator.emplace([context](tf::Subflow& subflow){

@@ -58,7 +58,7 @@ namespace million::api {
         virtual void on_before_render () = 0;
         virtual void on_after_render () = 0;
         // Scene setup and teardown. Use these to set up scene logic and scene-specific systems.
-        virtual void on_load_scene (entt::hashed_string) = 0;
-        virtual void on_unload_scene () = 0;
+        virtual void on_load_scene (entt::hashed_string::hash_type, const std::string&) = 0;
+        virtual void on_unload_scene (entt::hashed_string::hash_type, const std::string&) = 0;
     };
 }

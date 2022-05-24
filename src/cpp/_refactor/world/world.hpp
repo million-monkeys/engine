@@ -3,12 +3,13 @@
 #include <monkeys.hpp>
 
 namespace world {
-    Context* init (events::Context* events_ctx, messages::Context* messages_ctx, resources::Context* resources_ctx, scripting::Context* scripting_ctx);
+    Context* init (events::Context* events_ctx, messages::Context* messages_ctx, resources::Context* resources_ctx, scripting::Context* scripting_ctx, modules::Context* modules_ctx);
     void term (Context* context);
 
     void setContextData (Context* context, million::api::EngineRuntime* runtime);
     void installComponent (Context* context, const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn);
     void setEntityCategories (Context* context, const std::vector<entt::hashed_string::hash_type>& entity_categories);
+    void registerHandler (Context* context, entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler);
 
     entt::entity loadEntity (Context* context, entt::hashed_string prototype_id);
     void mergeEntity (Context* context, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components);

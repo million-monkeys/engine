@@ -5,6 +5,7 @@
 
 #include "_refactor/events/events.hpp"
 #include "_refactor/messages/messages.hpp"
+#include "_refactor/modules/modules.hpp"
 #include "_refactor/resources/resources.hpp"
 #include "_refactor/physics/physics.hpp"
 #include "_refactor/input/input.hpp"
@@ -14,7 +15,9 @@
 #include "_refactor/scheduler/scheduler.hpp"
 #include "_refactor/graphics/graphics.hpp"
 
-
+namespace init_core {
+    void register_components (million::api::internal::ModuleManager*);
+}
 
 bool Engine::init ()
 {
@@ -27,6 +30,7 @@ bool Engine::init ()
     // Setup subsystems
     m_events_ctx = events::init();
     m_messages_ctx = messages::init();
+    m_modules_ctx = modules::init();
     m_resources_ctx = resources::init(m_events_ctx);
     m_physics_ctx = physics::init();
     m_input_ctx = input::init(m_events_ctx);
@@ -34,16 +38,28 @@ bool Engine::init ()
     if (m_scripting_ctx == nullptr) {
         return false;
     }
-    m_world_ctx = world::init(m_events_ctx, m_messages_ctx, m_resources_ctx, m_scripting_ctx);
+    m_world_ctx = world::init(m_events_ctx, m_messages_ctx, m_resources_ctx, m_scripting_ctx, m_modules_ctx);
     m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx);
-    m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_physics_ctx, m_events_ctx, m_game_ctx);
-    m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx);
+    m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_physics_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
+    m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx, m_modules_ctx);
     if (m_graphics_ctx == nullptr) {
         return false;
     }
 
     // Scripting and world have a circular dependency...
     scripting::setWorld(m_scripting_ctx, m_world_ctx);
+    // game and scheduler have a circular dependency...
+    game::setScheduler(m_game_ctx, m_scheduler_ctx);
+
+    // Register core components
+    init_core::register_components(nullptr);
+
+    // Setup game
+    auto status = game::setup(m_game_ctx);
+    if (! status.has_value()) {
+        return false;
+    }
+    scheduler::setStatus(m_scheduler_ctx, status.value());
 
     // Initialized successfully
     return true;
@@ -154,13 +170,13 @@ void Engine::execute ()
         game::execute(m_game_ctx, current_time, delta, frame_count);
 
         // Run the before-frame hook for each module, updating the current time
-        // callModuleHook<CM::BEFORE_FRAME>(current_time, delta, frame_count);
+        modules::hooks::before_frame(m_modules_ctx, current_time, delta, frame_count);
 
         // Call scheduler to run tasks
         scheduler::execute(m_scheduler_ctx);
 
         // Run the after-frame hook for each module
-        // callModuleHook<CM::AFTER_FRAME>();
+        modules::hooks::after_frame(m_modules_ctx);
 
         /*
         * Hand over exclusive access to engine state to renderer.

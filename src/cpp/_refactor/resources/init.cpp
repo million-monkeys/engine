@@ -30,12 +30,9 @@ void loaderThread (resources::Context* context)
 
 resources::Context* resources::init (events::Context* events_ctx)
 {
-    auto context = new resources::Context();
-    context->m_stream = &events::createStream(events_ctx, "resources"_hs);
-    // resources::install<resources::types::EntityScripts>(context);
-    // resources::install<resources::types::GameScripts>(context);
-    // resources::install<resources::types::SceneScripts>(context);
-    // resources::install<resources::types::SceneEntities>(context);
+    auto context = new resources::Context{
+        events::createStream(events_ctx, "resources"_hs),
+    };
     context->m_loader_thread = std::thread(loaderThread, context);
     return context;
 }

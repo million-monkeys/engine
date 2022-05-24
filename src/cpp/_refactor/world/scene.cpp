@@ -1,7 +1,9 @@
 #include "world.hpp"
 #include "context.hpp"
 #include "utils/parser.hpp"
+
 #include "_refactor/resources/resources.hpp"
+#include "_refactor/modules/modules.hpp"
 
 #include <physfs.hpp>
 
@@ -75,5 +77,41 @@ void world::loadScene (world::Context* context, entt::hashed_string::hash_type s
 
     } else {
         spdlog::error("[scenes] Could not load scene because it does not exist: {}", scene);
+    }
+}
+
+// Swap foreground and background scenes, and clear the (new) background scene
+void world::swapScenes (world::Context* context)
+{
+    EASY_FUNCTION(profiler::colors::Amber800);
+    // Call UNLOAD_SCENE hooks on old scene
+    if (context->m_current.scene) {
+        modules::hooks::unload_scene(context->m_modules_ctx, context->m_current.scene, context->m_scenes[context->m_current.scene]);
+    }
+
+    // Set current scene and scripts
+    context->m_current.scene = context->m_pending.scene;
+    context->m_current.scripts = context->m_pending.scripts;
+
+    // Invalidate pending
+    context->m_pending.scene = 0;
+    context->m_pending.scripts = million::resources::Handle::invalid();
+
+    // Swap newly loaded scene into foreground
+    context->m_registries.swap();
+    // Copy entities marked as "global" from background to foreground
+    context->m_registries.copyGlobals();
+    // Clear the background registry
+    context->m_registries.background().clear();
+    // Set context variables
+    context->m_registries.foreground().runtime.ctx().emplace<million::api::Runtime>(context->m_context_data);
+
+    // Call LOAD_SCENE hooks on new scene
+    // TODO: Create a scene API object to pass in? What can it do?
+    if (context->m_current.scene) {
+        modules::hooks::unload_scene(context->m_modules_ctx, context->m_current.scene, context->m_scenes[context->m_current.scene]);
+        context->m_stream.emit<events::scene::Activated>([context](auto& scene){
+            scene.id = context->m_current.scene;
+        });
     }
 }

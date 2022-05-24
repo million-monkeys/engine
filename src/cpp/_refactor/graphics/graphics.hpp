@@ -14,7 +14,7 @@ namespace graphics {
         } owner = Owner::Engine;
     };
 
-    Context* init (world::Context* world_ctx, input::Context* input_ctx);
+    Context* init (world::Context* world_ctx, input::Context* input_ctx, modules::Context* modules_ctx);
     void term (Context* context);
     void handOff (Context* context);
 }

@@ -56,9 +56,13 @@ struct DoneItem {
 
 namespace resources {
     struct Context {
+        Context (million::events::Stream& stream) : m_stream(stream) {}
+        ~Context () {}
+        
+        million::events::Stream& m_stream;
+
         helpers::hashed_string_flat_map<million::resources::Handle> m_named_resources;
         helpers::hashed_string_flat_map<ResourceStorage> m_resource_loaders;
-        million::events::Stream* m_stream;
         moodycamel::BlockingConcurrentQueue<WorkItem> m_work_queue;
         moodycamel::ConcurrentQueue<DoneItem> m_done_queue;
         std::thread m_loader_thread;

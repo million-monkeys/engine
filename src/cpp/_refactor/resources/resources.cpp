@@ -11,7 +11,7 @@ void resources::poll (resources::Context* context)
     do {
         count = context->m_done_queue.try_dequeue_bulk(done_items, MAX_DONE_ITEMS);
         for (std::size_t i = 0; i != count; ++i) {
-            auto& loaded = context->m_stream->emit<events::resources::Loaded>();
+            auto& loaded = context->m_stream.emit<events::resources::Loaded>();
             auto& item = done_items[i];
             loaded.type = item.type;
             loaded.name = item.name;

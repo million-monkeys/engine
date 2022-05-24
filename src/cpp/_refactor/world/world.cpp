@@ -46,48 +46,17 @@ void world::update (world::Context* context)
     }
 }
 
-// Swap foreground and background scenes, and clear the (new) background scene
-void world::swapScenes (world::Context* context)
-{
-    EASY_FUNCTION(profiler::colors::Amber800);
-    // Call UNLOAD_SCENE hooks on old scene
-    // if (m_current.scene) {
-    //     m_engine.callModuleHook<core::CM::UNLOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
-    // }
-
-    // Set current scene and scripts
-    context->m_current.scene = context->m_pending.scene;
-    context->m_current.scripts = context->m_pending.scripts;
-
-    // Invalidate pending
-    context->m_pending.scene = 0;
-    context->m_pending.scripts = million::resources::Handle::invalid();
-
-    // Swap newly loaded scene into foreground
-    context->m_registries.swap();
-    // Copy entities marked as "global" from background to foreground
-    context->m_registries.copyGlobals();
-    // Clear the background registry
-    context->m_registries.background().clear();
-    // Set context variables
-    context->m_registries.foreground().runtime.ctx().emplace<million::api::Runtime>(context->m_context_data);
-
-    // Call LOAD_SCENE hooks on new scene
-    // TODO: Create a scene API object to pass in? What can it do?
-    if (context->m_current.scene) {
-        // m_engine.callModuleHook<core::CM::LOAD_SCENE>(m_current_scene, m_scenes[m_current_scene]);
-        context->m_stream.emit<events::scene::Activated>([context](auto& scene){
-            scene.id = context->m_current.scene;
-        });
-    }
-}
-
 void world::processEvents (world::Context* context)
 {
     EASY_FUNCTION(world::COLOR(2));
     if (context->m_current.scripts.valid()) {
         scripting::processSceneEvents(context->m_scripting_ctx, context->m_current.scripts);
     }
+}
+
+void world::registerHandler (world::Context* context, entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler)
+{
+    context->m_scene_handlers[scene].push_back({events, handler});
 }
 
 void world::executeHandlers (world::Context* context)

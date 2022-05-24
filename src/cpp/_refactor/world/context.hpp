@@ -10,6 +10,11 @@ struct PendingScene {
     bool auto_swap;
 };
 
+// Component used by the prototypes registry to identify the prototype entity
+struct EntityPrototypeID {
+    entt::hashed_string::hash_type id;
+};
+
 // Component used to represent group membership. Component named storage is used for different groups.
 struct EntityGroup {};
 
@@ -29,6 +34,7 @@ namespace world {
         messages::Context* m_messages_ctx;
         resources::Context* m_resources_ctx;
         scripting::Context* m_scripting_ctx;
+        modules::Context* m_modules_ctx;
 
         // Component loaders
         helpers::hashed_string_flat_map<million::api::definitions::LoaderFn> m_component_loaders;

@@ -5,6 +5,7 @@
 #include "_refactor/scripting/scripting.hpp"
 #include "_refactor/resources/resources.hpp"
 #include "_refactor/messages/messages.hpp"
+#include "_refactor/scheduler/scheduler.hpp"
 
 #include <million/engine.hpp>
 
@@ -37,10 +38,10 @@ void game::execute (game::Context* context, timing::Time current_time, timing::D
                 auto& loaded = million::api::EngineRuntime::eventData<events::resources::Loaded>(ev);
                 if (loaded.type == "game-script"_hs) {
                     context->m_game_scripts.emplace(loaded.name, loaded.handle);
-                    // if (scheduler::status(context->m_scheduler_ctx) == scheduler::SystemStatus::Loading && loaded.name == context->m_current_state) {
-                    //     context->m_current_game_script = loaded.handle;
-                    //     scheduler::setStatus(context->m_scheduler_ctx, scheduler::SystemStatus::Running);
-                    // }
+                    if (scheduler::status(context->m_scheduler_ctx) == scheduler::SystemStatus::Loading && loaded.name == context->m_current_state) {
+                        context->m_current_game_script = loaded.handle;
+                        scheduler::setStatus(context->m_scheduler_ctx, scheduler::SystemStatus::Running);
+                    }
                 }
                 break;
             }
@@ -48,6 +49,11 @@ void game::execute (game::Context* context, timing::Time current_time, timing::D
                 break;
         };
     }
+}
+
+void game::registerHandler (game::Context* context, entt::hashed_string state, entt::hashed_string::hash_type events, million::GameHandler handler)
+{
+    context->m_game_handlers[state].push_back({events, handler});
 }
 
 void game::executeHandlers (game::Context* context)

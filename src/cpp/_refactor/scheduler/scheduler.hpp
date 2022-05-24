@@ -9,7 +9,7 @@ namespace scheduler {
         Stopped,
     };
 
-    Context* init (world::Context* world_ctx, scripting::Context* scripting_ctx, physics::Context* physics_ctx, events::Context* events_ctx, game::Context* game_ctx);
+    Context* init (world::Context* world_ctx, scripting::Context* scripting_ctx, physics::Context* physics_ctx, events::Context* events_ctx, game::Context* game_ctx, modules::Context* modules_ctx);
     void term (Context* context);
 
     void setStatus (Context* context, SystemStatus status);

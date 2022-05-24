@@ -25,6 +25,7 @@ namespace scheduler {
         physics::Context* m_physics_ctx;
         events::Context* m_events_ctx;
         game::Context* m_game_ctx;
+        modules::Context* m_modules_ctx;
 
         phmap::flat_hash_map<million::SystemStage, entt::organizer> m_organizers;
         tf::Taskflow m_coordinator;

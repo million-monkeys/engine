@@ -10,7 +10,7 @@ void addGroups (entt::registry& registry, const TomlValue& groups, entt::entity 
     if (groups.is_array()) {
         for (auto& group_name : groups.as_array()) {
             if (group_name.is_string()) {
-                auto& storage = registry.storage<core::EntityGroup>(entt::hashed_string::value(group_name.as_string().str.c_str()));
+                auto& storage = registry.storage<EntityGroup>(entt::hashed_string::value(group_name.as_string().str.c_str()));
                 storage.emplace(entity);
             } else {
                 spdlog::warn("[scenes] Group name must be string");
@@ -35,7 +35,7 @@ bool loaders::SceneEntities::load (million::resources::Handle handle, const std:
                     const auto& name = entity.at("_name_").as_string().str;
                     SPDLOG_TRACE("[scenes] Creating new prototype entity: {}", name);
                     auto entity_id = prototype_registry.create();
-                    prototype_registry.emplace<core::EntityPrototypeID>(entity_id, entt::hashed_string::value(name.c_str()));
+                    prototype_registry.emplace<EntityPrototypeID>(entity_id, entt::hashed_string::value(name.c_str()));
                     for (const auto& [name_str, component]  : entity.as_table()) {
                         if (name_str == "_groups_") {
                             // Add entity to groups

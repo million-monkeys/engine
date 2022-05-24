@@ -9,6 +9,7 @@
 #include <variant>
 #include <array>
 #include <cassert>
+#include <optional>
 
 // From third-party dependencies
 #include <entt/core/monostate.hpp>

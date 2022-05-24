@@ -5,12 +5,13 @@
 
 void graphics_thread (graphics::Context* context);
 
-graphics::Context* graphics::init (world::Context* world_ctx, input::Context* input_ctx)
+graphics::Context* graphics::init (world::Context* world_ctx, input::Context* input_ctx, modules::Context* modules_ctx)
 {
     EASY_FUNCTION(graphics::COLOR(1));
     auto context = new graphics::Context{};
     context->m_world_ctx = world_ctx;
     context->m_input_ctx = input_ctx;
+    context->m_modules_ctx = modules_ctx;
 
     context->m_running = true;
     context->m_graphics_thread = std::thread(graphics_thread, context);

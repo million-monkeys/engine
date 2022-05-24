@@ -3,6 +3,7 @@
 
 #include "_refactor/world/world.hpp"
 #include "_refactor/input/input.hpp"
+#include "_refactor/modules/modules.hpp"
 
 #include <SDL.h>
 
@@ -77,8 +78,8 @@ void graphics_thread (graphics::Context* context)
 
             EASY_BLOCK("Collecting render data", graphics::COLOR(2));
             
-//             // Call onPrepareRender during the critical section, before performing any rendering
-//             engine.callModuleHook<CM::PREPARE_RENDER>();
+            // Call onPrepareRender during the critical section, before performing any rendering
+            modules::hooks::prepare_render(context->m_modules_ctx);
 
             entt::registry& registry = world::registry(context->m_world_ctx);
 
@@ -101,8 +102,10 @@ void graphics_thread (graphics::Context* context)
         EASY_BLOCK("Rendering", graphics::COLOR(2));
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
+        modules::hooks::before_render(context->m_modules_ctx);
         SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
         SDL_RenderFillRects(renderer, rects.data(), rects.size());
+        modules::hooks::after_render(context->m_modules_ctx);
         SDL_RenderPresent(renderer);
     } while (context->m_running.load());
 

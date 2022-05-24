@@ -9,7 +9,7 @@ struct GameEventHandler {
 
 namespace game {
     struct Context {
-        Context (million::events::Stream& stream) : m_stream(stream) {}
+        Context (million::events::Stream& stream, million::events::Stream& commands) : m_stream(stream), m_commands(commands) {}
         ~Context () {}
 
         events::Context* m_events_ctx;
@@ -17,8 +17,10 @@ namespace game {
         world::Context* m_world_ctx;
         scripting::Context* m_scripting_ctx;
         resources::Context* m_resources_ctx;
+        scheduler::Context* m_scheduler_ctx;
 
         million::events::Stream& m_stream;   // "game"_hs output stream
+        million::events::Stream& m_commands;
 
         // Timing
         timing::Delta m_current_time_delta = 0;

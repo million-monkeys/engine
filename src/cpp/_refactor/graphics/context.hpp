@@ -8,6 +8,7 @@ namespace graphics {
     struct Context {
         world::Context* m_world_ctx;
         input::Context* m_input_ctx;
+        modules::Context* m_modules_ctx;
 
         Sync m_sync;
         std::thread m_graphics_thread;

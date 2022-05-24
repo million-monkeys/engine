@@ -6,7 +6,7 @@
 namespace loaders {
     class SceneEntities : public million::api::resources::Loader {
     public:
-        SceneEntities(world::Context* context) : m_context (context) {}
+        SceneEntities (world::Context* context) : m_context (context) {}
         virtual ~SceneEntities() {}
 
         bool cached (const std::string& filename, std::uint32_t*) final { return false; } // No caching
