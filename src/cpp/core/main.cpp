@@ -1,9 +1,9 @@
 
 #include <monkeys.hpp>
-#include "config.hpp"
-#include "core/engine.hpp"
-#include "utils/timekeeping.hpp"
-#include "graphics/graphics.hpp"
+#include "config/config.hpp"
+#include "events/events.hpp"
+
+#include "engine.hpp"
 
 #include <map>
 
@@ -68,18 +68,12 @@ std::shared_ptr<spdlog::logger> setupLogging ()
 int game_main (int argc, char** argv)
 {
     // Load base engine settings
-    if (! core::readUserConfig(argc, argv)) {
+    if (! config::readUserConfig(argc, argv)) {
         return -1;
     }
     // Initialise logger and filesystem
     auto logger = setupLogging();
     setupPhysFS(argv[0]);
-
-    // Now that both the filesystem and logger are set up, load the game-specific settings
-    helpers::hashed_string_flat_map<std::uint32_t> stream_sizes;
-    if (! core::readEngineConfig(stream_sizes)) {
-        return -1;
-    }
 
 #ifdef BUILD_WITH_EASY_PROFILER
     const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
@@ -97,46 +91,13 @@ int game_main (int argc, char** argv)
 
     bool clean_exit = true;
     try {
-        core::Engine engine(stream_sizes);
-        // core::ModuleManager moduleManager(engine);
+        Engine engine;
         if (engine.init()) {
-            // if (! moduleManager.load(logger, imgui_ctx)) {
-            if (false) {
-                spdlog::critical("Could not load some required modules. Terminating.");
-            } else {
-                if (!engine.setupGame()) {
-                    spdlog::critical("Game could not be set up. Terminating.");
-                } else {
-                    // Initialise timekeeping
-                    timekeeping::FrameTimer frame_timer;
-
-            // #ifdef DEV_MODE
-            //         ElapsedTime last_update_time = 0L; // microseconds
-            //         const ElapsedTime update_interval = entt::monostate<"dev-mode/reload-interval"_hs>();
-            // #endif
-
-                    // Run main loop
-                    spdlog::info("Game Running...");
-                    do {
-                        // // Execute systems and copy current frames events for processing next frame
-                        if (!engine.execute(frame_timer.sinceStart(), frame_timer.frameTime(), frame_timer.totalFrames())) {
-                            break;
-                        }
-
-                        // Update timekeeping
-                        frame_timer.update();
-
-            // #ifdef DEV_MODE
-                        // In dev mode, update plugins every few seconds for hot code reloading
-                        // if (frame_timer.sinceStart() - last_update_time > update_interval) {
-                        //     last_update_time = frame_timer.sinceStart();
-                        //     moduleManager.update();
-                        // }
-            // #endif
-                    } while (true);
-                    frame_timer.reportAverage();
-                }
-            }
+            engine.execute();
+        } else {
+            spdlog::critical("Could not start engine");
+            spdlog::critical("Terminating.");
+            clean_exit = false;
         }
         // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
         engine.shutdown();

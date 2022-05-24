@@ -4,12 +4,7 @@
 #include <mutex>
 #include <condition_variable>
 
-namespace core {
-    class Engine;
-}
-
 namespace graphics {
-
     struct Sync {
         std::mutex state_mutex;
         std::condition_variable sync_cv;
@@ -19,7 +14,7 @@ namespace graphics {
         } owner = Owner::Engine;
     };
 
-    Sync* init (core::Engine&);
-    void term (Sync*);
-
+    Context* init (world::Context* world_ctx, input::Context* input_ctx, modules::Context* modules_ctx);
+    void term (Context* context);
+    void handOff (Context* context);
 }

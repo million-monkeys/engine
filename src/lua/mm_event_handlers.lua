@@ -4,7 +4,7 @@ struct EventEnvelope {
     uint32_t type;
     uint32_t size;
 };
-uint32_t get_stream_events (uint32_t, const char**);
+uint32_t get_stream_events (void*, uint32_t, const char**);
 ]]
 local C = ffi.C
 local core = require('mm_core')
@@ -38,7 +38,7 @@ return {
     handle_game_events = function ()
         local event_buffer = ffi.new('const char*[1]')
         for stream, event_map in pairs(core.game_event_map) do
-            local buffer_size = C.get_stream_events(stream, event_buffer)
+            local buffer_size = C.get_stream_events(MM_CONTEXT, stream, event_buffer)
             if buffer_size > 0 then
                 process_events(event_buffer[0], buffer_size, event_map)
             end
@@ -49,7 +49,7 @@ return {
         if scene_events then
             local event_buffer = ffi.new('const char*[1]')
             for stream, event_map in pairs(scene_events) do
-                local buffer_size = C.get_stream_events(stream, event_buffer)
+                local buffer_size = C.get_stream_events(MM_CONTEXT, stream, event_buffer)
                 if buffer_size > 0 then
                     process_events(event_buffer[0], buffer_size, event_map)
                 end

@@ -8,16 +8,6 @@
 #include "game_systems.hpp"
 
 namespace million {
-    // Access to the ECS registry
-    enum class Registry : std::uint32_t {
-        // The main registry, used to run the game
-        Runtime,
-        // The background registry, used for background loading, scene editing etc, can be copied to the Runtime registry
-        Background,
-        // The prototype registry, used by the component loader setup code, not meant for module users
-        Prototype,
-    };
-
     enum class SystemStage {
         GameLogic,
         AIExecute,
@@ -82,8 +72,6 @@ namespace million::api {
                     static_cast<void>(registry.template storage<T>());
                 });
             }
-
-            virtual entt::registry& registry (million::Registry) = 0;
             
         protected:
             // Allow engine to decide where the module classes are allocated
@@ -118,8 +106,8 @@ namespace million::api {
         // Load a new resource
         virtual million::resources::Handle loadResource (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name) = 0;
 
-        /** Access an ECS registry */
-        virtual entt::registry& registry (million::Registry) = 0;
+        /** Access ECS registry */
+        virtual entt::registry& registry () = 0;
 
         /** Access ECS organizers through which to register systems */
         virtual entt::organizer& organizer (million::SystemStage) = 0;
@@ -131,7 +119,7 @@ namespace million::api {
         virtual million::events::Stream& commandStream() = 0;
 
         /** Create a new named event stream */
-        virtual million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single, std::uint32_t=0) = 0;
+        virtual million::events::Stream& createStream (entt::hashed_string, million::StreamWriters=million::StreamWriters::Single) = 0;
     };
 
     // Engine API to be used at runtime (ie in systems or handler each frame).
@@ -149,12 +137,12 @@ namespace million::api {
         /** Load an entity into specified registry from a prototype */
         // NOT Thread Safe!
         // TODO: make thread safe by making asynchronous and dispatching event when done.
-        virtual entt::entity loadEntity (million::Registry, entt::hashed_string) = 0;
+        virtual entt::entity loadEntity (entt::hashed_string) = 0;
 
         /** Merge a prototype into an entity in the specified registry which */
         // NOT Thread Safe!
         // TODO: make thread safe by making asynchronous and dispatching event when done.
-        virtual void mergeEntity (million::Registry, entt::entity, entt::hashed_string, bool) = 0;
+        virtual void mergeEntity (entt::entity, entt::hashed_string, bool) = 0;
 
         // Retrieve a resource handle by name
         virtual million::resources::Handle findResource (entt::hashed_string::hash_type) const = 0;

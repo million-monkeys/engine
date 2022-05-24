@@ -7,27 +7,28 @@ namespace core {
 }
 
 namespace scripting {
-
     namespace detail {
-        using VariantVector = std::vector<std::variant<std::string,const char*,int,long,float,double,bool>>;
-        void call (const std::string& function, const VariantVector& args);
+        using VariantVector = std::vector<std::variant<std::string,const char*,int,long,float,double,bool,void*>>;
+        void call (Context* context, const std::string& function, const VariantVector& args);
     }
 
-    bool init (core::Engine* engine);
-    void registerComponent (entt::hashed_string::hash_type name, entt::id_type id);
-    bool evaluate (const std::string& name, const std::string& source);
-    bool load (const std::string& filename);
+    Context* init (messages::Context* msgs_ctx, events::Context* events_ctx, resources::Context* resources_ctx);
+    void setWorld (Context* context, world::Context* world_ctx);
+
+    void registerComponent (Context* context, entt::hashed_string::hash_type name, entt::id_type id);
+    bool evaluate (Context* context, const std::string& name, const std::string& source);
+    bool load (Context* context, const std::string& filename);
     template <typename... Args>
-    void call (const std::string& function, Args... args) {
+    void call (Context* context, const std::string& function, Args... args) {
         const detail::VariantVector arguments{args...};
-        detail::call(function, arguments);
+        detail::call(context, function, arguments);
     }
     
 
-    void processGameEvents ();
-    void processSceneEvents (million::resources::Handle handle);
-    void processMessages ();
+    void processGameEvents (Context* context);
+    void processSceneEvents (Context* context, million::resources::Handle handle);
+    void processMessages (Context* context);
 
-    void term ();
+    void term (Context* context);
 
 }

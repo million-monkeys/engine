@@ -12,7 +12,7 @@ namespace timekeeping {
     constexpr ElapsedTime seconds (ElapsedTime s) { return s * 1000000L; }
     constexpr ElapsedTime millis (ElapsedTime ms) { return ms * 1000L; }
 
-    float as_seconds (ElapsedTime micros) { return micros / 1000000.0; }
+    inline float as_seconds (ElapsedTime micros) { return micros / 1000000.0; }
 
     class FrameTimer {
     public:

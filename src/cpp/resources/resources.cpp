@@ -1,113 +1,19 @@
-
 #include "resources.hpp"
-#include "builtintypes.hpp"
+#include "context.hpp"
 
-#include "core/engine.hpp"
-
-#include <thread>
-#include <blockingconcurrentqueue.h>
-#include <concurrentqueue.h>
-
-class ResourceStorage {
-public:
-    ResourceStorage (std::uint32_t id, million::api::resources::Loader* loader, bool managed) : m_resource_id(id), m_loader(loader), m_managed(managed) {}
-    ResourceStorage (ResourceStorage&& other) :
-        m_resource_id(other.m_resource_id),
-        m_loader(other.m_loader),
-        m_managed(other.m_managed)
-    {
-        other.m_loader = nullptr;
-    }
-    ~ResourceStorage()
-    {
-        if (m_managed && m_loader != nullptr) {
-            delete m_loader;
-        }
-    }
-
-    million::resources::Handle enqueue (const std::string& filename, entt::hashed_string::hash_type name);
-    
-private:
-    std::atomic_int32_t m_idx = 0;
-    const std::uint32_t m_resource_id;
-    million::api::resources::Loader* m_loader;
-    const bool m_managed;
-};
-
-phmap::flat_hash_map<entt::hashed_string::hash_type, ResourceStorage, helpers::Identity> g_resource_loaders;
-
-struct WorkItem {
-    million::api::resources::Loader* loader;
-    std::string filename;
-    million::resources::Handle handle;
-    entt::hashed_string::hash_type name;
-
-    bool operator==(const WorkItem& other) const {
-        return loader == other.loader && handle.handle == other.handle.handle && filename == other.filename;
-    }
-
-    static const WorkItem POISON_PILL;
-};
 const WorkItem WorkItem::POISON_PILL = WorkItem{nullptr, "", million::resources::Handle::invalid()};
-
-struct DoneItem {
-    entt::hashed_string::hash_type type;
-    million::resources::Handle handle;
-    entt::hashed_string::hash_type name;
-};
-
-moodycamel::BlockingConcurrentQueue<WorkItem> g_work_queue;
-moodycamel::ConcurrentQueue<DoneItem> g_done_queue;
-
 constexpr int MAX_DONE_ITEMS = 10;
-DoneItem g_done_items[MAX_DONE_ITEMS];
 
-void loaderThread ()
+void resources::poll (resources::Context* context)
 {
-    spdlog::debug("[resources] Starting resource loader thread");
-    WorkItem item = WorkItem::POISON_PILL;
-    do {
-        g_work_queue.wait_dequeue(item);
-        if (item == WorkItem::POISON_PILL) {
-            break;
-        }
-
-        EASY_BLOCK("Loading Resource", profiler::colors::Teal200);
-
-        SPDLOG_DEBUG("[resources] Loading {}/{:#x} from file: {}", item.loader->name().data(), item.handle.handle, item.filename);
-        auto loaded = item.loader->load(item.handle, item.filename);
-        if (!loaded) {
-            spdlog::warn("[resources] Could not load {}/{:#x} from file: {}", item.loader->name().data(), item.handle.handle, item.filename);
-            continue;
-        }
-        SPDLOG_DEBUG("[resources] Loaded {}/{:#x}", item.loader->name().data(), item.handle.handle);
-        g_done_queue.enqueue({item.loader->name(), item.handle, item.name});
-
-    } while (true);
-    spdlog::debug("[resources] Terminating resource loader thread");
-}
-
-std::thread g_loader_thread;
-million::events::Stream* g_stream = nullptr;
-
-void resources::init (core::Engine* engine)
-{
-    g_stream = &engine->createStream("resources"_hs);
-    resources::install<resources::types::EntityScripts>(engine);
-    resources::install<resources::types::GameScripts>(engine);
-    resources::install<resources::types::SceneScripts>(engine);
-    resources::install<resources::types::SceneEntities>(engine);
-    g_loader_thread = std::thread(loaderThread);
-}
-
-void resources::poll ()
-{
+    EASY_FUNCTION(resources::COLOR(1));
+    DoneItem done_items[MAX_DONE_ITEMS];
     std::size_t count;
     do {
-        count = g_done_queue.try_dequeue_bulk(g_done_items, MAX_DONE_ITEMS);
+        count = context->m_done_queue.try_dequeue_bulk(done_items, MAX_DONE_ITEMS);
         for (std::size_t i = 0; i != count; ++i) {
-            auto& loaded = g_stream->emit<events::resources::Loaded>();
-            auto& item = g_done_items[i];
+            auto& loaded = context->m_stream.emit<events::resources::Loaded>();
+            auto& item = done_items[i];
             loaded.type = item.type;
             loaded.name = item.name;
             loaded.handle = item.handle;
@@ -115,19 +21,20 @@ void resources::poll ()
     } while (count > 0);
 }
 
-void resources::install (million::api::resources::Loader* loader, bool managed)
+void resources::install (resources::Context* context, million::api::resources::Loader* loader, bool managed)
 {
+    EASY_FUNCTION(resources::COLOR(1));
     const auto type = loader->name();
-    std::uint32_t index = g_resource_loaders.size() + 1;
+    std::uint32_t index = context->m_resource_loaders.size() + 1;
     spdlog::debug("[resources] Installing {} ({:x})", type.data(), index);
-    g_resource_loaders.emplace(type.value(), ResourceStorage{index, loader, managed});
+    context->m_resource_loaders.emplace(type.value(), ResourceStorage{index, loader, managed, context});
 }
 
-million::resources::Handle resources::load (entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
+million::resources::Handle loadResource (resources::Context* context, entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
-    EASY_FUNCTION(profiler::colors::Teal100);
-    auto it = g_resource_loaders.find(type.value());
-    if (it != g_resource_loaders.end()) {
+    EASY_FUNCTION(resources::COLOR(2));
+    auto it = context->m_resource_loaders.find(type.value());
+    if (it != context->m_resource_loaders.end()) {
         return it->second.enqueue(filename, name);
     } else {
         spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
@@ -135,11 +42,38 @@ million::resources::Handle resources::load (entt::hashed_string type, const std:
     }
 }
 
-void resources::term ()
+million::resources::Handle resources::load (resources::Context* context, entt::hashed_string type, const std::string& filename, entt::hashed_string::hash_type name)
 {
-    g_work_queue.enqueue(WorkItem::POISON_PILL);
-    g_loader_thread.join();
-    g_resource_loaders.clear();
+    EASY_FUNCTION(resources::COLOR(1));
+    auto it = context->m_resource_loaders.find(type.value());
+    if (it == context->m_resource_loaders.end()) {
+        spdlog::warn("[resources] Could not load '{}' from '{}', resource type does not exist", type.data(), filename);
+        return million::resources::Handle::invalid();
+    }
+    auto handle = it->second.enqueue(filename, name);
+    if (name != 0) {
+        resources::bindToName(context, handle, name);
+    }
+    return handle;
+}
+
+million::resources::Handle resources::find (resources::Context* context, entt::hashed_string::hash_type name)
+{
+    EASY_FUNCTION(resources::COLOR(1));
+    auto it = context->m_named_resources.find(name);
+    if (it != context->m_named_resources.end()) {
+        spdlog::debug("Resource with name {:#x} found: {:#x}", name, it->second.handle);
+        return it->second;
+    }
+    spdlog::debug("Resource with name {:#x} not found", name);
+    return million::resources::Handle::invalid();
+}
+
+void resources::bindToName (resources::Context* context, million::resources::Handle handle, entt::hashed_string::hash_type name)
+{
+    EASY_FUNCTION(resources::COLOR(4));
+    context->m_named_resources[name] = handle;
+    spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
 }
 
 million::resources::Handle ResourceStorage::enqueue (const std::string& filename, entt::hashed_string::hash_type name)
@@ -150,6 +84,6 @@ million::resources::Handle ResourceStorage::enqueue (const std::string& filename
     }
     EASY_FUNCTION(profiler::colors::Teal300);
     million::resources::Handle handle = million::resources::Handle::make(m_resource_id, m_idx.fetch_add(1));
-    g_work_queue.enqueue({m_loader, filename, handle, name});
+    m_context->m_work_queue.enqueue({m_loader, filename, handle, name});
     return handle;
 }

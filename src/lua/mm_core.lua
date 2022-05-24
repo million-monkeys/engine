@@ -5,7 +5,7 @@ ffi.cdef[[
     struct Vec4 {float x, y, z, w;};
     struct RGB {float r, g, b;};
     struct RGBA {float r, g, b, a;};
-    uint32_t get_ref (const char* name);
+    uint32_t get_ref (void*, const char* name);
 
     struct NameOnlyEvent {};
     struct SceneActivatedEvent {uint32_t id;};
@@ -44,7 +44,7 @@ local function register_events(self, type_list)
             type = ctype,
             size = ffi.sizeof(type_struct),
         }
-        self.types_by_id[C.get_ref(info.name)] = ctype
+        self.types_by_id[C.get_ref(MM_CONTEXT, info.name)] = ctype
     end
 end
 

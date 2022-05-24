@@ -7,13 +7,13 @@ struct MessageEnvelope {
     uint32_t target;
     uint32_t metadata;
 };
-struct BehaviorIterator* setup_scripted_behavior_iterator ();
-uint32_t get_next_scripted_behavior (struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
-bool is_in_group (uint32_t, uint32_t);
-uint32_t get_group (uint32_t, const uint32_t**);
-uint32_t get_entity_set (uint32_t, const uint32_t**);
-uint32_t get_entity_composite (uint32_t, const uint32_t**);
-uint32_t get_messages (const char**);
+struct BehaviorIterator* setup_scripted_behavior_iterator (void*);
+uint32_t get_next_scripted_behavior (void*, struct BehaviorIterator*, const struct Component_Core_ScriptedBehavior**);
+bool is_in_group (void*, uint32_t, uint32_t);
+uint32_t get_group (void*, uint32_t, const uint32_t**);
+uint32_t get_entity_set (void*, uint32_t, const uint32_t**);
+uint32_t get_entity_composite (void*, uint32_t, const uint32_t**);
+uint32_t get_messages (void*, const char**);
 ]]
 local C = ffi.C
 local core = require('mm_core')
@@ -24,10 +24,10 @@ local function gather_entities ()
     local scripted_behavior = ffi.new('const struct Component_Core_ScriptedBehavior*[1]')
     local entity_collection = {}
     -- Get a new iterator for ScriptedBehavior's
-    local iterator = C.setup_scripted_behavior_iterator()
+    local iterator = C.setup_scripted_behavior_iterator(MM_CONTEXT)
     while true do
         -- Get entity and ScriptedBehavior instance and advance iterator
-        local entity = registry:entity(C.get_next_scripted_behavior(iterator, scripted_behavior))
+        local entity = registry:entity(C.get_next_scripted_behavior(MM_CONTEXT, iterator, scripted_behavior))
         if not entity then
             -- Entity not valid, no more scripted behaviors, return the collection
             return entity_collection
@@ -97,13 +97,13 @@ local function process_messages (entities, message_buffer, buffer_size)
             local num_entities
             if target_type == 1 then
                 -- Group target
-                num_entities = C.get_group(envelope.target, entity_ids)
+                num_entities = C.get_group(MM_CONTEXT, envelope.target, entity_ids)
             elseif target_type == 2 then
                 -- Entity Set target
-                num_entities = C.get_entity_set(envelope.target, entity_ids)
+                num_entities = C.get_entity_set(MM_CONTEXT, envelope.target, entity_ids)
             else
                 -- Composite target
-                num_entities = C.get_entity_composite(envelope.target, entity_ids)
+                num_entities = C.get_entity_composite(MM_CONTEXT, envelope.target, entity_ids)
             end
             local entity_id_ptr = entity_ids[0]
             if is_filtered == 0 then
@@ -137,7 +137,7 @@ return function ()
     -- Process messages until no new messages are received, or MAX_ITERATIONS iterations, whichever happens first
     local iteration = 0
     repeat
-        local buffer_size = C.get_messages(message_buffer)
+        local buffer_size = C.get_messages(MM_CONTEXT, message_buffer)
         -- If there are no more messages, then abort
         if buffer_size == 0 then
             break

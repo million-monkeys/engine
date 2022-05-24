@@ -1,107 +1,20 @@
 
 #include "scripting.hpp"
+#include "context.hpp"
 
-#include <lua.hpp>
-#include <mutex>
 #include <spdlog/fmt/fmt.h>
+#include <lua.hpp>
 
-void init_scripting_api (core::Engine* engine);
-void set_active_stream (entt::hashed_string stream_name);
+void set_active_stream (scripting::Context* context, entt::hashed_string stream_name);
 
-lua_State* g_lua_state;
-std::mutex g_vm_mutex;
-
-void setLuaPath(lua_State* state, const std::string& path)
+bool scripting::load (scripting::Context* context, const std::string& filename)
 {
-    lua_getglobal(state, "package");
-    lua_getfield(state, -1, "path");
-    std::string cur_path = lua_tostring(state, -1);
-    cur_path.append(";");
-    cur_path.append(path);
-    lua_pop(state, 1);
-    lua_pushstring(state, cur_path.c_str());
-    lua_setfield(state, -2, "path");
-    lua_pop(state, 1);
-}
-
-static int packageLoader(lua_State* state)
-{
-    std::string module_name{lua_tostring(state, -1)};
-    try {
-        std::string filename = module_name;
-        filename.append(".lua");
-        auto source = helpers::readToString(filename);
-        if (luaL_loadbuffer(state, source.c_str(), source.size(), filename.c_str()) != 0) {
-            spdlog::error("[script] Failed to load package '{}': {}", module_name, lua_tostring(state, -1));
-            lua_pushstring(state, "");
-        }
-    } catch (const std::invalid_argument& e) {
-        spdlog::error("[script] Could not find lua module: {}", module_name);
-        lua_pushstring(state, "");
-    }
-	return 1;
-}
-
-bool setupPackageLoader(lua_State* state)
-{
-    // Remove third and fourth loader (C lib loader & combined loader)
-    // Then set the custom package path
-    luaL_dostring(state, R"lua(
-        table.remove(package.loaders, 3)
-        table.remove(package.loaders, 3)
-        package.path = './?.lua;?/init.lua'
-    )lua");
-
-    // Get the package loaders list
-	lua_getglobal(state, "package");
-	if (lua_type(state, -1) != LUA_TTABLE) {
-		spdlog::error("Lua \"package\" is not a table");
-		return false;
-	}
-    lua_getfield(state, -1, "loaders");
-    if (lua_type(state, -1) != LUA_TTABLE) {
-        spdlog::error("Lua \"package.loaders\" is not a table");
-        return false;
-    }
-
-    // Add the custom package loader to the end of the list
-	lua_pushinteger(state, 3);
-	lua_pushcfunction(state, packageLoader);
-	lua_rawset(state, -3);
-    lua_pop(state, 2);
-
-    return true;
-}
-
-bool scripting::init (core::Engine* engine)
-{
-    init_scripting_api(engine);
-
-    g_lua_state = luaL_newstate();
-    if (!g_lua_state) {
-        return false;
-    }
-    luaL_openlibs(g_lua_state);
-    setupPackageLoader(g_lua_state);
-
-    // Initialize scripting system
-    luaL_dostring(g_lua_state, "require('mm_init')");
-
-    return true;
-}
-
-void scripting::term ()
-{
-    lua_close(g_lua_state);
-}
-
-bool scripting::load (const std::string& filename)
-{
-    EASY_BLOCK("Scripts/load", profiler::colors::Purple100);
+    EASY_BLOCK("Scripts/load", scripting::COLOR(1));
+    SPDLOG_TRACE("[script] Loading script");
     try {
         spdlog::debug("[script] Loading: {}", filename);
         auto source = helpers::readToString(filename);
-        return evaluate(filename, source);
+        return evaluate(context, filename, source);
     } catch (const std::invalid_argument& e) {
         spdlog::error("[script] Script file not found: {}", filename);
         return false;
@@ -109,102 +22,112 @@ bool scripting::load (const std::string& filename)
     return true;
 }
 
-bool scripting::evaluate (const std::string& name, const std::string& source)
+bool scripting::evaluate (scripting::Context* context, const std::string& name, const std::string& source)
 {
-    EASY_BLOCK("Scripts/evaluate", profiler::colors::Purple200);
+    EASY_BLOCK("Scripts/evaluate", scripting::COLOR(2));
+    SPDLOG_TRACE("[script] Evaluating code");
     // Only one thread can execute Lua code at once
-    std::lock_guard<std::mutex> guard(g_vm_mutex);
+    std::lock_guard<std::mutex> guard(context->m_vm_mutex);
 
-    int status = luaL_loadbuffer(g_lua_state, source.c_str(), source.size(), name.c_str());
+    int status = luaL_loadbuffer(context->m_state, source.c_str(), source.size(), name.c_str());
     if (status != 0) {
         if (status == LUA_ERRSYNTAX) {
-            spdlog::error("[script] Syntax error in script: {} {}", name, lua_tostring(g_lua_state, -1));
-            lua_pop(g_lua_state, 1);
+            spdlog::error("[script] Syntax error in script: {} {}", name, lua_tostring(context->m_state, -1));
+            lua_pop(context->m_state, 1);
         } else {
             spdlog::error("[script] Could not load script: {}", name);
         }
         return false;
     }
-    int ret = lua_pcall(g_lua_state, 0, 0, 0);
+    int ret = lua_pcall(context->m_state, 0, 0, 0);
     if (ret != 0) {
-        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        spdlog::error("[script] Runtime error {}", lua_tostring(context->m_state, -1));
         return false;
     }
     return true;
 }
 
-void scripting::detail::call (const std::string& function, const scripting::detail::VariantVector& args)
+void scripting::detail::call (scripting::Context* context, const std::string& function, const scripting::detail::VariantVector& args)
 {
-    EASY_BLOCK("Scripts/call", profiler::colors::Purple200);
-    spdlog::trace("Calling function {}", function);
+    EASY_BLOCK("Scripts/call", scripting::COLOR(1));
+    SPDLOG_TRACE("[script] Calling function {}", function);
 
     // Only one thread can execute Lua code at once
-    std::lock_guard<std::mutex> guard(g_vm_mutex);
+    std::lock_guard<std::mutex> guard(context->m_vm_mutex);
 
-    lua_getglobal(g_lua_state, function.c_str());
+    lua_getglobal(context->m_state, function.c_str());
     for (const auto& arg : args) {
         std::visit(
             helpers::visitor{
-                [](const std::string& str) { lua_pushstring(g_lua_state, str.c_str()); },
-                [](const char* str) { lua_pushstring(g_lua_state, str); },
-                [](int num) { lua_pushinteger(g_lua_state, num); },
-                [](long num) { lua_pushinteger(g_lua_state, num); },
-                [](float num) { lua_pushnumber(g_lua_state, num); },
-                [](double num) { lua_pushnumber(g_lua_state, num); },
-                [](bool boolean) { lua_pushboolean(g_lua_state, boolean); },
+                [context](const std::string& str) { lua_pushstring(context->m_state, str.c_str()); },
+                [context](const char* str) { lua_pushstring(context->m_state, str); },
+                [context](int num) { lua_pushinteger(context->m_state, num); },
+                [context](long num) { lua_pushinteger(context->m_state, num); },
+                [context](float num) { lua_pushnumber(context->m_state, num); },
+                [context](double num) { lua_pushnumber(context->m_state, num); },
+                [context](bool boolean) { lua_pushboolean(context->m_state, boolean); },
+                [context](void* ptr) { lua_pushlightuserdata(context->m_state, ptr); }
             }, arg);
     }
-    int ret = lua_pcall(g_lua_state, args.size(), 0, 0);
+    int ret = lua_pcall(context->m_state, args.size(), 0, 0);
     if (ret != 0) {
-        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        spdlog::error("[script] Runtime error {}", lua_tostring(context->m_state, -1));
         throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
 
-void scripting::processGameEvents ()
+void scripting::processGameEvents (scripting::Context* context)
 {
-    EASY_BLOCK("Scripts/scene", profiler::colors::Purple200);
+    EASY_BLOCK("Scripts/scene", scripting::COLOR(1));
+    SPDLOG_TRACE("[script] Processing game event scripts");
 
     // Only one thread can execute Lua code at once
-    std::lock_guard<std::mutex> guard(g_vm_mutex);
+    std::lock_guard<std::mutex> guard(context->m_vm_mutex);
 
-    set_active_stream("game"_hs);
-    lua_getglobal(g_lua_state, "handle_game_events");
-    int ret = lua_pcall(g_lua_state, 0, 0, 0);
+    set_active_stream(context, "game"_hs);
+    lua_getglobal(context->m_state, "handle_game_events");
+    int ret = lua_pcall(context->m_state, 0, 0, 0);
     if (ret != 0) {
-        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        spdlog::error("[script] Runtime error {}", lua_tostring(context->m_state, -1));
         throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
-void scripting::processSceneEvents (million::resources::Handle handle)
+void scripting::processSceneEvents (scripting::Context* context, million::resources::Handle handle)
 {
-    EASY_BLOCK("Scripts/scene", profiler::colors::Purple200);
+    EASY_BLOCK("Scripts/scene", scripting::COLOR(1));
+    SPDLOG_TRACE("[script] Processing scene event scripts");
     // Only one thread can execute Lua code at once
-    std::lock_guard<std::mutex> guard(g_vm_mutex);
+    std::lock_guard<std::mutex> guard(context->m_vm_mutex);
 
-    set_active_stream("scene"_hs);
-    lua_getglobal(g_lua_state, "handle_scene_events");
-    lua_pushinteger(g_lua_state, handle.id());
-    int ret = lua_pcall(g_lua_state, 1, 0, 0);
+    set_active_stream(context, "scene"_hs);
+    lua_getglobal(context->m_state, "handle_scene_events");
+    lua_pushinteger(context->m_state, handle.id());
+    int ret = lua_pcall(context->m_state, 1, 0, 0);
     if (ret != 0) {
-        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        spdlog::error("[script] Runtime error {}", lua_tostring(context->m_state, -1));
         throw std::runtime_error("Script encountered unrecoverable error");
     }
 }
 
-void scripting::processMessages ()
+void scripting::processMessages (scripting::Context* context)
 {
-    EASY_BLOCK("Scripts/behavior", profiler::colors::Purple200);
+    EASY_BLOCK("Scripts/behavior", scripting::COLOR(1));
+    SPDLOG_TRACE("[script] Processing scripted behaviors");
     // Only one thread can execute Lua code at once
-    std::lock_guard<std::mutex> guard(g_vm_mutex);
+    std::lock_guard<std::mutex> guard(context->m_vm_mutex);
 
-    set_active_stream("behavior"_hs);
-    lua_getglobal(g_lua_state, "handle_messages");
-    int ret = lua_pcall(g_lua_state, 0, 0, 0);
+    set_active_stream(context, "behavior"_hs);
+    lua_getglobal(context->m_state, "handle_messages");
+    int ret = lua_pcall(context->m_state, 0, 0, 0);
     if (ret != 0) {
-        spdlog::error("[script] Runtime error {}", lua_tostring(g_lua_state, -1));
+        spdlog::error("[script] Runtime error {}", lua_tostring(context->m_state, -1));
         throw std::runtime_error("Script encountered unrecoverable error");
     }
+}
+
+void scripting::registerComponent (scripting::Context* context, entt::hashed_string::hash_type name, entt::id_type id)
+{
+    context->m_component_types[name] = id;
 }

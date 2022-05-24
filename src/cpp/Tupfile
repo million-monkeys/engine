@@ -35,37 +35,29 @@ endif
 : $(PCH).hpp |> !pch |> $(PCH).pch
 
 # Compile Sources
-# : foreach ai/*.cpp |> !compile-engine |> ai__%B.o
-# : foreach ai/planning/*.cpp |> !compile-engine |> ai_planning__%B.o
-# : foreach core/*.cpp |> !compile-engine |> core__%B.o
-# : foreach graphics/*.cpp |> !compile-engine |> graphics__%B.o
-# : foreach memory/*.cpp |> !compile-engine |> memory__%B.o
-# : foreach resources/*.cpp |> !compile-engine |> resources__%B.o
-# : foreach resources/types/*.cpp |> !compile-engine |> resources_types__%B.o
-# : foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o
-# : foreach utils/*.cpp |> !compile-engine |> utils__%B.o
-# : foreach world/*.cpp |> !compile-engine |> world__%B.o
 
 # Refactor
-: foreach _refactor/ai/*.cpp |> !compile-engine |> r_ai__%B.o
-: foreach _refactor/audio/*.cpp |> !compile-engine |> r_audo__%B.o
-: foreach _refactor/config/*.cpp |> !compile-engine |> r_config__%B.o
-: foreach _refactor/core/*.cpp |> !compile-engine |> r_core__%B.o
-: foreach _refactor/events/*.cpp |> !compile-engine |> r_events__%B.o
-: foreach _refactor/game/*.cpp |> !compile-engine |> r_game__%B.o
-: foreach _refactor/game/loaders/*.cpp |> !compile-engine |> r_game_loaders__%B.o
-: foreach _refactor/graphics/*.cpp |> !compile-engine |> r_graphics__%B.o
-: foreach _refactor/input/*.cpp |> !compile-engine |> r_input__%B.o
-: foreach _refactor/memory/*.cpp |> !compile-engine |> r_memory__%B.o
-: foreach _refactor/messages/*.cpp |> !compile-engine |> r_messages__%B.o
-: foreach _refactor/modules/*.cpp |> !compile-engine |> r_modules__%B.o
-: foreach _refactor/physics/*.cpp |> !compile-engine |> r_physics__%B.o
-: foreach _refactor/resources/*.cpp |> !compile-engine |> r_resources__%B.o
-: foreach _refactor/scheduler/*.cpp |> !compile-engine |> r_scheduler__%B.o
-: foreach _refactor/scripting/*.cpp |> !compile-engine |> r_scripting__%B.o
-: foreach _refactor/utils/*.cpp |> !compile-engine |> r_utils__%B.o
-: foreach _refactor/world/*.cpp |> !compile-engine |> r_world__%B.o
-: foreach _refactor/world/loaders/*.cpp |> !compile-engine |> r_world_loaders__%B.o
+: foreach ai/*.cpp |> !compile-engine |> ai__%B.o
+: foreach ai/planning/*.cpp |> !compile-engine |> ai_planning__%B.o
+: foreach ai/utility_system/*.cpp |> !compile-engine |> ai_utility_system__%B.o
+: foreach audio/*.cpp |> !compile-engine |> audo__%B.o
+: foreach config/*.cpp |> !compile-engine |> config__%B.o
+: foreach core/*.cpp |> !compile-engine |> core__%B.o
+: foreach events/*.cpp |> !compile-engine |> events__%B.o
+: foreach game/*.cpp |> !compile-engine |> game__%B.o
+: foreach game/loaders/*.cpp |> !compile-engine |> game_loaders__%B.o
+: foreach graphics/*.cpp |> !compile-engine |> graphics__%B.o
+: foreach input/*.cpp |> !compile-engine |> input__%B.o
+: foreach memory/*.cpp |> !compile-engine |> memory__%B.o
+: foreach messages/*.cpp |> !compile-engine |> messages__%B.o
+: foreach modules/*.cpp |> !compile-engine |> modules__%B.o
+: foreach physics/*.cpp |> !compile-engine |> physics__%B.o
+: foreach resources/*.cpp |> !compile-engine |> resources__%B.o
+: foreach scheduler/*.cpp |> !compile-engine |> scheduler__%B.o
+: foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o
+: foreach utils/*.cpp |> !compile-engine |> utils__%B.o
+: foreach world/*.cpp |> !compile-engine |> world__%B.o
+: foreach world/loaders/*.cpp |> !compile-engine |> world_loaders__%B.o
 
 : core_components.cpp |> !compile-engine |> %B.o
 
