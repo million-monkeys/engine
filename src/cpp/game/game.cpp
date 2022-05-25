@@ -24,11 +24,12 @@ void game::setState (game::Context* context, entt::hashed_string new_state)
     }
 }
 
-void game::execute (game::Context* context, timing::Time current_time, timing::Delta delta, uint64_t frame_count)
+void game::execute (game::Context* context, timing::Time current_time, timing::Delta delta, uint64_t current_frame)
 {
     EASY_BLOCK("game::execute", game::COLOR(1));
     context->m_current_time = current_time;
     context->m_current_time_delta = delta;
+    context->m_current_frame = current_frame;
 
     for (const auto& ev : events::events(context->m_events_ctx, "resources"_hs)) {
         EASY_BLOCK("Handling resource event", game::COLOR(3));
@@ -71,4 +72,19 @@ void game::executeHandlers (game::Context* context)
             scripting::processGameEvents(context->m_scripting_ctx);
         }
     }
+}
+
+timing::Delta game::deltaTime (game::Context* context)
+{
+    return context->m_current_time_delta;
+}
+
+timing::Time game::currentTime (game::Context* context)
+{
+    return context->m_current_time;
+}
+
+uint64_t game::currentFrame (game::Context* context)
+{
+    return context->m_current_frame;
 }

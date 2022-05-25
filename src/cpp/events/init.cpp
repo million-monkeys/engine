@@ -8,10 +8,14 @@ events::Context::Context ()
 
 events::Context* events::init ()
 {
+    EASY_BLOCK("events::init", events::COLOR(1));
+    SPDLOG_DEBUG("[events] Init");
     return new events::Context;
 }
 
 void events::term (events::Context* context)
 {
+    EASY_BLOCK("events::term", events::COLOR(1));
+    SPDLOG_DEBUG("[events] Term");
     delete context;
 }

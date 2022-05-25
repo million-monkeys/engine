@@ -44,6 +44,7 @@ else
 endif
 
 DEPENDENCIES = $(PROJECT_ROOT)/third-party
+DEPS = $(PROJECT_ROOT)/src/deps
 
 # Engine SDK includes
 INCLUDES += -I$(PROJECT_ROOT)/sdk/
@@ -58,4 +59,4 @@ INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
 !compile-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(INCLUDES) -c %f -o %o |> %d__%B.o
 !compile-dep-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(DEPS_INCLUDES) -c %f -o %o |> %d__%B.o
 !ar = |> ar crs %o %f |>
-!link-exe = |> clang++ $(LINKER) $(LTO) %f -o %o |> $(PROJECT_ROOT)/../$(BINARY_NAME)$(BINARY_NAME_SUFFIX)
+!link-exe = |> clang++ %f $(LINKER) $(LTO) -o %o |> $(PROJECT_ROOT)/../$(BINARY_NAME)$(BINARY_NAME_SUFFIX)

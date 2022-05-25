@@ -18,6 +18,7 @@ namespace game {
         scripting::Context* m_scripting_ctx;
         resources::Context* m_resources_ctx;
         scheduler::Context* m_scheduler_ctx;
+        physics::Context* m_physics_ctx;
 
         million::events::Stream& m_stream;   // "game"_hs output stream
         million::events::Stream& m_commands;
@@ -25,6 +26,7 @@ namespace game {
         // Timing
         timing::Delta m_current_time_delta = 0;
         timing::Time m_current_time = 0;
+        uint64_t m_current_frame = 0;
 
         // Game state
         entt::hashed_string::hash_type m_current_state;    // Track whether on menu, loading screen, etc

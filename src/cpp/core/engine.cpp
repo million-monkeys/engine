@@ -22,7 +22,7 @@ namespace init_core {
 bool Engine::init ()
 {
     EASY_BLOCK("Engine::init", Engine::COLOR(1));
-    spdlog::debug("[Engine] init");
+    SPDLOG_DEBUG("[Engine] Init");
     // Load the game-specific settings
     if (! config::readEngineConfig()) {
         return false;
@@ -33,14 +33,14 @@ bool Engine::init ()
     m_messages_ctx = messages::init();
     m_modules_ctx = modules::init();
     m_resources_ctx = resources::init(m_events_ctx);
-    m_physics_ctx = physics::init();
     m_input_ctx = input::init(m_events_ctx);
     m_scripting_ctx = scripting::init(m_messages_ctx, m_events_ctx, m_resources_ctx);
     if (m_scripting_ctx == nullptr) {
         return false;
     }
     m_world_ctx = world::init(m_events_ctx, m_messages_ctx, m_resources_ctx, m_scripting_ctx, m_modules_ctx);
-    m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx);
+    m_physics_ctx = physics::init(m_world_ctx);
+    m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx, m_physics_ctx);
     m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_physics_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
     m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx, m_modules_ctx);
     if (m_graphics_ctx == nullptr) {
@@ -71,8 +71,8 @@ bool Engine::init ()
 
 void Engine::shutdown ()
 {
-    spdlog::debug("[Engine] shutdown");
     EASY_BLOCK("Engine::shutdown", Engine::COLOR(1));
+    SPDLOG_DEBUG("[Engine] Shutdown");
     if (m_graphics_ctx) {
         graphics::term(m_graphics_ctx);
     }

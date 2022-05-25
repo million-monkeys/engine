@@ -19,6 +19,8 @@ int get_num_workers () {
 
 scheduler::Context* scheduler::init (world::Context* world_ctx, scripting::Context* scripting_ctx, physics::Context* physics_ctx, events::Context* events_ctx, game::Context* game_ctx, modules::Context* modules_ctx)
 {
+    EASY_BLOCK("scheduler::init", scheduler::COLOR(1));
+    SPDLOG_DEBUG("[scheduler] Init");
     auto context = new scheduler::Context{get_num_workers()};
     context->m_world_ctx = world_ctx;
     context->m_scripting_ctx = scripting_ctx;
@@ -33,6 +35,8 @@ scheduler::Context* scheduler::init (world::Context* world_ctx, scripting::Conte
 
 void scheduler::term (scheduler::Context* context)
 {
+    EASY_BLOCK("scheduler::term", scheduler::COLOR(1));
+    SPDLOG_DEBUG("[scheduler] Term");
     context->m_coordinator.clear();
     for (auto&& [_, taskflow] : context->m_systems) {
         delete taskflow;

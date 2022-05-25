@@ -14,10 +14,14 @@ messages::Context::Context () :
 
 messages::Context* messages::init ()
 {
+    EASY_BLOCK("messages::init", messages::COLOR(1));
+    SPDLOG_DEBUG("[messages] Init");
     return new messages::Context{};
 }
 
 void messages::term (messages::Context* context)
 {
+    EASY_BLOCK("messages::term", messages::COLOR(1));
+    SPDLOG_DEBUG("[messages] Term");
     delete context;
 }

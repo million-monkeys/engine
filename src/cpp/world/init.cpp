@@ -10,6 +10,8 @@
 
 world::Context* world::init (events::Context* events_ctx, messages::Context* messages_ctx, resources::Context* resources_ctx, scripting::Context* scripting_ctx, modules::Context* modules_ctx)
 {
+    EASY_BLOCK("world::init", world::COLOR(1));
+    SPDLOG_DEBUG("[world] Init");
     auto context = new world::Context{
         events::createStream(events_ctx, "scenes"_hs),
         events::createStream(events_ctx, "blackboard"_hs, million::StreamWriters::Multi),
@@ -29,6 +31,8 @@ world::Context* world::init (events::Context* events_ctx, messages::Context* mes
 
 void world::term (world::Context* context)
 {
+    EASY_BLOCK("world::term", world::COLOR(1));
+    SPDLOG_DEBUG("[world] Term");
     delete context;
 }
 

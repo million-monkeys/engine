@@ -78,7 +78,7 @@ int game_main (int argc, char** argv)
     const bool& profiling_enabled = entt::monostate<"telemetry/profiling"_hs>{};
     if (profiling_enabled) {
         EASY_PROFILER_ENABLE;
-        spdlog::info("Starting easy_profiler");
+        SPDLOG_DEBUG("Starting easy_profiler");
         profiler::startListen();
     }
     if (profiler::isListening()) {
@@ -100,7 +100,6 @@ int game_main (int argc, char** argv)
         }
         // Clear data before unloading modules, to avoid referencing memory owned by modules after they are unloaded
         engine.shutdown();
-        // moduleManager.unload();
         logger->flush();
 
     } catch (const std::exception& e) {

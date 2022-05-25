@@ -43,7 +43,7 @@ tf::Task createTask (scheduler::Context* context, tf::Taskflow* taskflow, const 
 {
     if (name) {
         auto fn = [context, userdata, callback, name](){
-            SPDLOG_TRACE("Running System: {}", name);
+            SPDLOG_TRACE("[scheduler] Running System: {}", name);
             EASY_BLOCK(name, scheduler::COLOR(2));
             try {
                 callback(userdata, world::registry(context->m_world_ctx));
@@ -68,7 +68,7 @@ tf::Task createTask (scheduler::Context* context, tf::Taskflow* taskflow, const 
 void scheduler::generateTasksForSystems (scheduler::Context* context)
 {
     EASY_FUNCTION(scheduler::COLOR(2));
-    SPDLOG_DEBUG("Generating task graph from systems");
+    SPDLOG_DEBUG("[scheduler] Generating task graph from systems");
     // Setup Systems by creating a Taskflow graph for each stage
     context->m_systems.clear();
     for (auto type : magic_enum::enum_values<million::SystemStage>()) {
@@ -89,7 +89,7 @@ void scheduler::generateTasksForSystems (scheduler::Context* context)
             for(auto&& node : graph) {
                 auto name = node.name();
                 if (name) {
-                    SPDLOG_DEBUG("Setting up system: {}", name);
+                    SPDLOG_DEBUG("[scheduler] Setting up system: {}", name);
                 }
                 auto callback = node.callback();
                 auto userdata = node.data();
@@ -113,7 +113,7 @@ void scheduler::generateTasksForSystems (scheduler::Context* context)
 void scheduler::createTaskGraph (scheduler::Context* context)
 {
     EASY_FUNCTION(scheduler::COLOR(1));
-    SPDLOG_DEBUG("Generating core task graph");
+    SPDLOG_DEBUG("[scheduler] Generating core task graph");
     // Generate sub graph for systems
     generateTasksForSystems(context);
 
@@ -136,7 +136,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     SPDLOG_DEBUG("Creating task graph");
 
     Task events_game = context->m_coordinator.emplace([context](){
-        SPDLOG_TRACE("Running Game event handlers");
+        SPDLOG_TRACE("[scheduler] Running Game event handlers");
         try {
             game::executeHandlers(context->m_game_ctx);
         } catch (const std::exception& e) {
@@ -145,7 +145,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("events/game");
 
     Task events_scene = context->m_coordinator.emplace([context](){
-        SPDLOG_TRACE("Running Scene event handlers");
+        SPDLOG_TRACE("[scheduler] Running Scene event handlers");
         try {
             world::executeHandlers(context->m_world_ctx);
         } catch (const std::exception& e) {
@@ -154,7 +154,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("events/scene");
 
     Task scripts_behavior = context->m_coordinator.emplace([context](){
-        SPDLOG_TRACE("Running ScriptedBehaviors");
+        SPDLOG_TRACE("[scheduler] Running ScriptedBehaviors");
         try {
             scripting::processMessages(context->m_scripting_ctx);
         } catch (const std::exception& e) {
@@ -164,6 +164,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     
     Task scripts_ai = context->m_coordinator.emplace([](){
         EASY_BLOCK("Scripts/AI", scheduler::COLOR(3));
+        SPDLOG_TRACE("[scheduler] Running AI scripts");
         // execute lua scripts here
         try {
             
@@ -172,8 +173,10 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         }
     }).name("scripts/ai");
 
+    // NOTE: Read-only access to the registry is allowed during prepare
     Task physics_prepare = context->m_coordinator.emplace([context](){
         EASY_BLOCK("Physics/prepare", scheduler::COLOR(3));
+        SPDLOG_TRACE("[scheduler] Running physics preparation");
         auto& registry = world::registry(context->m_world_ctx);
         try {
             physics::prepare(context->m_physics_ctx, registry);
@@ -182,10 +185,12 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         }
     }).name("phycis/prepare");
 
+    // NOTE: The registry should not be accessed 
     Task physics_simulate = context->m_coordinator.emplace([context](){
         EASY_BLOCK("Physics/simulate", scheduler::COLOR(3));
+        SPDLOG_TRACE("[scheduler] Running physics simulation");
         try {
-            physics::simulate(context->m_physics_ctx);
+            physics::simulate(context->m_physics_ctx, game::deltaTime(context->m_game_ctx));
         } catch (const std::exception& e) {
             context->m_ok = false;
         }
@@ -193,8 +198,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
 
     Task pump_events = context->m_coordinator.emplace([context](){
         // Copy current frames events for processing next frame
-        SPDLOG_TRACE("Pumping events");
-        SPDLOG_TRACE("[scheduler] PUMP");
+        SPDLOG_TRACE("[scheduler] Puming event streams");
         try {
             events::pump(context->m_events_ctx);
         } catch (const std::exception& e) {
@@ -203,6 +207,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("events/pump");
 
     Task before_update = context->m_coordinator.emplace([context](){
+        SPDLOG_TRACE("[scheduler] Running before_update hooks");
         try {
             modules::hooks::before_update(context->m_modules_ctx);
         } catch (const std::exception& e) {
@@ -214,6 +219,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         EASY_BLOCK("Systems/game-logic", scheduler::COLOR(3));
         tf::Taskflow* game_logic_flow = helpers::find_or(context->m_systems, million::SystemStage::GameLogic, nullptr);
         if EXPECT_TAKEN(game_logic_flow != nullptr) {
+            SPDLOG_TRACE("[scheduler] Running game-logic systems");
             subflow.composed_of(*game_logic_flow).name("systems/game-logic-subflow");
         }
     }).name("systems/game-logic");
@@ -222,6 +228,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         EASY_BLOCK("Systems/update", scheduler::COLOR(3));
         tf::Taskflow* updater_flow = helpers::find_or(context->m_systems, million::SystemStage::Update, nullptr);
         if EXPECT_TAKEN(updater_flow != nullptr) {
+            SPDLOG_TRACE("[scheduler] Running update systems");
             subflow.composed_of(*updater_flow).name("systems/update-subflow");
         }
     }).name("systems/update");
@@ -230,6 +237,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         EASY_BLOCK("Systems/actions", scheduler::COLOR(3));
         tf::Taskflow* actions_flow = helpers::find_or(context->m_systems, million::SystemStage::Actions, nullptr);
         if EXPECT_TAKEN(actions_flow != nullptr) {
+            SPDLOG_TRACE("[scheduler] Running actions");
             subflow.composed_of(*actions_flow).name("systems/actions-subflow");
         }
     }).name("systems/actions");
@@ -238,6 +246,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         EASY_BLOCK("AI/execute", scheduler::COLOR(3));
         tf::Taskflow* ai_execute_flow = helpers::find_or(context->m_systems, million::SystemStage::AIExecute, nullptr);
         if EXPECT_TAKEN(ai_execute_flow != nullptr) {
+            SPDLOG_TRACE("[scheduler] Running AI execute systems");
             subflow.composed_of(*ai_execute_flow).name("ai/execute-subflow");
         }
     }).name("ai/execute");

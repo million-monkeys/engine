@@ -55,6 +55,7 @@ bool setupPackageLoader(lua_State* state)
 scripting::Context* scripting::init (messages::Context* msgs_ctx, events::Context* events_ctx, resources::Context* resources_ctx)
 {
     EASY_BLOCK("scripting::init", scripting::COLOR(1));
+    SPDLOG_DEBUG("[scripting] Init");
     scripting::Context* context = new scripting::Context;
     context->m_messages_ctx = msgs_ctx;
     context->m_events_ctx = events_ctx;
@@ -82,5 +83,7 @@ void scripting::setWorld (scripting::Context* context, world::Context* world_ctx
 
 void scripting::term (scripting::Context* context)
 {
+    EASY_BLOCK("scripting::term", scripting::COLOR(1));
+    SPDLOG_DEBUG("[scripting] Term");
     lua_close(context->m_state);
 }

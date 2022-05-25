@@ -4,7 +4,7 @@ BINARY_NAME = game
 PCH = monkeys_pch
 
 CFLAGS += -Wall -Werror -I. -Wno-delete-non-abstract-non-virtual-dtor
-LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL
+LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXExtensions_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64
 
 INCLUDES += -I$(DEPENDENCIES)/spdlog/include
 INCLUDES += -I$(DEPENDENCIES)/cr/
@@ -24,11 +24,17 @@ INCLUDES += -I$(DEPENDENCIES)/tinygltf
 INCLUDES += -I$(DEPENDENCIES)/magic_enum/include
 INCLUDES += -I$(DEPENDENCIES)/luajit/src
 INCLUDES += -I$(DEPENDENCIES)/concurrentqueue
+INCLUDES += -I$(DEPENDENCIES)/physx/physx/include
+INCLUDES += -I$(DEPENDENCIES)/physx/pxshared/include
 
 ifdef CONFIG_DEBUG_BUILD
     INCLUDES += -I$(DEPENDENCIES)/glad/debug/include
+    LINKER += -L$(DEPENDENCIES)/physx/physx/bin/linux.clang/checked
+    CFLAGS += -D_DEBUG
 else
     INCLUDES += -I$(DEPENDENCIES)/glad/release/include
+    LINKER += -L$(DEPENDENCIES)/physx/physx/bin/linux.clang/release
+    CFLAGS += -DNDEBUG
 endif
 
 # Compile PCH

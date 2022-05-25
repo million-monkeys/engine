@@ -114,7 +114,7 @@ void graphics_thread (graphics::Context* context)
         spdlog::critical("[graphics] Exception in render thread: {}", e.what());
         throw e;
     }
-    spdlog::debug("[graphics] Terminating graphics thread");
+    SPDLOG_DEBUG("[graphics] Terminating graphics thread");
 
     SDL_DestroyRenderer(renderer);
     terminate_graphics(window);

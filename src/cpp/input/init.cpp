@@ -5,6 +5,8 @@
 
 input::Context* input::init (events::Context* events_ctx)
 {
+    EASY_BLOCK("input::init", input::COLOR(1));
+    SPDLOG_DEBUG("[input] Init");
     auto context = new input::Context{
         events::commandStream(events_ctx),
     };
@@ -14,5 +16,7 @@ input::Context* input::init (events::Context* events_ctx)
 
 void input::term (input::Context* context)
 {
+    EASY_BLOCK("input::term", input::COLOR(1));
+    SPDLOG_DEBUG("[input] Term");
     delete context;
 }

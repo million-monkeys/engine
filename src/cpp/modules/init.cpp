@@ -6,6 +6,8 @@
 
 modules::Context* modules::init ()
 {
+    EASY_BLOCK("modules::init", modules::COLOR(1));
+    SPDLOG_DEBUG("[modules] Init");
     auto context = new modules::Context{};
     return context;
 }
@@ -18,6 +20,8 @@ void modules::setup_api (modules::Context* context, world::Context* world_ctx, g
 
 void modules::term (modules::Context* context)
 {
+    EASY_BLOCK("modules::term", modules::COLOR(1));
+    SPDLOG_DEBUG("[modules] Term");
     delete context->m_engine_setup;
     delete context->m_module_manager;
     delete context;

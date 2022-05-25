@@ -8,6 +8,7 @@ void graphics_thread (graphics::Context* context);
 graphics::Context* graphics::init (world::Context* world_ctx, input::Context* input_ctx, modules::Context* modules_ctx)
 {
     EASY_BLOCK("graphics::init", graphics::COLOR(1));
+    SPDLOG_DEBUG("[graphics] Init");
     auto context = new graphics::Context{};
     context->m_world_ctx = world_ctx;
     context->m_input_ctx = input_ctx;
@@ -29,9 +30,10 @@ graphics::Context* graphics::init (world::Context* world_ctx, input::Context* in
 void graphics::term (graphics::Context* context)
 {
     EASY_BLOCK("graphics::term", graphics::COLOR(1));
+    SPDLOG_DEBUG("[graphics] Term");
     if (context->m_initialized.load()) {
         context->m_running = false;
-        spdlog::debug("Waiting for graphics to terminate");
+        SPDLOG_DEBUG("[graphics] Waiting for graphics to terminate");
         context->m_graphics_thread.join();
     }
 }

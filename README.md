@@ -54,6 +54,7 @@ The development setup of running entangled to keep markdown and source files in 
 
 * C++17 and OpenGL 4.6 (4.1 on OSX)
 * [BehaviorTree.CPP](https://github.com/BehaviorTree/BehaviorTree.CPP) - Framework for creating and executing behavior trees (MIT License)
+* [Edyn](https://github.com/xissburg/edyn) - EnTT-based real-time physics engine (MIT License)
 * [moodycamel::ConcurrentQueue](https://github.com/cameron314/concurrentqueue) - A fast multi-producer, multi-consumer lock-free concurrent queue for C++11 (choice of Simplified BSD and Boost Software License V1)
 * [cr.h](https://github.com/fungos/cr) - Module live reload library (MIT License)
 * [cxxopts](https://github.com/jarro2783/cxxopts) - Lightweight C++ command line option parser (MIT License)
@@ -72,6 +73,7 @@ The development setup of running entangled to keep markdown and source files in 
 * [parallel-hashmap](https://github.com/greg7mdp/parallel-hashmap) - A collection of fast and memory efficient map, unordered_map, set and unordered_set replacements ( Apache-2.0 License)
 * [PhysFS++](https://github.com/danielytics/physfs-hpp) - C++ wrapper for PhysicsFS (zlib License + [notes](https://github.com/Ybalrid/physfs-hpp/blob/master/LICENSE.txt))
 * [PhysicsFS](http://icculus.org/physfs/) - Library for filesystem abstraction (zlib License)
+* [PhysX](https://github.com/danielytics/PhysX)(forked from [NVIDIA](https://github.com/NVIDIAGameWorks/PhysX)) - Physics engine (BSD 3-Clause License)
 * [SDL2](http://libsdl.org/) - Windowing & Input (ZLIB License)
 * [SoLoud](https://github.com/jarikomppa/soloud) - Portable audio engine (zlib/libpng License)
 * [spdlog](https://github.com/gabime/spdlog) - Fast logging library (MIT License)

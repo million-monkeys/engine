@@ -35,7 +35,7 @@ extern "C" void output_log (scripting::Context* context, std::uint32_t level, co
         spdlog::info("[script] {}", message);
         break;
     case 4:
-        spdlog::debug("[script] {}", message);
+        SPDLOG_DEBUG("[script] {}", message);
         break;
     default:
         spdlog::warn("[script] invalid log level: {}", level);

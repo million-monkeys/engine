@@ -26,7 +26,7 @@ void world::update (world::Context* context)
                                 context->m_pending.scripts = loaded.handle;
                             }
                             if (pending.resources.empty()) {
-                                spdlog::debug("[world] Scene fully loaded");
+                                SPDLOG_DEBUG("[world] Scene fully loaded");
                                 // Scene fully loaded
                                 context->m_pending.scene = loaded.name;
                                 context->m_stream.emit<events::scene::Loaded>([&loaded](auto& scene){
@@ -37,7 +37,7 @@ void world::update (world::Context* context)
                                 }
                                 context->m_pending_scenes.erase(it);
                             } else {
-                                spdlog::debug("[world] Waiting for scene to load: {} resources pending", pending.resources.size());
+                                SPDLOG_DEBUG("[world] Waiting for scene to load: {} resources pending", pending.resources.size());
                             }
                         }
                         break;

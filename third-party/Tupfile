@@ -24,7 +24,7 @@ endif
 # ifndef CONFIG_DEBUG_BUILD
 #     ifndef CONFIG_RELEASE_BUILD
         # Build easy_profiler
-        INCLUDES += -Ieasy_profiler/easy_profiler_core/include
+        INCLUDES = -Ieasy_profiler/easy_profiler_core/include
         CPPFLAGS += -DEASY_PROFILER_VERSION_MAJOR=2 -DEASY_PROFILER_VERSION_MINOR=1 -DEASY_PROFILER_VERSION_PATCH=0 -DBUILD_WITH_EASY_PROFILER=1
         : foreach easy_profiler/easy_profiler_core/*.cpp |> !compile-c++ |> easy_profiler__%B.o
         : easy_profiler__*.o |> !ar |> libeasy_profiler.a

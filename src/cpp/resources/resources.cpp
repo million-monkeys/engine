@@ -26,7 +26,7 @@ void resources::install (resources::Context* context, million::api::resources::L
     EASY_BLOCK("resources::install", resources::COLOR(1));
     const auto type = loader->name();
     std::uint32_t index = context->m_resource_loaders.size() + 1;
-    spdlog::debug("[resources] Installing {} ({}, 0x{:x})", type.data(), index, index << 22);
+    SPDLOG_DEBUG("[resources] Installing {} ({}, 0x{:x})", type.data(), index, index << 22);
     context->m_resource_loaders.emplace(type.value(), ResourceStorage{index, loader, managed, context});
 }
 
@@ -57,10 +57,10 @@ million::resources::Handle resources::find (resources::Context* context, entt::h
     EASY_BLOCK("resources::find", resources::COLOR(1));
     auto it = context->m_named_resources.find(name);
     if (it != context->m_named_resources.end()) {
-        spdlog::debug("Resource with name {:#x} found: {:#x}", name, it->second.handle);
+        SPDLOG_DEBUG("Resource with name {:#x} found: {:#x}", name, it->second.handle);
         return it->second;
     }
-    spdlog::debug("Resource with name {:#x} not found", name);
+    SPDLOG_DEBUG("Resource with name {:#x} not found", name);
     return million::resources::Handle::invalid();
 }
 
@@ -68,7 +68,7 @@ void resources::bindToName (resources::Context* context, million::resources::Han
 {
     EASY_BLOCK("resources::bindToName", resources::COLOR(4));
     context->m_named_resources[name] = handle;
-    spdlog::debug("Bound resource {:#x} to name {:#x}", handle.handle, name);
+    SPDLOG_DEBUG("Bound resource {:#x} to name {:#x}", handle.handle, name);
 }
 
 million::resources::Handle ResourceStorage::enqueue (const std::string& filename, entt::hashed_string::hash_type name)

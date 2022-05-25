@@ -107,8 +107,8 @@ namespace = "core"
     direction     = { type = "vec3", default = { x = 1.0, y = 1.0, z = 1.0 } }
     intensity     = { type = "float", default = 1.0 }
 
-    ##################################################
-    # Physics components            ##################
+##################################################
+# Physics components            ##################
 
 [[component]]
     _name_        = "static-body"
@@ -121,15 +121,15 @@ namespace = "core"
     _name_        = "dynamic-body"
     _namespace_   = "physics"
     _description_ = "A physics object whose motion is dictated by the physics engine"
-    shape         = "resource:mesh"
+    shape         = "resource:physics-shape"
     mass          = "float"
     physics-body  = "ptr:btRigidBody"
 
 [[component]]
-    _name_        = "kinematic-body"
+    _name_        = "character"
     _namespace_   = "physics"
     _description_ = "A physics object whose motion is externally controlled"
-    shape         = "resource:mesh"
+    shape         = "resource:physics-shape"
     mass          = "float"
     physics-body  = "ptr:btRigidBody"
 

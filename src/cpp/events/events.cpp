@@ -10,7 +10,7 @@ million::events::Stream& createStreamHelper (entt::hashed_string stream_name, st
 {
     const std::uint32_t event_stream_size = entt::monostate<"memory/events/stream-size"_hs>();
     buffer_size = buffer_size > 0 ? buffer_size : event_stream_size;
-    spdlog::debug("[events] Creating stream '{}' with buffor size of {} bytes", stream_name.data(), buffer_size);
+    SPDLOG_DEBUG("[events] Creating stream '{}' with buffor size of {} bytes", stream_name.data(), buffer_size);
     memory::IterableStream* iterable;
     million::events::Stream* streamable;
     if constexpr (sizeof...(EngineStreams) == 1) {
