@@ -5,10 +5,12 @@
 
 namespace physics {
     struct Context {
+        modules::Context* m_modules_ctx;
         world::Context* m_world_ctx;
 
         float m_timestep_cccumulator;
         float m_step_size;
+        unsigned m_frames_late;
 
         physx::PxDefaultAllocator m_default_allocator_callback;
         physx::PxDefaultErrorCallback  m_default_error_callback;

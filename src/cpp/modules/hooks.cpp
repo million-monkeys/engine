@@ -11,6 +11,9 @@ void modules::addHook (modules::Context* context, million::api::Module::Callback
         case CM::AFTER_FRAME:
             context->m_hooks_afterFrame.push_back(mod);
             break;
+        case CM::PHYSICS_STEP:
+            context->m_hooks_physicsStep.push_back(mod);
+            break;
         case CM::BEFORE_UPDATE:
             context->m_hooks_beforeUpdate.push_back(mod);
             break;
@@ -32,7 +35,7 @@ void modules::addHook (modules::Context* context, million::api::Module::Callback
     };
 }
 
-void modules::hooks::before_frame (Context* context, timing::Time time, timing::Delta delta, uint64_t frame)
+void modules::hooks::before_frame (modules::Context* context, timing::Time time, timing::Delta delta, uint64_t frame)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_beforeFrame) {
@@ -40,7 +43,15 @@ void modules::hooks::before_frame (Context* context, timing::Time time, timing::
     }
 }
 
-void modules::hooks::before_update (Context* context)
+void modules::hooks::physics_step (modules::Context* context, timing::Delta time_delta)
+{
+    EASY_FUNCTION(modules::COLOR(1));
+    for (auto& mod : context->m_hooks_beforeUpdate) {
+        mod->on_physics_step(time_delta);
+    }
+}
+
+void modules::hooks::before_update (modules::Context* context)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_beforeUpdate) {
@@ -48,7 +59,7 @@ void modules::hooks::before_update (Context* context)
     }
 }
 
-void modules::hooks::after_frame (Context* context)
+void modules::hooks::after_frame (modules::Context* context)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_afterFrame) {
@@ -56,7 +67,7 @@ void modules::hooks::after_frame (Context* context)
     }
 }
 
-void modules::hooks::prepare_render (Context* context)
+void modules::hooks::prepare_render (modules::Context* context)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_prepareRender) {
@@ -64,7 +75,7 @@ void modules::hooks::prepare_render (Context* context)
     }
 }
 
-void modules::hooks::before_render (Context* context)
+void modules::hooks::before_render (modules::Context* context)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_beforeRender) {
@@ -72,7 +83,7 @@ void modules::hooks::before_render (Context* context)
     }
 }
 
-void modules::hooks::after_render (Context* context)
+void modules::hooks::after_render (modules::Context* context)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_afterRender) {
@@ -80,7 +91,7 @@ void modules::hooks::after_render (Context* context)
     }
 }
 
-void modules::hooks::load_scene (Context* context, entt::hashed_string::hash_type scene_id, const std::string& name)
+void modules::hooks::load_scene (modules::Context* context, entt::hashed_string::hash_type scene_id, const std::string& name)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_loadScene) {
@@ -88,7 +99,7 @@ void modules::hooks::load_scene (Context* context, entt::hashed_string::hash_typ
     }
 }
 
-void modules::hooks::unload_scene (Context* context, entt::hashed_string::hash_type scene_id, const std::string& name)
+void modules::hooks::unload_scene (modules::Context* context, entt::hashed_string::hash_type scene_id, const std::string& name)
 {
     EASY_FUNCTION(modules::COLOR(1));
     for (auto& mod : context->m_hooks_unloadScene) {

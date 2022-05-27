@@ -10,13 +10,14 @@ namespace million::api {
         enum class CallbackMasks : std::uint32_t {
             // load, unload and before_frame are always called. reload functions are handled by the module (not the engine)
             BEFORE_FRAME    = 0x00, // Doesn't need to set a bit because its always registered for every module
-            BEFORE_UPDATE   = 0x01,
-            AFTER_FRAME     = 0x02,
-            PREPARE_RENDER  = 0x04, 
-            BEFORE_RENDER   = 0x08,
-            AFTER_RENDER    = 0x10,
-            LOAD_SCENE      = 0x20,
-            UNLOAD_SCENE    = 0x40,
+            PHYSICS_STEP    = 0x01,
+            BEFORE_UPDATE   = 0x02,
+            AFTER_FRAME     = 0x04,
+            PREPARE_RENDER  = 0x08,
+            BEFORE_RENDER   = 0x10,
+            AFTER_RENDER    = 0x20,
+            LOAD_SCENE      = 0x40,
+            UNLOAD_SCENE    = 0x80,
 
             /** Notes on data access.
              * It is always safe to access data passed into the hooks as arguments. Sharing data between hooks, however, must follow some rules.
@@ -51,6 +52,7 @@ namespace million::api {
         virtual void on_after_reload () = 0; // After hot code reload, use to reload data
         // Logic hooks. Use these to add custom logic on a per-frame basis.
         virtual void on_before_frame (timing::Time, timing::Delta, uint64_t) = 0;
+        virtual void on_physics_step (timing::Delta) = 0;
         virtual void on_before_update () = 0;
         virtual void on_after_frame () = 0;
         // Rendering hooks. Use these to add custom rendering, including dev tool UI.

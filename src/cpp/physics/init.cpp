@@ -1,15 +1,17 @@
 #include "physics.hpp"
 #include "context.hpp"
 
-physics::Context* physics::init (world::Context* world_ctx)
+physics::Context* physics::init (modules::Context* modules_ctx, world::Context* world_ctx)
 {
     EASY_BLOCK("physics::init", physics::COLOR(1));
     SPDLOG_DEBUG("[physics] Init");
     auto context = new physics::Context{};
+    context->m_modules_ctx = modules_ctx;
     context->m_world_ctx = world_ctx;
 
     context->m_timestep_cccumulator = 0.0f;
     context->m_step_size = 1.0f / 60.0f;
+    context->m_frames_late = 0;
 
     context->m_foundation = PxCreateFoundation(PX_PHYSICS_VERSION, context->m_default_allocator_callback, context->m_default_error_callback);
     if (!context->m_foundation) {

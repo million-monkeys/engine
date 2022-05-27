@@ -173,24 +173,12 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         }
     }).name("scripts/ai");
 
-    // NOTE: Read-only access to the registry is allowed during prepare
-    Task physics_prepare = context->m_coordinator.emplace([context](){
-        EASY_BLOCK("Physics/prepare", scheduler::COLOR(3));
-        SPDLOG_TRACE("[scheduler] Running physics preparation");
-        auto& registry = world::registry(context->m_world_ctx);
-        try {
-            physics::prepare(context->m_physics_ctx, registry);
-        } catch (const std::exception& e) {
-            context->m_ok = false;
-        }
-    }).name("phycis/prepare");
-
     // NOTE: The registry should not be accessed 
     Task physics_simulate = context->m_coordinator.emplace([context](){
         EASY_BLOCK("Physics/simulate", scheduler::COLOR(3));
         SPDLOG_TRACE("[scheduler] Running physics simulation");
         try {
-            physics::simulate(context->m_physics_ctx, game::deltaTime(context->m_game_ctx));
+            physics::simulate(context->m_physics_ctx, game::currentTime(context->m_game_ctx), game::deltaTime(context->m_game_ctx));
         } catch (const std::exception& e) {
             context->m_ok = false;
         }

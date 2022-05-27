@@ -39,7 +39,7 @@ bool Engine::init ()
         return false;
     }
     m_world_ctx = world::init(m_events_ctx, m_messages_ctx, m_resources_ctx, m_scripting_ctx, m_modules_ctx);
-    m_physics_ctx = physics::init(m_world_ctx);
+    m_physics_ctx = physics::init(m_modules_ctx, m_world_ctx);
     m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx, m_physics_ctx);
     m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_physics_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
     m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx, m_modules_ctx);
