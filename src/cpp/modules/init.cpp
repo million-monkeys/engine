@@ -3,6 +3,7 @@
 
 #include "api_module_manager.hpp"
 #include "api_setup.hpp"
+#include "api_runtime.hpp"
 
 modules::Context* modules::init ()
 {
@@ -16,6 +17,7 @@ void modules::setup_api (modules::Context* context, world::Context* world_ctx, g
 {
     context->m_module_manager = new ModuleManagerAPI(world_ctx);
     context->m_engine_setup = new SetupAPI(world_ctx, game_ctx, resources_ctx, scheduler_ctx, messages_ctx, events_ctx);
+    context->m_engine_runtime = new RuntimeAPI(world_ctx, resources_ctx, messages_ctx, events_ctx);
 }
 
 void modules::term (modules::Context* context)

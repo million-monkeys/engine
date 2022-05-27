@@ -9,11 +9,13 @@ namespace modules {
     void setup_api (Context* context, world::Context* world_ctx, game::Context* game_ctx, resources::Context* resources_ctx, scheduler::Context* scheduler_ctx, messages::Context* messages_ctx, events::Context* events_ctx);
     million::api::internal::ModuleManager* api_module_manager (Context* context);
     million::api::EngineSetup* api_engine_setup (Context* context);
+    million::api::EngineRuntime* api_engine_runtime (Context* context);
 
     void addHook (Context* context, million::api::Module::CallbackMasks hook, million::api::Module* mod);
 
     namespace hooks {
         void before_frame (Context* context, timing::Time, timing::Delta, uint64_t);
+        void physics_step (Context* context, timing::Delta);
         void before_update (Context* context);
         void after_frame (Context* context);
         void prepare_render (Context* context);

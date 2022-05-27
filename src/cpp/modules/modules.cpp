@@ -10,3 +10,8 @@ million::api::EngineSetup* modules::api_engine_setup (modules::Context* context)
 {
     return context->m_engine_setup;
 }
+
+million::api::EngineRuntime* modules::api_engine_runtime (modules::Context* context)
+{
+    return context->m_engine_runtime;
+}

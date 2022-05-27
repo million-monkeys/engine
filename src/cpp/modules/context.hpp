@@ -9,10 +9,12 @@ namespace modules {
         // API
         million::api::internal::ModuleManager* m_module_manager;
         million::api::EngineSetup* m_engine_setup;
+        million::api::EngineRuntime* m_engine_runtime;
 
         // Module Hooks
         std::vector<million::api::Module*> m_hooks_beforeFrame;
         std::vector<million::api::Module*> m_hooks_afterFrame;
+        std::vector<million::api::Module*> m_hooks_physicsStep;
         std::vector<million::api::Module*> m_hooks_beforeUpdate;
         std::vector<million::api::Module*> m_hooks_loadScene;
         std::vector<million::api::Module*> m_hooks_unloadScene;
