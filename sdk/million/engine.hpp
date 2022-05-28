@@ -1,11 +1,14 @@
 #pragma once
 
 #include <entt/fwd.hpp>
-#include <magic_enum.hpp>
 
 #include "types.hpp"
 #include "definitions.hpp"
 #include "game_systems.hpp"
+
+namespace components::core {
+    struct Named;
+}
 
 namespace million {
     enum class SystemStage {
@@ -54,7 +57,7 @@ namespace million::api {
             /** Internal module creation API */
             template <class Module> Module* createModule (const std::string& name)
             {
-                return new (allocModule(sizeof(Module))) Module(name, *this);
+                return new (allocModule(sizeof(Module))) Module(name);
             }
 
             /** Internal module destruction API */

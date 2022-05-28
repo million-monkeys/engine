@@ -1,0 +1,5 @@
+include_rules
+
+INCLUDES += -I$(DEPENDENCIES)/cr
+
+: entry.cpp |> !compile-module |> entry.o

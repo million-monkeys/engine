@@ -34,6 +34,13 @@ void graphics::term (graphics::Context* context)
     if (context->m_initialized.load()) {
         context->m_running = false;
         SPDLOG_DEBUG("[graphics] Waiting for graphics to terminate");
+        // Make sure graphics thread can unblock from its critical section, if its waiting
+        auto& sync_obj = context->m_sync;
+        {
+            std::scoped_lock<std::mutex> lock(sync_obj.state_mutex);
+            sync_obj.owner = graphics::Sync::Owner::Renderer;
+        }
+        sync_obj.sync_cv.notify_one();
         context->m_graphics_thread.join();
     }
 }

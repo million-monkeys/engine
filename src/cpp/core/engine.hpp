@@ -4,15 +4,15 @@
 
 class Engine {
 public:
-    bool init ();
+    bool init (std::shared_ptr<spdlog::logger> logger);
     void execute ();
     void shutdown ();
 
 private:
     events::Context* m_events_ctx = nullptr;
     messages::Context* m_messages_ctx = nullptr;
+    modules::Context* m_modules_ctx = nullptr;
     resources::Context* m_resources_ctx = nullptr;
-    physics::Context* m_physics_ctx = nullptr;
     input::Context* m_input_ctx = nullptr;
     scripting::Context* m_scripting_ctx = nullptr;
     world::Context* m_world_ctx = nullptr;
@@ -21,7 +21,6 @@ private:
     graphics::Context* m_graphics_ctx = nullptr;
 
     [[maybe_unused]] audio::Context* m_audio_ctx = nullptr;
-    [[maybe_unused]] modules::Context* m_modules_ctx = nullptr;
     
     constexpr profiler::color_t COLOR(unsigned idx) {
         std::array colors{

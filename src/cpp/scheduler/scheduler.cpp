@@ -3,12 +3,40 @@
 
 #include "world/world.hpp"
 #include "scripting/scripting.hpp"
-#include "physics/physics.hpp"
 #include "events/events.hpp"
 #include "game/game.hpp"
 #include "modules/modules.hpp"
 
 using TaskCallback = void(*)(const void*, entt::registry&);
+
+void do_physics_step (scheduler::Context* context)
+{
+    context->m_timestep_cccumulator += game::deltaTime(context->m_game_ctx);
+    if(context->m_timestep_cccumulator < context->m_step_size) {
+        return;
+    }
+    // If more than 1/4 second has passed, just take the hit on jitter by dropping steps
+    if(context->m_timestep_cccumulator > 0.25f) { // TODO: Make this an engine config
+        context->m_timestep_cccumulator = context->m_step_size;
+    }
+    // Run one time step
+    context->m_timestep_cccumulator -= context->m_step_size;
+    modules::hooks::physics_step(context->m_modules_ctx, context->m_step_size);
+    if (context->m_timestep_cccumulator >= context->m_step_size) {
+        // Still time, count this frame
+        if (++context->m_frames_late >= 5) { // TODO: Make this an engine config
+            // After five consecutive late frames, just take the hit on jitter
+            context->m_timestep_cccumulator = context->m_step_size;
+            context->m_frames_late = 0;
+        }
+        do {
+            context->m_timestep_cccumulator -= context->m_step_size;
+            modules::hooks::physics_step(context->m_modules_ctx, context->m_step_size);
+        } while (context->m_timestep_cccumulator >= context->m_step_size);
+    } else {
+        context->m_frames_late = 0;
+    }
+}
 
 void scheduler::setStatus (scheduler::Context* context, scheduler::SystemStatus status)
 {
@@ -136,6 +164,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     SPDLOG_DEBUG("Creating task graph");
 
     Task events_game = context->m_coordinator.emplace([context](){
+        EASY_BLOCK("Events/game", scheduler::COLOR(3));
         SPDLOG_TRACE("[scheduler] Running Game event handlers");
         try {
             game::executeHandlers(context->m_game_ctx);
@@ -145,6 +174,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("events/game");
 
     Task events_scene = context->m_coordinator.emplace([context](){
+        EASY_BLOCK("Events/scene", scheduler::COLOR(3));
         SPDLOG_TRACE("[scheduler] Running Scene event handlers");
         try {
             world::executeHandlers(context->m_world_ctx);
@@ -154,6 +184,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("events/scene");
 
     Task scripts_behavior = context->m_coordinator.emplace([context](){
+        EASY_BLOCK("SveScriptsnts/behavior", scheduler::COLOR(3));
         SPDLOG_TRACE("[scheduler] Running ScriptedBehaviors");
         try {
             scripting::processMessages(context->m_scripting_ctx);
@@ -173,16 +204,14 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         }
     }).name("scripts/ai");
 
-    // NOTE: The registry should not be accessed 
-    Task physics_simulate = context->m_coordinator.emplace([context](){
-        EASY_BLOCK("Physics/simulate", scheduler::COLOR(3));
-        SPDLOG_TRACE("[scheduler] Running physics simulation");
+    Task physics_step = context->m_coordinator.emplace([context](){
+        EASY_BLOCK("Physics/step", scheduler::COLOR(3));
         try {
-            physics::simulate(context->m_physics_ctx, game::currentTime(context->m_game_ctx), game::deltaTime(context->m_game_ctx));
+            do_physics_step(context);
         } catch (const std::exception& e) {
             context->m_ok = false;
         }
-    }).name("physics/simulate");
+    }).name("physics/step");
 
     Task pump_events = context->m_coordinator.emplace([context](){
         // Copy current frames events for processing next frame

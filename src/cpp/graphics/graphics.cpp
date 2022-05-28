@@ -57,6 +57,7 @@ void graphics_thread (graphics::Context* context)
     std::vector<SDL_Rect> rects;
 
     try {
+        SPDLOG_DEBUG("[graphics] Running");
         do {
             EASY_BLOCK("Frame", graphics::COLOR(1));
             input::poll(context->m_input_ctx);
@@ -108,7 +109,10 @@ void graphics_thread (graphics::Context* context)
             SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
             SDL_RenderFillRects(renderer, rects.data(), rects.size());
             modules::hooks::after_render(context->m_modules_ctx);
-            SDL_RenderPresent(renderer);
+            {
+                EASY_BLOCK("Present", graphics::COLOR(3));
+                SDL_RenderPresent(renderer);
+            }
         } while (context->m_running.load());
     } catch (const std::exception& e) {
         spdlog::critical("[graphics] Exception in render thread: {}", e.what());

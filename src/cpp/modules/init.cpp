@@ -5,11 +5,12 @@
 #include "api_setup.hpp"
 #include "api_runtime.hpp"
 
-modules::Context* modules::init ()
+modules::Context* modules::init (std::shared_ptr<spdlog::logger> logger)
 {
     EASY_BLOCK("modules::init", modules::COLOR(1));
     SPDLOG_DEBUG("[modules] Init");
     auto context = new modules::Context{};
+    context->logger = logger;
     return context;
 }
 

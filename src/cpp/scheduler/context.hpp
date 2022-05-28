@@ -27,7 +27,6 @@ namespace scheduler {
 
         world::Context* m_world_ctx;
         scripting::Context* m_scripting_ctx;
-        physics::Context* m_physics_ctx;
         events::Context* m_events_ctx;
         game::Context* m_game_ctx;
         modules::Context* m_modules_ctx;
@@ -38,6 +37,10 @@ namespace scheduler {
         phmap::flat_hash_map<million::SystemStage, tf::Taskflow*> m_systems;
 
         SystemStatus m_system_status;
+
+        float m_timestep_cccumulator;
+        float m_step_size;
+        unsigned m_frames_late;
 
         std::atomic_bool m_ok = true;
     };

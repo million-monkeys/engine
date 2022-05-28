@@ -8,7 +8,7 @@ namespace config {
     // Read engine configuration (not meant for player editing)
     bool readEngineConfig ();
     // Read game configuration (not meant for player editing)
-    bool readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories);
+    bool readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories, modules::Context* modules_ctx);
 
     // Access config
     

@@ -7,7 +7,6 @@
 #include "messages/messages.hpp"
 #include "modules/modules.hpp"
 #include "resources/resources.hpp"
-#include "physics/physics.hpp"
 #include "input/input.hpp"
 #include "scripting/scripting.hpp"
 #include "world/world.hpp"
@@ -19,7 +18,7 @@ namespace init_core {
     void register_components (million::api::internal::ModuleManager*);
 }
 
-bool Engine::init ()
+bool Engine::init (std::shared_ptr<spdlog::logger> logger)
 {
     EASY_BLOCK("Engine::init", Engine::COLOR(1));
     SPDLOG_DEBUG("[Engine] Init");
@@ -31,7 +30,7 @@ bool Engine::init ()
     // Setup subsystems
     m_events_ctx = events::init();
     m_messages_ctx = messages::init();
-    m_modules_ctx = modules::init();
+    m_modules_ctx = modules::init(logger);
     m_resources_ctx = resources::init(m_events_ctx);
     m_input_ctx = input::init(m_events_ctx);
     m_scripting_ctx = scripting::init(m_messages_ctx, m_events_ctx, m_resources_ctx);
@@ -39,9 +38,8 @@ bool Engine::init ()
         return false;
     }
     m_world_ctx = world::init(m_events_ctx, m_messages_ctx, m_resources_ctx, m_scripting_ctx, m_modules_ctx);
-    m_physics_ctx = physics::init(m_modules_ctx, m_world_ctx);
-    m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx, m_physics_ctx);
-    m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_physics_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
+    m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx, m_modules_ctx);
+    m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
     m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx, m_modules_ctx);
     if (m_graphics_ctx == nullptr) {
         return false;
@@ -73,6 +71,7 @@ void Engine::shutdown ()
 {
     EASY_BLOCK("Engine::shutdown", Engine::COLOR(1));
     SPDLOG_DEBUG("[Engine] Shutdown");
+    modules::unload(m_modules_ctx);
     if (m_graphics_ctx) {
         graphics::term(m_graphics_ctx);
     }
@@ -90,9 +89,6 @@ void Engine::shutdown ()
     }
     if (m_input_ctx) {
         input::term(m_input_ctx);
-    }
-    if (m_physics_ctx) {
-        physics::term(m_physics_ctx);
     }
     if (m_resources_ctx) {
         resources::term(m_resources_ctx);

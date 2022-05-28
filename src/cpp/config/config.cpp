@@ -5,6 +5,8 @@
 
 #include <cxxopts.hpp>
 
+#include "modules/modules.hpp"
+
 helpers::hashed_string_flat_map<std::uint32_t> g_stream_sizes;
 
 helpers::hashed_string_flat_map<std::uint32_t>& config::stream_sizes ()
@@ -291,7 +293,7 @@ bool config::readEngineConfig ()
 }
 
 
-bool config::readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories)
+bool config::readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_string_flat_map<std::string>& game_scripts, std::vector<entt::hashed_string::hash_type>& entity_categories, modules::Context* modules_ctx)
 {
     EASY_FUNCTION(profiler::colors::Indigo500);
     //******************************************************//
@@ -437,6 +439,21 @@ bool config::readGameConfig (scripting::Context* scripting_ctx, helpers::hashed_
             entt::monostate<"physics/max-substeps"_hs>{} = int(5);
             entt::monostate<"physics/gravity"_hs>{} = glm::vec3{0, 0, 0};
         }
+
+        //******************************************************//
+        // MODULES
+        //******************************************************//
+        if (config.contains("module")) {
+            const auto& module_list = config.at("module");
+            if (! module_list.is_array()) {
+                spdlog::error("Game config files \"module\" field is not an array.");
+                return false;
+            }
+            if (! modules::load(modules_ctx, nullptr, std::string{}, module_list)) {
+                return false;
+            }
+        }
+
     } catch (const std::exception& e) {
         spdlog::critical("Could not load game configuration: {}", e.what());
         return false;

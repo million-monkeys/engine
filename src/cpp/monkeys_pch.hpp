@@ -56,7 +56,6 @@ namespace graphics { struct Context; }
 namespace input { struct Context; }
 namespace messages { struct Context; }
 namespace modules { struct Context; }
-namespace physics { struct Context; }
 namespace resources { struct Context; }
 namespace scheduler { struct Context; }
 namespace scripting { struct Context; }

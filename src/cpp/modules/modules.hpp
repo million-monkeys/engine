@@ -1,9 +1,12 @@
 #pragma once
 
 #include <monkeys.hpp>
+#include "utils/parser.hpp"
+
+struct ImGuiContext;
 
 namespace modules {
-    Context* init ();
+    Context* init (std::shared_ptr<spdlog::logger> logger);
     void term (Context* context);
 
     void setup_api (Context* context, world::Context* world_ctx, game::Context* game_ctx, resources::Context* resources_ctx, scheduler::Context* scheduler_ctx, messages::Context* messages_ctx, events::Context* events_ctx);
@@ -11,9 +14,13 @@ namespace modules {
     million::api::EngineSetup* api_engine_setup (Context* context);
     million::api::EngineRuntime* api_engine_runtime (Context* context);
 
+    bool load (Context* context, ImGuiContext* imgui_context, const std::string& base_path, const TomlValue& module_list);
+    void unload (Context* context);
+
     void addHook (Context* context, million::api::Module::CallbackMasks hook, million::api::Module* mod);
 
     namespace hooks {
+        void game_setup (Context* context);
         void before_frame (Context* context, timing::Time, timing::Delta, uint64_t);
         void physics_step (Context* context, timing::Delta);
         void before_update (Context* context);

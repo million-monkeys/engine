@@ -49,8 +49,10 @@ DEPS = $(PROJECT_ROOT)/src/deps
 # Engine SDK includes
 INCLUDES += -I$(PROJECT_ROOT)/sdk/
 
-# Third party includes
-INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
+# Common includes
+INCLUDES += -I$(DEPENDENCIES)/spdlog/include
+INCLUDES += -I$(DEPENDENCIES)/entt/src
+INCLUDES += -I$(DEPENDENCIES)/glm
 
 !pch = |> clang++ $(CPPFLAGS) $(INCLUDES) -stdlib=libstdc++ -x c++-header %f -o %o |>
 !compile-engine = | $(PCH).hpp |> clang++ -Wall -Werror $(CFLAGS) $(CPPFLAGS) $(LTO) `sdl2-config --cflags` -include $(PCH).hpp $(INCLUDES) -c %f -o %o |> %d__%B.o
@@ -60,3 +62,8 @@ INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
 !compile-dep-c++ = |> clang++ $(CFLAGS) $(CPPFLAGS) $(DEPS_INCLUDES) -c %f -o %o |> %d__%B.o
 !ar = |> ar crs %o %f |>
 !link-exe = |> clang++ %f $(LINKER) $(LTO) -o %o |> $(PROJECT_ROOT)/../$(BINARY_NAME)$(BINARY_NAME_SUFFIX)
+
+# Modules
+!compile-module = | <module-pch> |> clang++ -fPIC  $(CFLAGS) $(CPPFLAGS) $(MODULE_INCLUDES) $(INCLUDES) $(LTO) -c %f -o %o |> %d__%B.o
+# -Wl,-z,origin -Wl, -rpath './libs'
+!link-module =  | $(ROOT_LOCATION)/sdk/module/entry.o $(ROOT_LOCATION)/vendor/libdearimgui.a |> clang++ $(LTO) $(MODULE_LINKER) -shared $(PROJECT_ROOT)/sdk/module/entry.o $(ROOT_LOCATION)/vendor/libdearimgui.a %f -o %o |> ../%d.module

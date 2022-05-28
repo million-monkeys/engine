@@ -5,11 +5,11 @@
 #include "events/events.hpp"
 #include "world/world.hpp"
 #include "scripting/scripting.hpp"
-#include "physics/physics.hpp"
+#include "modules/modules.hpp"
 
 #include "loaders/game_scripts.hpp"
 
-game::Context* game::init (events::Context* events_ctx, messages::Context* messages_ctx, world::Context* world_ctx, scripting::Context* scripting_ctx, resources::Context* resources_ctx, physics::Context* physics_ctx)
+game::Context* game::init (events::Context* events_ctx, messages::Context* messages_ctx, world::Context* world_ctx, scripting::Context* scripting_ctx, resources::Context* resources_ctx, modules::Context* modules_ctx)
 {
     EASY_BLOCK("game::init", game::COLOR(1));
     SPDLOG_DEBUG("[game] Init");
@@ -22,7 +22,7 @@ game::Context* game::init (events::Context* events_ctx, messages::Context* messa
     context->m_world_ctx = world_ctx;
     context->m_scripting_ctx = scripting_ctx;
     context->m_resources_ctx = resources_ctx;
-    context->m_physics_ctx = physics_ctx;
+    context->m_modules_ctx = modules_ctx;
 
     resources::install<loaders::GameScripts>(resources_ctx, context);
 
@@ -48,14 +48,18 @@ std::optional<scheduler::SystemStatus> game::setup (game::Context* context)
     // Read game configuration
     helpers::hashed_string_flat_map<std::string> game_scripts;
     std::vector<entt::hashed_string::hash_type> entity_categories;
-    if (!config::readGameConfig(context->m_scripting_ctx, game_scripts, entity_categories)) {
+    if (!config::readGameConfig(context->m_scripting_ctx, game_scripts, entity_categories, context->m_modules_ctx)) {
         return std::nullopt;
     }
     SPDLOG_TRACE("[game] Game config read");
 
-    // Create physics scene
-    physics::createScene(context->m_physics_ctx);
-    SPDLOG_TRACE("[game] Physics scene created");
+    // Load user mods
+    // const std::string& user_mods = entt::monostate<"game/user-mods"_hs>();
+    // TomlTable mods_table;
+    // modules::load(context->m_modules_ctx, nullptr, user_mods, mods_table);
+
+    // Call module hooks
+    modules::hooks::game_setup(context->m_modules_ctx);
 
     // Add entity categories
     world::setEntityCategories(context->m_world_ctx, entity_categories);

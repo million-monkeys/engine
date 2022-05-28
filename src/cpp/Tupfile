@@ -4,11 +4,10 @@ BINARY_NAME = game
 PCH = monkeys_pch
 
 CFLAGS += -Wall -Werror -I. -Wno-delete-non-abstract-non-virtual-dtor
-LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL -lPhysX_static_64 -lPhysXPvdSDK_static_64 -lPhysXExtensions_static_64 -lPhysXCooking_static_64 -lPhysXCommon_static_64 -lPhysXFoundation_static_64
+LINKER += -pthread -ldl -lSDL2 -lwayland-egl -lGL
 
-INCLUDES += -I$(DEPENDENCIES)/spdlog/include
-INCLUDES += -I$(DEPENDENCIES)/cr/
-INCLUDES += -I$(DEPENDENCIES)/entt/src
+INCLUDES += -I$(DEPENDENCIES)/doctest/doctest
+INCLUDES += -I$(DEPENDENCIES)/cr
 INCLUDES += -I$(DEPENDENCIES)/taskflow
 INCLUDES += -I$(DEPENDENCIES)/toml11
 INCLUDES += -I$(DEPENDENCIES)/glm
@@ -24,16 +23,12 @@ INCLUDES += -I$(DEPENDENCIES)/tinygltf
 INCLUDES += -I$(DEPENDENCIES)/magic_enum/include
 INCLUDES += -I$(DEPENDENCIES)/luajit/src
 INCLUDES += -I$(DEPENDENCIES)/concurrentqueue
-INCLUDES += -I$(DEPENDENCIES)/physx/physx/include
-INCLUDES += -I$(DEPENDENCIES)/physx/pxshared/include
 
 ifdef CONFIG_DEBUG_BUILD
     INCLUDES += -I$(DEPENDENCIES)/glad/debug/include
-    LINKER += -L$(DEPENDENCIES)/physx/physx/bin/linux.clang/checked
     CFLAGS += -D_DEBUG
 else
     INCLUDES += -I$(DEPENDENCIES)/glad/release/include
-    LINKER += -L$(DEPENDENCIES)/physx/physx/bin/linux.clang/release
     CFLAGS += -DNDEBUG
 endif
 
@@ -57,7 +52,6 @@ endif
 : foreach memory/*.cpp |> !compile-engine |> memory__%B.o
 : foreach messages/*.cpp |> !compile-engine |> messages__%B.o
 : foreach modules/*.cpp |> !compile-engine |> modules__%B.o
-: foreach physics/*.cpp |> !compile-engine |> physics__%B.o
 : foreach resources/*.cpp |> !compile-engine |> resources__%B.o
 : foreach scheduler/*.cpp |> !compile-engine |> scheduler__%B.o
 : foreach scripting/*.cpp |> !compile-engine |> scripting__%B.o

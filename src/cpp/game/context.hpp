@@ -18,7 +18,7 @@ namespace game {
         scripting::Context* m_scripting_ctx;
         resources::Context* m_resources_ctx;
         scheduler::Context* m_scheduler_ctx;
-        physics::Context* m_physics_ctx;
+        modules::Context* m_modules_ctx;
 
         million::events::Stream& m_stream;   // "game"_hs output stream
         million::events::Stream& m_commands;

@@ -4,6 +4,8 @@
 
 using CM = million::api::Module::CallbackMasks;
 
+struct ModuleList;
+
 namespace modules {
     struct Context {
         // API
@@ -11,7 +13,12 @@ namespace modules {
         million::api::EngineSetup* m_engine_setup;
         million::api::EngineRuntime* m_engine_runtime;
 
+        std::shared_ptr<spdlog::logger> logger;
+
+        ModuleList* m_modules = nullptr;
+
         // Module Hooks
+        std::vector<million::api::Module*> m_hooks_gameSetup;
         std::vector<million::api::Module*> m_hooks_beforeFrame;
         std::vector<million::api::Module*> m_hooks_afterFrame;
         std::vector<million::api::Module*> m_hooks_physicsStep;

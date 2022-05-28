@@ -5,7 +5,7 @@
 #include "scheduler/scheduler.hpp"
 
 namespace game {
-    Context* init (events::Context* events_ctx, messages::Context* messages_ctx, world::Context* world_ctx, scripting::Context* scripting_ctx, resources::Context* resources_ctx, physics::Context* physics_ctx);
+    Context* init (events::Context* events_ctx, messages::Context* messages_ctx, world::Context* world_ctx, scripting::Context* scripting_ctx, resources::Context* resources_ctx, modules::Context* modules_ctx);
     void term (Context* context);
     void setScheduler (Context* context, scheduler::Context* scheduler_ctx);
     std::optional<scheduler::SystemStatus> setup (Context* context);

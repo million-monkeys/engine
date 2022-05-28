@@ -78,7 +78,7 @@ void scripting::detail::call (scripting::Context* context, const std::string& fu
 
 void scripting::processGameEvents (scripting::Context* context)
 {
-    EASY_BLOCK("Scripts/scene", scripting::COLOR(1));
+    EASY_BLOCK("Scripts/game", scripting::COLOR(1));
     SPDLOG_TRACE("[script] Processing game event scripts");
 
     // Only one thread can execute Lua code at once

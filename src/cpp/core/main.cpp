@@ -91,7 +91,7 @@ int game_main (int argc, char** argv)
     bool clean_exit = true;
     try {
         Engine engine;
-        if (engine.init()) {
+        if (engine.init(logger)) {
             engine.execute();
         } else {
             spdlog::critical("Could not start engine");

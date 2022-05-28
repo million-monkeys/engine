@@ -1,5 +1,6 @@
 #pragma once
 
+#include <entt/entity/entity.hpp>
 #include <entt/core/hashed_string.hpp>
 #include <glm/glm.hpp>
 
