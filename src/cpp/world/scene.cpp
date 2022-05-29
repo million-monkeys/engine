@@ -110,7 +110,7 @@ void world::swapScenes (world::Context* context)
     // Call LOAD_SCENE hooks on new scene
     // TODO: Create a scene API object to pass in? What can it do?
     if (context->m_current.scene) {
-        modules::hooks::unload_scene(context->m_modules_ctx, context->m_current.scene, context->m_scenes[context->m_current.scene]);
+        modules::hooks::load_scene(context->m_modules_ctx, context->m_current.scene, context->m_scenes[context->m_current.scene]);
         context->m_stream.emit<events::scene::Activated>([context](auto& scene){
             scene.id = context->m_current.scene;
         });

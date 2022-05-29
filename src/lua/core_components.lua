@@ -26,17 +26,17 @@ ffi.cdef [[
 
 	struct Component_physics_StaticBody {
 		uint32_t shape;
-		struct btRigidBody* physics_body;
+		void* physics_body;
 	};
 	struct Component_physics_DynamicBody {
 		uint32_t shape;
 		float mass;
-		struct btRigidBody* physics_body;
+		void* physics_body;
 	};
-	struct Component_physics_KinematicBody {
+	struct Component_physics_Character {
 		uint32_t shape;
 		float mass;
-		struct btRigidBody* physics_body;
+		void* physics_body;
 	};
 	struct Component_physics_CollisionSensor {
 		uint32_t on_collision;
@@ -103,7 +103,7 @@ core:register_components({
 	['graphics/spot-light'] = 'struct Component_graphics_SpotLight*',
 	['physics/static-body'] = 'struct Component_physics_StaticBody*',
 	['physics/dynamic-body'] = 'struct Component_physics_DynamicBody*',
-	['physics/kinematic-body'] = 'struct Component_physics_KinematicBody*',
+	['physics/character'] = 'struct Component_physics_Character*',
 	['physics/collision-sensor'] = 'struct Component_physics_CollisionSensor*',
 	['physics/trigger-region'] = 'struct Component_physics_TriggerRegion*',
 })

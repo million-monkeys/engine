@@ -114,8 +114,8 @@ namespace = "core"
     _name_        = "static-body"
     _namespace_   = "physics"
     _description_ = "A static (immobile) physics object"
-    shape         = "resource:mesh"
-    physics-body  = "ptr:btRigidBody"
+    shape         = "resource:physics-shape"
+    physics-body  = "ptr"
 
 [[component]]
     _name_        = "dynamic-body"
@@ -123,7 +123,7 @@ namespace = "core"
     _description_ = "A physics object whose motion is dictated by the physics engine"
     shape         = "resource:physics-shape"
     mass          = "float"
-    physics-body  = "ptr:btRigidBody"
+    physics-body  = "ptr"
 
 [[component]]
     _name_        = "character"
@@ -131,7 +131,7 @@ namespace = "core"
     _description_ = "A physics object whose motion is externally controlled"
     shape         = "resource:physics-shape"
     mass          = "float"
-    physics-body  = "ptr:btRigidBody"
+    physics-body  = "ptr"
 
 [[component]]
     _name_        = "collision-sensor"

@@ -16,6 +16,11 @@ public:
     SetupAPI (world::Context* world_ctx, game::Context* game_ctx, resources::Context* resources_ctx, scheduler::Context* scheduler_ctx, messages::Context* messages_ctx, events::Context* events_ctx) : m_world_ctx(world_ctx), m_game_ctx(game_ctx), m_resources_ctx(resources_ctx), m_scheduler_ctx(scheduler_ctx), m_messages_ctx(messages_ctx), m_events_ctx(events_ctx) {}
     virtual ~SetupAPI () {}
 
+    void registerResourceLoader (million::api::resources::Loader* loader) final
+    {
+        resources::install(m_resources_ctx, loader);
+    }
+
     void registerGameHandler (entt::hashed_string state, entt::hashed_string::hash_type events, million::GameHandler handler) final
     {
         game::registerHandler(m_game_ctx, state, events, handler);

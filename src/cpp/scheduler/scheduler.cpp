@@ -142,18 +142,20 @@ void scheduler::createTaskGraph (scheduler::Context* context)
 {
     EASY_FUNCTION(scheduler::COLOR(1));
     SPDLOG_DEBUG("[scheduler] Generating core task graph");
-    // Generate sub graph for systems
-    generateTasksForSystems(context);
+    // Generate sub graph for systems whenever a scene is loaded
+    context->m_module = modules::addHook<million::api::Module::CallbackMasks::LOAD_SCENE>(context->m_modules_ctx, [context](auto, auto, auto){
+        scheduler::generateTasksForSystems(context);
+    });
 
     /** Task graph:
      * 
-     *                  SCRIPT EXECUTE                 AI EXECUTE [*]
+     *                     SCRIPTS                     AI EXECUTE [*]
      *                        |                              |
      *                  GAME LOGIC [*]              APPLY AI ACTIONS [*]
      *                    /         \                        |
-     *           PHYSICS PREPARE    BEFORE UPDATE    AI SCRIPT EXECUTE
-     *             |           \         |             /
-     *      PHYSICS SIMULATE    +--> PUMP EVENTS <----+
+     *                   |         BEFORE UPDATE    AI SCRIPT EXECUTE
+     *                   |               |             /
+     *               PHYSICS STEP     PUMP EVENTS <----+
      *                    \              |
      *                     +-> BEFORE UPDATE
      *                              |
@@ -269,11 +271,10 @@ void scheduler::createTaskGraph (scheduler::Context* context)
     }).name("ai/execute");
 
     // Game and scene event handlers
-    events_scene.after(events_game);
-    scripts_behavior.after(events_scene);
-
-    before_update.after(pump_events);
-    pump_events.after(scripts_behavior);
+    events_game >> events_scene >> scripts_behavior >> game_logic;
+    game_logic.before(before_update, physics_step);
+    before_update >> pump_events;
+    update_logic.after(pump_events, physics_step);
 
 #ifdef DEBUG_BUILD
     const std::string& task_graph = entt::monostate<"dev/export-task-graph"_hs>();

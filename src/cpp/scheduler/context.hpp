@@ -16,6 +16,8 @@ public:
     template <typename... Args> void after (Args... args) {task.succeed((args.task)...);}
     template <typename... Args> void before (Args... args) {task.precede((args.task)...);}
 
+    Task& operator>> (Task& other) {task.precede(other.task); return other;}
+
     tf::Task task;
 };
 
@@ -30,6 +32,8 @@ namespace scheduler {
         events::Context* m_events_ctx;
         game::Context* m_game_ctx;
         modules::Context* m_modules_ctx;
+
+        million::api::Module* m_module;
 
         phmap::flat_hash_map<million::SystemStage, entt::organizer> m_organizers;
         tf::Taskflow m_coordinator;

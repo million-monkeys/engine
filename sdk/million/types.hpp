@@ -4,6 +4,8 @@
 #include <entt/core/hashed_string.hpp>
 #include <glm/glm.hpp>
 
+using namespace entt::literals;
+
 namespace timing {
     using Time = float;
     using Delta = Time;

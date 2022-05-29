@@ -348,7 +348,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::StaticBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), nullptr);
+				registry.emplace_or_replace<components::core::physics::StaticBody>(entity, engine->loadResource("physics-shape"_hs, toml::find<std::string>(table, "shape").c_str(), 0), nullptr);
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::StaticBody>(entity)); };
@@ -372,7 +372,7 @@ namespace init_core {
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::DynamicBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
+				registry.emplace_or_replace<components::core::physics::DynamicBody>(entity, engine->loadResource("physics-shape"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
 			};
             
 			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::DynamicBody>(entity)); };
@@ -390,29 +390,29 @@ namespace init_core {
 			};
 			engine->registerComponent<components::core::physics::DynamicBody>(component_def);
 		}
-		{ // components::core::physics::KinematicBody
-			million::api::definitions::Component component_def {"physics/kinematic-body"_hs, entt::type_hash<components::core::physics::KinematicBody>::value(), "core::physics", "KinematicBody"};
-			component_def.size_in_bytes = sizeof(components::core::physics::KinematicBody);
+		{ // components::core::physics::Character
+			million::api::definitions::Component component_def {"physics/character"_hs, entt::type_hash<components::core::physics::Character>::value(), "core::physics", "Character"};
+			component_def.size_in_bytes = sizeof(components::core::physics::Character);
 			component_def.loader = [](million::api::EngineSetup* engine, entt::registry& registry, const void* tableptr, entt::entity entity) {
 				const auto& table = *reinterpret_cast<const toml::value*>(tableptr);
 				
-				registry.emplace_or_replace<components::core::physics::KinematicBody>(entity, engine->loadResource("mesh"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
+				registry.emplace_or_replace<components::core::physics::Character>(entity, engine->loadResource("physics-shape"_hs, toml::find<std::string>(table, "shape").c_str(), 0), float(toml::find<toml::floating>(table, "mass")), nullptr);
 			};
             
-			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::KinematicBody>(entity)); };
-			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::KinematicBody>(entity); };
+			component_def.getter = [](entt::registry& registry, entt::entity entity){ return (char*)&(registry.get<components::core::physics::Character>(entity)); };
+			component_def.attached_to_entity = [](entt::registry& registry, entt::entity entity){ return registry.any_of<components::core::physics::Character>(entity); };
 			component_def.manage = [](entt::registry& registry, entt::entity entity, million::api::definitions::ManageOperation op){
 				switch (op) {
 					case million::api::definitions::ManageOperation::Add:
-						registry.emplace_or_replace<components::core::physics::KinematicBody>(entity);
+						registry.emplace_or_replace<components::core::physics::Character>(entity);
 						break;
 					case million::api::definitions::ManageOperation::Remove:
-						registry.remove<components::core::physics::KinematicBody>(entity);
+						registry.remove<components::core::physics::Character>(entity);
 						break;
 					default: break;
 				}
 			};
-			engine->registerComponent<components::core::physics::KinematicBody>(component_def);
+			engine->registerComponent<components::core::physics::Character>(component_def);
 		}
 		{ // components::core::physics::CollisionSensor
 			million::api::definitions::Component component_def {"physics/collision-sensor"_hs, entt::type_hash<components::core::physics::CollisionSensor>::value(), "core::physics", "CollisionSensor"};

@@ -32,6 +32,8 @@ scheduler::Context* scheduler::init (world::Context* world_ctx, scripting::Conte
     context->m_step_size = 1.0f / 60.0f;
     context->m_frames_late = 0;
 
+    context->m_module = nullptr;
+
     context->m_system_status = scheduler::SystemStatus::Stopped;
     return context;
 }
@@ -40,6 +42,9 @@ void scheduler::term (scheduler::Context* context)
 {
     EASY_BLOCK("scheduler::term", scheduler::COLOR(1));
     SPDLOG_DEBUG("[scheduler] Term");
+    if (context->m_module) {
+        delete context->m_module;
+    }
     context->m_coordinator.clear();
     for (auto&& [_, taskflow] : context->m_systems) {
         delete taskflow;
