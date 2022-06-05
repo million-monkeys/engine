@@ -55,11 +55,12 @@ bool scheduler::execute (scheduler::Context* context)
         // Execute the taskflow graph if systems are running
         context->m_executor.run(context->m_coordinator);
         context->m_executor.wait_for_all();
+        return context->m_ok.load();
     } else {
         // If systems are stopped, only pump events
         events::pump(context->m_events_ctx);
     }
-    return context->m_ok.load();
+    return true;
 }
 
 entt::organizer& scheduler::organizer (scheduler::Context* context, million::SystemStage type)
@@ -250,6 +251,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         if EXPECT_TAKEN(updater_flow != nullptr) {
             SPDLOG_TRACE("[scheduler] Running update systems");
             subflow.composed_of(*updater_flow).name("systems/update-subflow");
+            subflow.join();
         }
     }).name("systems/update");
 
@@ -259,6 +261,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         if EXPECT_TAKEN(actions_flow != nullptr) {
             SPDLOG_TRACE("[scheduler] Running actions");
             subflow.composed_of(*actions_flow).name("systems/actions-subflow");
+            subflow.join();
         }
     }).name("systems/actions");
 
@@ -268,6 +271,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         if EXPECT_TAKEN(ai_execute_flow != nullptr) {
             SPDLOG_TRACE("[scheduler] Running AI execute systems");
             subflow.composed_of(*ai_execute_flow).name("ai/execute-subflow");
+            subflow.join();
         }
     }).name("ai/execute");
 

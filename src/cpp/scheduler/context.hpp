@@ -21,10 +21,15 @@ public:
     tf::Task task;
 };
 
+class WorkerDecorator : public tf::WorkerInterface {
+public:
+    void scheduler_prologue(tf::Worker& w) override;
+    void scheduler_epilogue(tf::Worker& w, std::exception_ptr e) override;
+};
 
 namespace scheduler {
     struct Context {
-        Context (int num_workers) : m_executor(num_workers) {}
+        Context (int num_workers) : m_executor(num_workers, std::make_shared<WorkerDecorator>()) {}
         ~Context () {}
 
         world::Context* m_world_ctx;

@@ -4,6 +4,15 @@
 #include "graphics.hpp"
 #include <thread>
 
+struct Sync {
+    std::mutex state_mutex;
+    std::condition_variable sync_cv;
+    enum class Owner {
+        Engine,
+        Renderer,
+    } owner = Owner::Engine;
+};
+
 namespace graphics {
     struct Context {
         world::Context* m_world_ctx;

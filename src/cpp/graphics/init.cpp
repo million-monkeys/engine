@@ -17,14 +17,15 @@ graphics::Context* graphics::init (world::Context* world_ctx, input::Context* in
     context->m_running = true;
     context->m_graphics_thread = std::thread(graphics_thread, context);
 
+    return context;
+}
+
+bool graphics::init_ok (graphics::Context* context)
+{
     // Sync to make sure render thread is set up before continuing
     graphics::handOff(context);
 
-    if (!context->m_error.load()) {
-        return context;   
-    } else {
-        return nullptr;
-    }
+    return !context->m_error.load();
 }
 
 void graphics::term (graphics::Context* context)
@@ -38,7 +39,7 @@ void graphics::term (graphics::Context* context)
         auto& sync_obj = context->m_sync;
         {
             std::scoped_lock<std::mutex> lock(sync_obj.state_mutex);
-            sync_obj.owner = graphics::Sync::Owner::Renderer;
+            sync_obj.owner = Sync::Owner::Renderer;
         }
         sync_obj.sync_cv.notify_one();
         context->m_graphics_thread.join();

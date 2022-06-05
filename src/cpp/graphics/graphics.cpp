@@ -17,12 +17,27 @@ void graphics::handOff (graphics::Context* context)
     // First, signal to the renderer that it has exclusive access to the engines state
     {
         std::scoped_lock<std::mutex> lock(sync_obj.state_mutex);
-        sync_obj.owner = graphics::Sync::Owner::Renderer;
+        sync_obj.owner = Sync::Owner::Renderer;
     }
     sync_obj.sync_cv.notify_one();
     // Now wait for the renderer to relinquish exclusive access back to the engine
     std::unique_lock<std::mutex> lock(sync_obj.state_mutex);
-    sync_obj.sync_cv.wait(lock, [&sync_obj]{ return sync_obj.owner == graphics::Sync::Owner::Engine; });
+    sync_obj.sync_cv.wait(lock, [&sync_obj]{ return sync_obj.owner == Sync::Owner::Engine; });
+}
+
+void wait_for_sync (graphics::Context* context)
+{
+    auto& sync_obj = context->m_sync;
+    // Sync with the engine, so that it knows the render thread is set up
+    {
+        // Wait to grab the lock
+        std::unique_lock<std::mutex> lock(sync_obj.state_mutex);
+        sync_obj.sync_cv.wait(lock, [&sync_obj](){ return sync_obj.owner == Sync::Owner::Renderer; });
+        // And release it again right away
+        sync_obj.owner = Sync::Owner::Engine;
+        lock.unlock();
+        sync_obj.sync_cv.notify_one();
+    }
 }
 
 void graphics_thread (graphics::Context* context)
@@ -34,27 +49,18 @@ void graphics_thread (graphics::Context* context)
     SDL_Window* window = initialize_graphics(width, height);
     if (window == nullptr) {
         context->m_error = true;
+        wait_for_sync(context);
         return;
     }
 
     SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
 
     context->m_initialized = true;
-
-    auto& sync_obj = context->m_sync;
-    // Sync with the engine, so that it knows the render thread is set up
-    {
-        // Wait to grab the lock
-        std::unique_lock<std::mutex> lock(sync_obj.state_mutex);
-        sync_obj.sync_cv.wait(lock, [&sync_obj](){ return sync_obj.owner == graphics::Sync::Owner::Renderer; });
-        // And release it again right away
-        sync_obj.owner = graphics::Sync::Owner::Engine;
-        lock.unlock();
-        sync_obj.sync_cv.notify_one();
-    }
+    wait_for_sync(context);
     EASY_END_BLOCK
 
     std::vector<SDL_Rect> rects;
+    auto& sync_obj = context->m_sync;
 
     try {
         SPDLOG_DEBUG("[graphics] Running");
@@ -75,7 +81,7 @@ void graphics_thread (graphics::Context* context)
                 // Wait for exclusive access to engine state
                 std::unique_lock<std::mutex> lock(sync_obj.state_mutex);
                 {
-                    sync_obj.sync_cv.wait(lock, [&sync_obj](){ return sync_obj.owner == graphics::Sync::Owner::Renderer; });
+                    sync_obj.sync_cv.wait(lock, [&sync_obj](){ return sync_obj.owner == Sync::Owner::Renderer; });
                 }
                 EASY_END_BLOCK;
 
@@ -97,7 +103,7 @@ void graphics_thread (graphics::Context* context)
                 });
 
                 // Hand exclusive access back to engine
-                sync_obj.owner = graphics::Sync::Owner::Engine;
+                sync_obj.owner = Sync::Owner::Engine;
                 lock.unlock();
                 sync_obj.sync_cv.notify_one();
             }

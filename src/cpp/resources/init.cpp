@@ -5,6 +5,7 @@
 
 void loaderThread (resources::Context* context)
 {
+    EASY_THREAD("Resource Loader");
     SPDLOG_DEBUG("[resources] Starting resource loader thread");
     WorkItem item = WorkItem::POISON_PILL;
     do {

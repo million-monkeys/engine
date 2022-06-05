@@ -32,4 +32,6 @@ private:
         };
         return colors[idx];
     }
+
+    bool handle_commands ();
 };

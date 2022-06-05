@@ -17,6 +17,22 @@ int get_num_workers () {
     }
 }
 
+void WorkerDecorator::scheduler_prologue(tf::Worker& w)
+{
+    EASY_THREAD((std::string{"Task Worker "} + std::to_string(w.id())).c_str());
+}
+
+void WorkerDecorator::scheduler_epilogue(tf::Worker& w, std::exception_ptr e)
+{
+    try {
+        if (e) {
+            std::rethrow_exception(e);
+        }
+    } catch(const std::exception& e) {
+        spdlog::error("Exception in task worker {}: {}", w.id(), e.what());
+    }
+}
+
 scheduler::Context* scheduler::init (world::Context* world_ctx, scripting::Context* scripting_ctx, events::Context* events_ctx, game::Context* game_ctx, modules::Context* modules_ctx)
 {
     EASY_BLOCK("scheduler::init", scheduler::COLOR(1));

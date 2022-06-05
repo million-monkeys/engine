@@ -41,9 +41,6 @@ bool Engine::init (std::shared_ptr<spdlog::logger> logger)
     m_game_ctx = game::init(m_events_ctx, m_messages_ctx, m_world_ctx, m_scripting_ctx, m_resources_ctx, m_modules_ctx);
     m_scheduler_ctx = scheduler::init(m_world_ctx, m_scripting_ctx, m_events_ctx, m_game_ctx, m_modules_ctx);
     m_graphics_ctx = graphics::init(m_world_ctx, m_input_ctx, m_modules_ctx);
-    if (m_graphics_ctx == nullptr) {
-        return false;
-    }
 
     // Scripting and world have a circular dependency...
     scripting::setWorld(m_scripting_ctx, m_world_ctx);
@@ -62,6 +59,16 @@ bool Engine::init (std::shared_ptr<spdlog::logger> logger)
         return false;
     }
     scheduler::setStatus(m_scheduler_ctx, status.value());
+
+    // Allow startup commands to process
+    handle_commands();
+    events::pump(m_events_ctx);
+    
+    // Make sure graphics is fully initialized before continuing
+    if (! graphics::init_ok(m_graphics_ctx)) {
+        // Graphics failed to initialize
+        return false;
+    }
 
     // Initialized successfully
     return true;
@@ -128,49 +135,9 @@ void Engine::execute ()
         // Check if a new scene has loaded
         world::update(m_world_ctx);
 
-        {
-            EASY_BLOCK("Handling System Events", Engine::COLOR(2));
-            // Process previous frames events, looking for ones the core engine cares about
-            // Yes, its a bit wasteful to loop them all like this, but they should be hot in cache so ¯\_(ツ)_/¯
-            for (const auto& ev : events::events(m_events_ctx, "commands"_hs)) {
-                EASY_BLOCK("Handling event", Engine::COLOR(3));
-                switch (ev.type) {
-                    case commands::engine::Exit::ID:
-                        SPDLOG_TRACE("[core] Got EXIT command");
-                        // No longer running, return.
-                        return;
-                    case "engine/set-system-status/running"_hs:
-                        scheduler::setStatus(m_scheduler_ctx, scheduler::SystemStatus::Running);
-                        break;
-                    case "engine/set-system-status/stopped"_hs:
-                        scheduler::setStatus(m_scheduler_ctx, scheduler::SystemStatus::Stopped);
-                        break;
-                    // case "scene/registry/runtime->background"_hs:
-                    //     copyRegistry(m_runtime_registry, m_background_registry);
-                    //     break;
-                    // case "scene/registry/background->runtime"_hs:
-                    //     {
-                    //         auto names = m_named_entities;
-                    //         copyRegistry(m_background_registry, m_runtime_registry);
-                    //         m_named_entities = names;
-                    //     }
-                    //     break;
-                    // case "scene/registry/clear-background"_hs:
-                    //     m_background_registry.clear();
-                    //     break;
-                    // case "scene/registry/clear-runtime"_hs:
-                    //     m_runtime_registry.clear();
-                    //     break;
-                    case commands::scene::Load::ID:
-                    {
-                        auto& new_scene = million::api::EngineRuntime::eventData<commands::scene::Load>(ev);
-                        world::loadScene(m_world_ctx, new_scene.scene_id, new_scene.auto_swap);
-                        break;
-                    }
-                    default:
-                        break;
-                };
-            }
+        // Process system commands
+        if EXPECT_NOT_TAKEN(! handle_commands()) {
+            return;
         }
 
         // Let game process
@@ -203,4 +170,51 @@ void Engine::execute ()
 
     } while (true);
     frame_timer.reportAverage();
+}
+
+bool Engine::handle_commands ()
+{
+    EASY_BLOCK("Handling System Events", Engine::COLOR(2));
+    // Process previous frames events, looking for ones the core engine cares about
+    // Yes, its a bit wasteful to loop them all like this, but they should be hot in cache so ¯\_(ツ)_/¯
+    for (const auto& ev : events::events(m_events_ctx, "commands"_hs)) {
+        EASY_BLOCK("Handling event", Engine::COLOR(3));
+        switch (ev.type) {
+            case commands::engine::Exit::ID:
+                SPDLOG_TRACE("[core] Got EXIT command");
+                // No longer running, return.
+                return false;
+            case "engine/set-system-status/running"_hs:
+                scheduler::setStatus(m_scheduler_ctx, scheduler::SystemStatus::Running);
+                break;
+            case "engine/set-system-status/stopped"_hs:
+                scheduler::setStatus(m_scheduler_ctx, scheduler::SystemStatus::Stopped);
+                break;
+            // case "scene/registry/runtime->background"_hs:
+            //     copyRegistry(m_runtime_registry, m_background_registry);
+            //     break;
+            // case "scene/registry/background->runtime"_hs:
+            //     {
+            //         auto names = m_named_entities;
+            //         copyRegistry(m_background_registry, m_runtime_registry);
+            //         m_named_entities = names;
+            //     }
+            //     break;
+            // case "scene/registry/clear-background"_hs:
+            //     m_background_registry.clear();
+            //     break;
+            // case "scene/registry/clear-runtime"_hs:
+            //     m_runtime_registry.clear();
+            //     break;
+            case commands::scene::Load::ID:
+            {
+                auto& new_scene = million::api::EngineRuntime::eventData<commands::scene::Load>(ev);
+                world::loadScene(m_world_ctx, new_scene.scene_id, new_scene.auto_swap);
+                break;
+            }
+            default:
+                break;
+        };
+    }
+    return true;
 }
