@@ -77,6 +77,16 @@ namespace million::api {
                     static_cast<void>(registry.template storage<T>());
                 });
             }
+
+            template <typename... Ts>
+            void registerInternalComponents ()
+            {
+                if constexpr (sizeof...(Ts) > 0) {
+                    prepareRegistries([](entt::registry& registry) {
+                        (static_cast<void>(registry.template storage<Ts>()), ...);
+                    });
+                }
+            }
             
         protected:
             // Allow engine to decide where the module classes are allocated
@@ -84,6 +94,8 @@ namespace million::api {
             virtual void deallocModule(void *) = 0;
             // Register components with the engine
             virtual void installComponent (const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn) = 0;
+            // Add unloadable (internal) components to the engine
+            virtual void prepareRegistries (million::api::definitions::PrepareFn prepareFn) = 0;
         };
     }
 
@@ -140,6 +152,7 @@ namespace million::api {
 
         /** Get the string name of a named entity */
         virtual const std::string& findEntityName (const components::core::Named& named) const = 0;
+        virtual const std::string& findEntityName (entt::entity entity) const = 0;
 
         /** Load an entity into specified registry from a prototype */
         // NOT Thread Safe!
@@ -199,7 +212,12 @@ namespace million::api {
         /** Get the string name of a named entity */
         const std::string& findEntityName (const components::core::Named& named) const
         {
-            return m_runtime->findEntityName (named);
+            return m_runtime->findEntityName(named);
+        }
+
+        const std::string& findEntityName (entt::entity entity) const
+        {
+            return m_runtime->findEntityName(entity);
         }
 
         // Retrieve a resource handle by name

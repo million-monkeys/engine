@@ -21,6 +21,11 @@ protected:
         delete [] reinterpret_cast<std::byte*>(ptr);
     }
 
+    void prepareRegistries (million::api::definitions::PrepareFn prepareFn) final
+    {
+        world::prepareRegistries(m_world_ctx, prepareFn);
+    }
+
     void installComponent (const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn) final
     {
         world::installComponent(m_world_ctx, component, prepareFn);

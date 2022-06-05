@@ -29,7 +29,7 @@ void world::update (world::Context* context)
                                 SPDLOG_DEBUG("[world] Scene fully loaded");
                                 // Scene fully loaded
                                 context->m_pending.scene = loaded.name;
-                                context->m_stream.emit<events::scene::Loaded>([&loaded](auto& scene){
+                                context->m_world_stream.emit<events::world::SceneLoaded>([&loaded](auto& scene){
                                     scene.id = loaded.name;
                                 });
                                 if (pending.auto_swap) {
@@ -73,7 +73,7 @@ void world::executeHandlers (world::Context* context)
         EASY_BLOCK("Events/scene", world::COLOR(2));
         auto& message_publisher = messages::publisher(context->m_messages_ctx);
         for (const auto& [event_stream, handler] : context->m_scene_handlers[context->m_current.scene]) {
-            handler(events::events(context->m_events_ctx, event_stream), context->m_stream, message_publisher);
+            handler(events::events(context->m_events_ctx, event_stream), context->m_world_stream, message_publisher);
         }
     }
     world::processEvents(context);

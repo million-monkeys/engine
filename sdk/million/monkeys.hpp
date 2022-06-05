@@ -56,11 +56,14 @@ namespace mm_module {
     #endif
         }
 
+        virtual void advancedModuleSetup (million::api::internal::ModuleManager*) {}
+
 ///////////////////////////////////////////////////////////////////////////////
 // Implementation Details, not part of public API
 ///////////////////////////////////////////////////////////////////////////////
 
     private:
+
         std::uint32_t on_load (million::Setup* api) final {
             using CM = million::api::Module::CallbackMasks;
             if constexpr (detail::hasMember_onLoad<Derived>()) {

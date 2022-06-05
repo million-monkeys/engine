@@ -7,6 +7,7 @@ namespace world {
     void term (Context* context);
 
     void setContextData (Context* context, million::api::EngineRuntime* runtime);
+    void prepareRegistries (Context* context, million::api::definitions::PrepareFn prepareFn);
     void installComponent (Context* context, const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn);
     void setEntityCategories (Context* context, const std::vector<entt::hashed_string::hash_type>& entity_categories);
     void registerHandler (Context* context, entt::hashed_string scene, entt::hashed_string::hash_type events, million::SceneHandler handler);
@@ -15,6 +16,7 @@ namespace world {
     void mergeEntity (Context* context, entt::entity entity, entt::hashed_string prototype_id, bool overwrite_components);
     entt::entity findEntity (Context* context, entt::hashed_string name);
     const std::string& findEntityName (Context* context, const components::core::Named& named);
+    const std::string& findEntityName (Context* context, entt::entity entity);
     bool isInGroup (Context* context, entt::entity entity, entt::hashed_string::hash_type group_name);
     std::uint16_t categoryBitflag (Context* context, entt::hashed_string::hash_type category_name);
 

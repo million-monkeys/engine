@@ -71,18 +71,21 @@ void Engine::shutdown ()
 {
     EASY_BLOCK("Engine::shutdown", Engine::COLOR(1));
     SPDLOG_DEBUG("[Engine] Shutdown");
-    modules::unload(m_modules_ctx);
-    if (m_graphics_ctx) {
-        graphics::term(m_graphics_ctx);
-    }
-    if (m_scheduler_ctx) {
-        scheduler::term(m_scheduler_ctx);
-    }
+    // Terminate game and world before unloading modules
     if (m_game_ctx) {
         game::term(m_game_ctx);
     }
     if (m_world_ctx) {
         world::term(m_world_ctx);
+    }
+    // Now that the registries are cleared, unload moudles
+    modules::unload(m_modules_ctx);
+    // Then terminate the rest of the subsystems
+    if (m_graphics_ctx) {
+        graphics::term(m_graphics_ctx);
+    }
+    if (m_scheduler_ctx) {
+        scheduler::term(m_scheduler_ctx);
     }
     if (m_scripting_ctx) {
         scripting::term(m_scripting_ctx);

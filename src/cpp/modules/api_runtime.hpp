@@ -22,6 +22,11 @@ public:
         return world::findEntityName(m_world_ctx, named);
     }
 
+    const std::string& findEntityName (entt::entity entity) const final
+    {
+        return world::findEntityName(m_world_ctx, entity);
+    }
+
     entt::entity loadEntity (entt::hashed_string prototype_id) final
     {
         return world::loadEntity(m_world_ctx, prototype_id);

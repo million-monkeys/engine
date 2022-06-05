@@ -4,13 +4,18 @@
 #include "scripting/scripting.hpp"
 #include "modules/modules.hpp"
 
-void world::installComponent (world::Context* context, const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn)
+void world::prepareRegistries (world::Context* context, million::api::definitions::PrepareFn prepareFn)
 {
     // Create storage for the component
     prepareFn(context->m_registries.foreground().runtime);
     prepareFn(context->m_registries.foreground().prototypes);
     prepareFn(context->m_registries.background().runtime);
     prepareFn(context->m_registries.background().prototypes);
+}
+
+void world::installComponent (world::Context* context, const million::api::definitions::Component& component, million::api::definitions::PrepareFn prepareFn)
+{
+    world::prepareRegistries(context, prepareFn);
     // Make component accessible from scripting
     scripting::registerComponent(context->m_scripting_ctx, component.id.value(), component.type_id);
     // Add component loader

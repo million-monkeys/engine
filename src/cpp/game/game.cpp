@@ -66,11 +66,9 @@ void game::executeHandlers (game::Context* context)
             handler(events::events(context->m_events_ctx, event_stream), context->m_stream, message_publisher);
         }
     }
-    {
+    if (context->m_current_game_script.valid()) {
         EASY_BLOCK("Scripts/game", game::COLOR(1));
-        if (context->m_current_game_script.valid()) {
-            scripting::processGameEvents(context->m_scripting_ctx);
-        }
+        scripting::processGameEvents(context->m_scripting_ctx);
     }
 }
 

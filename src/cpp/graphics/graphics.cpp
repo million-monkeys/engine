@@ -86,13 +86,13 @@ void graphics_thread (graphics::Context* context)
 
                 entt::registry& registry = world::registry(context->m_world_ctx);
 
-                registry.view<components::core::graphics::Sprite, components::core::Position>(entt::exclude<components::core::Transform>).each([&rects](const auto, const auto& position) {
+                registry.view<components::core::graphics::Sprite, components::core::Position>(entt::exclude<components::core::Transform>).each([&rects, height](const auto, const auto& position) {
                     rects.emplace_back(
                         SDL_Rect{
-                            int(position.x) - 10,
-                            int(position.y) - 10,
-                            20,
-                            20,
+                            int(position.x * 100.0f) - 12,
+                            (height - 12) - (int(position.y * 100.0f) + 12),
+                            25,
+                            25,
                         });
                 });
 

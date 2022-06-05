@@ -26,14 +26,13 @@ namespace events {
         };
     }
 
-    namespace scene {
-        DECLARE_EVENT(Loaded, "scene/loaded") {
+    namespace world {
+        DECLARE_EVENT(SceneLoaded, "scene/loaded") {
             entt::hashed_string::hash_type id;
         };
 
-        DECLARE_EVENT(Activated, "scene/activated") {
+        DECLARE_EVENT(SceneActivated, "scene/activated") {
             entt::hashed_string::hash_type id;
         };
     }
-
 }

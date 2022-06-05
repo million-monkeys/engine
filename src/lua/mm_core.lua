@@ -7,8 +7,8 @@ ffi.cdef[[
     struct RGBA {float r, g, b, a;};
     uint32_t get_ref (const char* name);
 
-    struct NameOnlyEvent {};
-    struct SceneActivatedEvent {uint32_t id;};
+    struct Event_NameOnly {};
+    struct Event_IDOnly {uint32_t id;};
 ]]
 local C = ffi.C
 
@@ -86,8 +86,9 @@ local obj = {
 }
 
 obj:register_events({
-    {name="engine/exit", type="NameOnlyEvent"},
-    {name="scene/activated", type="SceneActivatedEvent"},
+    {name="engine/exit", type="Event_NameOnly"},
+    {name="scene/loaded", type="Event_IDOnly"},
+    {name="scene/activated", type="Event_IDOnly"},
 })
 
 return obj

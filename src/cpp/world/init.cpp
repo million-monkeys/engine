@@ -13,7 +13,8 @@ world::Context* world::init (events::Context* events_ctx, messages::Context* mes
     EASY_BLOCK("world::init", world::COLOR(1));
     SPDLOG_DEBUG("[world] Init");
     auto context = new world::Context{
-        events::createStream(events_ctx, "scenes"_hs),
+        events::createStream(events_ctx, "world"_hs),
+        events::createStream(events_ctx, "scene"_hs),
         events::createStream(events_ctx, "blackboard"_hs, million::StreamWriters::Multi),
     };
     context->m_events_ctx = events_ctx;

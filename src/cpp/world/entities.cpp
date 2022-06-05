@@ -21,12 +21,30 @@ const std::string& world::findEntityName (world::Context* context, const compone
     EASY_FUNCTION(world::COLOR(2));
     const auto& entities = context->m_registries.foreground().entity_names;
     auto it = entities.find(named.name);
-    if (it != entities.end()) {
-        return it->second.name;
-    } else {
+    if (it == entities.end()) {
         spdlog::warn("No name for {}", named.name.data());
+        return g_empty_string;
     }
-    return g_empty_string;
+    return it->second.name;
+    
+}
+
+const std::string& world::findEntityName (world::Context* context, entt::entity entity)
+{
+    EASY_FUNCTION(world::COLOR(2));
+    auto& foreground = context->m_registries.foreground();
+    auto named = foreground.runtime.try_get<components::core::Named>(entity);
+    if (named == nullptr) {
+        spdlog::warn("No name for entity {}", entt::to_integral(entity));
+        return g_empty_string;
+    }
+    const auto& entities = foreground.entity_names;
+    auto it = entities.find(named->name);
+    if (it == entities.end()) {
+        spdlog::warn("No name for {}", named->name.data());
+        return g_empty_string;
+    }
+    return it->second.name;
 }
 
 bool world::isInGroup (world::Context* context, entt::entity entity, entt::hashed_string::hash_type group_name)

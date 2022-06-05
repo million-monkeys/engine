@@ -12,6 +12,8 @@ namespace timing {
 }
 
 namespace million {
+    
+    template <typename Type> struct WrapPtr { Type* ptr; };
 
     namespace types {
         enum class Type {

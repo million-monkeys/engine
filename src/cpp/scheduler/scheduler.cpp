@@ -240,6 +240,7 @@ void scheduler::createTaskGraph (scheduler::Context* context)
         if EXPECT_TAKEN(game_logic_flow != nullptr) {
             SPDLOG_TRACE("[scheduler] Running game-logic systems");
             subflow.composed_of(*game_logic_flow).name("systems/game-logic-subflow");
+            subflow.join();
         }
     }).name("systems/game-logic");
 

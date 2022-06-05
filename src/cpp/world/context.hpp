@@ -19,7 +19,7 @@ void loadComponent (world::Context* context, entt::registry& registry, entt::has
 
 namespace world {
     struct Context {
-        Context (million::events::Stream& stream, million::events::Stream& commands) : m_stream(stream), m_blackboard_commands(commands) {}
+        Context (million::events::Stream& wrold_stream, million::events::Stream& scene_stream, million::events::Stream& commands) : m_world_stream(wrold_stream), m_scene_stream(scene_stream), m_blackboard_commands(commands) {}
         ~Context () {}
 
         events::Context* m_events_ctx;
@@ -35,7 +35,8 @@ namespace world {
         Registries m_registries;
         million::api::EngineRuntime* m_context_data = nullptr;
 
-        million::events::Stream& m_stream;   // "scene"_hs output stream
+        million::events::Stream& m_world_stream;   // "world"_hs output stream, world subsystem events reported here
+        million::events::Stream& m_scene_stream;   // "scene"_hs output stream, scene-specific user events reported here
         million::events::Stream& m_blackboard_commands; // "blackboard"_hs input stream
         
         // Scene loading

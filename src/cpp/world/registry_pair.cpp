@@ -15,7 +15,8 @@ RegistryPair::RegistryPair()
 
 RegistryPair::~RegistryPair()
 {
-
+    runtime = {};
+    prototypes = {};
 }
 
 void RegistryPair::onAddNamedEntity (entt::registry& registry, entt::entity entity)

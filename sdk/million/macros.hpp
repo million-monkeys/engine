@@ -42,4 +42,4 @@ namespace supports_detail {                                                     
 #define MM_MODULE_CLASS(ClassName) public: ClassName(const std::string& name) : mm_module::Module<ClassName>(name) {} virtual ~ClassName() {} private:
 
 // Declare module
-#define MM_MODULE(ClassName) MM_MODULE_INIT(mm_module::) { MM_REGISTER_COMPONENTS return mm->createModule<ClassName>(name); }
+#define MM_MODULE(ClassName) MM_MODULE_INIT(mm_module::) { MM_REGISTER_COMPONENTS auto instance = mm->createModule<ClassName>(name); instance->advancedModuleSetup(mm); return instance; }
