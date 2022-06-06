@@ -20,7 +20,6 @@ void world::update (world::Context* context)
                         if (it != context->m_pending_scenes.end()) {
                             EASY_BLOCK("SceneManager handling loaded event", profiler::colors::Amber500);
                             PendingScene& pending = it->second;
-                            SPDLOG_TRACE("[world] Updating pending scenes {} {}", pending.resources.size(), loaded.handle.handle);
                             pending.resources.erase(loaded.handle.handle);
                             if (loaded.type == "scene-script"_hs) {
                                 context->m_pending.scripts = loaded.handle;

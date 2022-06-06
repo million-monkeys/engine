@@ -5,6 +5,8 @@
 #include "api_setup.hpp"
 #include "api_runtime.hpp"
 
+#include "world/world.hpp"
+
 modules::Context* modules::init (std::shared_ptr<spdlog::logger> logger)
 {
     EASY_BLOCK("modules::init", modules::COLOR(1));
@@ -19,6 +21,8 @@ void modules::setup_api (modules::Context* context, world::Context* world_ctx, g
     context->m_module_manager = new ModuleManagerAPI(world_ctx);
     context->m_engine_setup = new SetupAPI(world_ctx, game_ctx, resources_ctx, scheduler_ctx, messages_ctx, events_ctx);
     context->m_engine_runtime = new RuntimeAPI(world_ctx, resources_ctx, messages_ctx, events_ctx);
+
+    world::setContextData(world_ctx, context->m_engine_runtime);
 }
 
 void modules::term (modules::Context* context)

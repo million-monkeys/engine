@@ -80,7 +80,7 @@ namespace million {
             virtual ~Stream () {}
             template <typename Event> Event& emit () { return *(new (push(Event::ID, sizeof(Event))) Event{}); }    
             template <typename Event, typename Function> void emit (Function fn) { fn(emit<Event>()); }
-            void emit (entt::hashed_string event_id) { push(event_id, 0); }
+            void emit (entt::hashed_string::hash_type event_id) { push(event_id, 0); }
         protected:
             virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t) = 0;
         };
@@ -114,8 +114,13 @@ namespace million {
             }
             template <typename Message, typename Function> void postFiltered (entt::hashed_string::hash_type target, std::uint16_t categories, Function fn) { fn(post<Message>(target, categories)); }
 
+            // Push a data-less message by name
+            void post (entt::entity target, entt::hashed_string::hash_type type_name) {
+                push(type_name, entt::to_integral(target), 0, 0);
+            }
+
             // Internal! Even though this is public, it should not be used directly.
-            virtual std::byte* push (entt::hashed_string::hash_type, std::uint32_t, std::uint32_t, std::uint8_t) = 0;
+            virtual std::byte* push (entt::hashed_string::hash_type message_type, std::uint32_t target_entity, std::uint32_t flags, std::uint8_t size) = 0;
         };
 
         /// Internal type: not expected to be used directly.

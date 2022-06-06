@@ -57,7 +57,8 @@ local function handle_message (message_type, entity_info, ptr)
             local msg = ffi.cast(ctype, ptr + ffi.sizeof("struct MessageEnvelope"))
             handler(entity, msg, mm)
         else
-            mm.log.warning("Entity %d registered for unknown message type: %d", entity.id, message_type)
+            -- Message not registered, assume its a body-less signal
+            handler(entity, nil, mm)
         end
     end
 end
